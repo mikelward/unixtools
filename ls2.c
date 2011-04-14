@@ -5,13 +5,19 @@
 #include <assert.h>
 #include <dirent.h>
 #include <errno.h>
+#include <getopt.h>             /* for getopt() */
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-int strcmpforqsort(const void *a, const void *b)
+struct options {
+    int all : 1;
+    int (*sort)(const void *, const void *);
+};
+
+int sortbyname(const void *a, const void *b)
 {
     const char *sa = *(char **)a;
     const char *sb = *(char **)b;
@@ -20,7 +26,7 @@ int strcmpforqsort(const void *a, const void *b)
     return strcoll(sa, sb);
 }
 
-void ls(const char *root)
+void ls(const char *root, struct options *poptions)
 {
     struct stat buf;
 
@@ -34,7 +40,7 @@ void ls(const char *root)
         errno = 0;
         DIR *pdir = opendir(root);
         if (pdir) {
-            char **names;
+            char **names = NULL;
             int namesmax = 0;
             int i = 0;
             struct dirent *pde;
@@ -51,10 +57,13 @@ void ls(const char *root)
                 names[i++] = strdup(pde->d_name);
             }
 
-            qsort(names, i, sizeof(char *), strcmpforqsort);
+            if (poptions->sort) {
+                qsort(names, i, sizeof(char *), poptions->sort);
+            }
             for (int j = 0; j < i; j++) {
-                if (strchr(names[j], '.') == names[j]) {
-                    /* skip dot files by default */
+                if ((poptions->all == 0) &&
+                    (strchr(names[j], '.') == names[j])) {
+                    /* skip dot files */
                     continue;
                 }
                 printf("%s\n", names[j]);
@@ -67,18 +76,39 @@ void ls(const char *root)
     }
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char *argv[])
 {
     /* so that files are sorted the same as GNU ls */
     setlocale(LC_ALL, "");
 
+    struct options options;
+    options.all = 0;
+    options.sort = &sortbyname;
+
+    int option;
+    opterr = 0;
+    while ((option = getopt(argc, argv, ":a")) != -1) {
+        switch (option) {
+        case 'a':
+            options.all = 1;
+            break;
+        case ':':
+            fprintf(stderr, "Missing argument to -%c\n", optopt);
+            exit(2);
+        case '?':
+            fprintf(stderr, "Invalid option -%c\n", optopt);
+            exit(2);
+        }
+    }
+    argc -= optind, argv += optind;
+
     /* list current directory if no other paths were given */
-    if (argc == 1) {
-        ls(".");
+    if (argc == 0) {
+        ls(".", &options);
     }
     else {
-        for (int i = 1; i < argc; i++) {
-            ls(argv[i]);
+        for (int i = 0; i < argc; i++) {
+            ls(argv[i], &options);
         }
     }
 
