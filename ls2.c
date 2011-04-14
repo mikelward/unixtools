@@ -51,7 +51,6 @@ void ls(const char *root)
                 names[i++] = strdup(pde->d_name);
             }
 
-            printf("%d files\n", i);
             qsort(names, i, sizeof(char *), strcmpforqsort);
             for (int j = 0; j < i; j++) {
                 if (strchr(names[j], '.') == names[j]) {
@@ -71,8 +70,14 @@ int main(int argc, const char *argv[])
 {
     setlocale(LC_ALL, "");
 
-    for (int i = 1; i < argc; i++) {
-        ls(argv[i]);
+    /* list current directory if no other paths were given */
+    if (argc == 1) {
+        ls(".");
+    }
+    else {
+        for (int i = 1; i < argc; i++) {
+            ls(argv[i]);
+        }
     }
 
     return 0;
