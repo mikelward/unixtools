@@ -59,6 +59,7 @@ void ls(const char *root)
                 }
                 printf("%s\n", names[j]);
             }
+            free(names);
         }
     }
     else {
@@ -68,6 +69,7 @@ void ls(const char *root)
 
 int main(int argc, const char *argv[])
 {
+    /* so that files are sorted the same as GNU ls */
     setlocale(LC_ALL, "");
 
     /* list current directory if no other paths were given */
