@@ -260,22 +260,6 @@ void listdir(struct file *fp, struct options *poptions)
     }
 }
 
-/*
- * called for each file specified on the command line
- *
- * by default, if "file" is a directory, its contents will be listed
- * the -d flag causes only the directory itself to be listed
- */
-void ls(struct file *file, struct options *poptions)
-{
-    if (isdir(file)) {
-        listdir(file, poptions);
-    }
-    else {
-        listfile(file, poptions, 1);
-    }
-}
-
 int main(int argc, char *argv[])
 {
     /* so that files are sorted the same as GNU ls */
@@ -339,7 +323,12 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Error getting file for %s\n", path);
         }
         else {
-            dirs[dirno++] = file;
+            if (options.directory) {
+                files[fileno++] = file;
+            }
+            else {
+                dirs[dirno++] = file;
+            }
         }
     }
     else {
@@ -355,7 +344,7 @@ int main(int argc, char *argv[])
             if (!file || !file->psb) {
                 continue;
             }
-            else if (isdir(file)) {
+            else if (!options.directory && isdir(file)) {
                 /* add file to directories */
                 if (dirno == dirmax) {
                     struct file **newdirs = realloc(dirs, (dirmax+=1024)*sizeof(*newdirs));
@@ -389,7 +378,7 @@ int main(int argc, char *argv[])
         qsort(files, fileno, sizeof(*files), options.sort);
     }
     for (int i = 0; i < fileno; i++) {
-        ls(files[i], &options);
+        listfile(files[i], &options, 1);
         nprinted++;
     }
 
@@ -404,7 +393,7 @@ int main(int argc, char *argv[])
         if (nprinted > 0 || dirno > 1) {
             printf("%s:\n", dirs[i]->path);
         }
-        ls(dirs[i], &options);
+        listdir(dirs[i], &options);
         nprinted++;
     }
 
