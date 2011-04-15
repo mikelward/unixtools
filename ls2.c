@@ -22,6 +22,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "list.h"
+
 struct options {
     int all : 1;
     int directory : 1;
@@ -30,17 +32,19 @@ struct options {
     int blocksize;
     int (*sort)(const void *, const void *);
 };
+typedef struct options Options;
 
 struct file {
     const char *path;       /* full path to the file */
     const char *name;       /* file name without leading directories */
     struct stat *psb;
 };
+typedef struct file File;
 
 int sortbyname(const void *a, const void *b)
 {
-    const struct file *fa = *(struct file **)a;
-    const struct file *fb = *(struct file **)b;
+    const File *fa = *(File **)a;
+    const File *fb = *(File **)b;
     const char *namea = fa->path;
     const char *nameb = fb->path;
 
@@ -113,9 +117,9 @@ char *makepath(const char *dirname, const char *filename)
  * if "wantstat" is false (0) or stat() fails, the psb member will be NULL
  * callers should check for this condition before using psb
  */
-struct file *getfile(const char *dirname, const char *filename, int wantstat)
+File *getfile(const char *dirname, const char *filename, int wantstat)
 {
-    struct file *pfile = malloc(sizeof *pfile);
+    File *pfile = malloc(sizeof *pfile);
     if (!pfile) {
         fprintf(stderr, "Out of memory\n");
         return NULL;
@@ -145,7 +149,7 @@ struct file *getfile(const char *dirname, const char *filename, int wantstat)
  * returns 1 if poptions mean we will need to call stat() to produce the correct output
  * returns 0 if poptions means we do not require stat()
  */
-int needfilestat(struct options *poptions)
+int needfilestat(Options *poptions)
 {
     return poptions->size;
 }
@@ -154,23 +158,23 @@ int needfilestat(struct options *poptions)
  * like needfilestat(), but if the -d flag is not given,
  * we also need to stat a path to see if it's a directory or not
  */
-int needdirstat(struct options *poptions)
+int needdirstat(Options *poptions)
 {
     return !poptions->directory || needfilestat(poptions);
 }
 
 
-int isdir(struct file *fp)
+int isdir(File *fp)
 {
     return S_ISDIR(fp->psb->st_mode);
 }
 
-int wantthisfile(const char *filename, struct options *poptions)
+int wantthisfile(const char *filename, Options *poptions)
 {
     return poptions->all || (filename[0] != '.');
 }
 
-unsigned long getdisplaysize(blkcnt_t blocks, struct options *poptions)
+unsigned long getdisplaysize(blkcnt_t blocks, Options *poptions)
 {
 
     /* yep, a file that's only using one block gets printed as size "0"!
@@ -188,7 +192,7 @@ unsigned long getdisplaysize(blkcnt_t blocks, struct options *poptions)
     return size;
 }
 
-void listfile(struct file *fp, struct options *poptions, int fullpath)
+void listfile(File *fp, Options *poptions, int fullpath)
 {
     if (poptions->size) {
         printf("%6lu ", getdisplaysize(fp->psb->st_blocks, poptions)); 
@@ -199,7 +203,7 @@ void listfile(struct file *fp, struct options *poptions, int fullpath)
     printf("%s\n", name);
 }
 
-void listdir(struct file *fp, struct options *poptions)
+void listdir(File *fp, Options *poptions)
 {
     if (!fp) {
         fprintf(stderr, "listdir: fp is NULL\n");
@@ -214,32 +218,20 @@ void listdir(struct file *fp, struct options *poptions)
     errno = 0;
     DIR *pdir = opendir(dirname);
     if (pdir) {
-        struct file **files = NULL;
-        int filessize = 0;
-        int filesinc = 256;
+        List *files = newlist();
         blkcnt_t totalblocks = 0;
-        int nfiles = 0;
         int wantstat = needfilestat(poptions);
         struct dirent *pde;
         while ((pde = readdir(pdir))) {
             if (!wantthisfile(pde->d_name, poptions)) {
                 continue;
             }
-            if (nfiles == filessize) {
-                struct file **newfiles = realloc(files, (filessize+=filesinc)*sizeof(*files));
-                if (!newfiles) {
-                    fprintf(stderr, "Error allocating memory\n");
-                    free(files);
-                    return;
-                }
-                files = newfiles;
-            }
-            struct file *file = getfile(dirname, pde->d_name, wantstat);
+            File *file = getfile(dirname, pde->d_name, wantstat);
             if (!file) {
                 fprintf(stderr, "Error getting file\n");
                 continue;
             }
-            files[nfiles++] = file;
+            append(file, files);
 
             if (poptions->size) {
                 totalblocks += file->psb->st_blocks;
@@ -249,10 +241,12 @@ void listdir(struct file *fp, struct options *poptions)
             printf("total %lu\n", getdisplaysize(totalblocks, poptions));
         }
         if (poptions->sort) {
-            qsort(files, nfiles, sizeof(*files), poptions->sort);
+            sort(files, poptions->sort);
         }
+        unsigned nfiles = length(files);
         for (int i = 0; i < nfiles; i++) {
-            listfile(files[i], poptions, 0);
+            File *file = getitem(files, i);
+            listfile(file, poptions, 0);
         }
         free(files);
     }
@@ -266,7 +260,7 @@ int main(int argc, char *argv[])
     /* so that files are sorted the same as GNU ls */
     setlocale(LC_ALL, "");
 
-    struct options options;
+    Options options;
     options.all = 0;
     options.blocksize = 1024;       /* bytes per block */
     options.directory = 0;
@@ -306,10 +300,8 @@ int main(int argc, char *argv[])
     }
     argc -= optind, argv += optind;
 
-    struct file **files = NULL;
-    struct file **dirs = NULL;
-    int fileno = 0, filemax = 0;
-    int dirno = 0, dirmax = 0;
+    List *files = newlist();
+    List *dirs = newlist();
 
     /* list current directory if no other paths were given */
     if (argc == 0) {
@@ -324,59 +316,43 @@ int main(int argc, char *argv[])
          * path is always set to the full path,
          * name is set if we are listing its directory */
         char *path = argv[i];
-        struct file *file = getfile(path, "", 1);
+        File *file = getfile(path, "", 1);
         if (!file || !file->psb) {
             continue;
         }
         else if (!options.directory && isdir(file)) {
-            /* add file to directories */
-            if (dirno == dirmax) {
-                struct file **newdirs = realloc(dirs, (dirmax+=1024)*sizeof(*newdirs));
-                if (!newdirs) {
-                    fprintf(stderr, "Out of memory\n");
-                    exit(1);
-                }
-                dirs = newdirs;
-            }
-            dirs[dirno++] = file;
+            append(file, dirs);
         }
         else {
-            /* add file to files */
-            if (fileno == filemax) {
-                struct file **newfiles = realloc(files, (filemax+=1024)*sizeof(*newfiles));
-                if (!newfiles) {
-                    fprintf(stderr, "Out of memory\n");
-                    exit(1);
-                }
-                files = newfiles;
-            }
-            files[fileno++] = file;
+            append(file, files);
         }
     }
 
     int nprinted = 0;
 
     /* print files first, sorted according to user preference */
-    if (options.sort && fileno > 0) {
-        qsort(files, fileno, sizeof(*files), options.sort);
+    if (options.sort && length(files) > 0) {
+        sort(files, options.sort);
     }
-    for (int i = 0; i < fileno; i++) {
-        listfile(files[i], &options, 1);
+    for (int i = 0; i < length(files); i++) {
+        File *file = getitem(files, i);
+        listfile(file, &options, 1);
         nprinted++;
     }
 
     /* then print directories, sorted by name */
-    if (options.sort && dirno > 0) {
-        qsort(dirs, dirno, sizeof(*dirs), &sortbyname);
+    if (options.sort && length(dirs) > 0) {
+        sort(dirs, &sortbyname);
     }
-    for (int i = 0; i < dirno; i++) {
+    for (int i = 0; i < length(dirs); i++) {
+        File *dir = getitem(dirs, i);
         if (nprinted > 0) {
             printf("\n");
         }
-        if (nprinted > 0 || dirno > 1) {
-            printf("%s:\n", dirs[i]->path);
+        if (nprinted > 0 || length(dirs) > 1) {
+            printf("%s:\n", dir->path);
         }
-        listdir(dirs[i], &options);
+        listdir(dir, &options);
         nprinted++;
     }
 
