@@ -313,66 +313,44 @@ int main(int argc, char *argv[])
 
     /* list current directory if no other paths were given */
     if (argc == 0) {
-        /* add "." to directories */
-        if (dirno == dirmax) {
-            struct file **newdirs = realloc(dirs, (dirmax+=1024)*sizeof(*newdirs));
-            if (!newdirs) {
-                fprintf(stderr, "Out of memory\n");
-                exit(1);
-            }
-            dirs = newdirs;
-        }
-        char *path = ".";
+        argc = 1, argv[0] = ".";
+    }
+
+    for (int i = 0; i < argc; i++) {
+        /* XXX should dirs be recorded is dir=dir, file="", or something else? */
+        /* (maybe it should depend on whether it contains a slash,
+         *  maybe dirname/basename should be used?) */
+        /* current rule:
+         * path is always set to the full path,
+         * name is set if we are listing its directory */
+        char *path = argv[i];
         struct file *file = getfile(path, "", 1);
-        if (!file) {
-            fprintf(stderr, "Error getting file for %s\n", path);
+        if (!file || !file->psb) {
+            continue;
+        }
+        else if (!options.directory && isdir(file)) {
+            /* add file to directories */
+            if (dirno == dirmax) {
+                struct file **newdirs = realloc(dirs, (dirmax+=1024)*sizeof(*newdirs));
+                if (!newdirs) {
+                    fprintf(stderr, "Out of memory\n");
+                    exit(1);
+                }
+                dirs = newdirs;
+            }
+            dirs[dirno++] = file;
         }
         else {
-            if (options.directory) {
-                files[fileno++] = file;
-            }
-            else {
-                dirs[dirno++] = file;
-            }
-        }
-    }
-    else {
-        for (int i = 0; i < argc; i++) {
-            /* XXX should dirs be recorded is dir=dir, file="", or something else? */
-            /* (maybe it should depend on whether it contains a slash,
-             *  maybe dirname/basename should be used?) */
-            /* current rule:
-             * path is always set to the full path,
-             * name is set if we are listing its directory */
-            char *path = argv[i];
-            struct file *file = getfile(path, "", 1);
-            if (!file || !file->psb) {
-                continue;
-            }
-            else if (!options.directory && isdir(file)) {
-                /* add file to directories */
-                if (dirno == dirmax) {
-                    struct file **newdirs = realloc(dirs, (dirmax+=1024)*sizeof(*newdirs));
-                    if (!newdirs) {
-                        fprintf(stderr, "Out of memory\n");
-                        exit(1);
-                    }
-                    dirs = newdirs;
+            /* add file to files */
+            if (fileno == filemax) {
+                struct file **newfiles = realloc(files, (filemax+=1024)*sizeof(*newfiles));
+                if (!newfiles) {
+                    fprintf(stderr, "Out of memory\n");
+                    exit(1);
                 }
-                dirs[dirno++] = file;
+                files = newfiles;
             }
-            else {
-                /* add file to files */
-                if (fileno == filemax) {
-                    struct file **newfiles = realloc(files, (filemax+=1024)*sizeof(*newfiles));
-                    if (!newfiles) {
-                        fprintf(stderr, "Out of memory\n");
-                        exit(1);
-                    }
-                    files = newfiles;
-                }
-                files[fileno++] = file;
-            }
+            files[fileno++] = file;
         }
     }
 
