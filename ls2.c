@@ -25,6 +25,7 @@
 struct options {
     int all : 1;
     int directory : 1;
+    int one : 1;
     int size : 1;
     int blocksize;
     int (*sort)(const void *, const void *);
@@ -269,13 +270,17 @@ int main(int argc, char *argv[])
     options.all = 0;
     options.blocksize = 1024;       /* bytes per block */
     options.directory = 0;
+    options.one = 1;                /* XXX maybe change later? */
     options.size = 0;
     options.sort = &sortbyname;
 
     int option;
     opterr = 0;
-    while ((option = getopt(argc, argv, ":adsU")) != -1) {
+    while ((option = getopt(argc, argv, ":1adsU")) != -1) {
         switch (option) {
+        case '1':
+            options.one = 1;
+            break;
         case 'a':
             options.all = 1;
             break;
