@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
 
     int option;
     opterr = 0;
-    while ((option = getopt(argc, argv, ":ads")) != -1) {
+    while ((option = getopt(argc, argv, ":adsU")) != -1) {
         switch (option) {
         case 'a':
             options.all = 1;
@@ -300,6 +300,9 @@ int main(int argc, char *argv[])
             break;
         case 's':
             options.size = 1;
+            break;
+        case 'U':
+            options.sort = NULL;
             break;
         case ':':
             fprintf(stderr, "Missing argument to -%c\n", optopt);
