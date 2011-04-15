@@ -32,7 +32,7 @@ struct options {
 
 struct file {
     const char *path;       /* full path to the file */
-    const char *filename;   /* path to the file without leading directories */
+    const char *name;       /* file name without leading directories */
     struct stat *psb;
 };
 
@@ -40,8 +40,8 @@ int sortbyname(const void *a, const void *b)
 {
     const struct file *fa = *(struct file **)a;
     const struct file *fb = *(struct file **)b;
-    const char *namea = fa->filename;
-    const char *nameb = fb->filename;
+    const char *namea = fa->path;
+    const char *nameb = fb->path;
 
     //return strcmp(sa, sb);
     return strcoll(namea, nameb);
@@ -93,7 +93,12 @@ char *strconcat(const char *s1, ...)
  */
 char *makepath(const char *dirname, const char *filename)
 {
-    return strconcat(dirname, "/", filename, NULL);
+    if (dirname && *dirname && filename && *filename) {
+        return strconcat(dirname, "/", filename, NULL);
+    }
+    else {
+        return strconcat(dirname, filename, NULL);
+    }
 }
 
 
@@ -111,11 +116,12 @@ struct file *getfile(const char *dirname, const char *filename, int wantstat)
 {
     struct file *pfile = malloc(sizeof *pfile);
     if (!pfile) {
+        fprintf(stderr, "Out of memory\n");
         return NULL;
     }
 
     pfile->path = makepath(dirname, filename);
-    pfile->filename = strdup(filename);
+    pfile->name = strdup(filename);
     pfile->psb = NULL;
 
     if (wantstat) {
@@ -181,13 +187,15 @@ unsigned long getdisplaysize(blkcnt_t blocks, struct options *poptions)
     return size;
 }
 
-void listfile(struct file *fp, struct options *poptions)
+void listfile(struct file *fp, struct options *poptions, int fullpath)
 {
     if (poptions->size) {
         printf("%6lu ", getdisplaysize(fp->psb->st_blocks, poptions)); 
     }
 
-    printf("%s\n", fp->filename);
+    const char *name = (fullpath)? fp->path: fp->name;
+
+    printf("%s\n", name);
 }
 
 void listdir(struct file *fp, struct options *poptions)
@@ -243,7 +251,7 @@ void listdir(struct file *fp, struct options *poptions)
             qsort(files, nfiles, sizeof(*files), poptions->sort);
         }
         for (int i = 0; i < nfiles; i++) {
-            listfile(files[i], poptions);
+            listfile(files[i], poptions, 0);
         }
         free(files);
     }
@@ -264,7 +272,7 @@ void ls(struct file *file, struct options *poptions)
         listdir(file, poptions);
     }
     else {
-        listfile(file, poptions);
+        listfile(file, poptions, 1);
     }
 }
 
@@ -322,15 +330,29 @@ int main(int argc, char *argv[])
             }
             dirs = newdirs;
         }
-        dirs[dirno++] = getfile(".", "", 1);
+        char *path = ".";
+        struct file *file = getfile(path, "", 1);
+        if (!file) {
+            fprintf(stderr, "Error getting file for %s\n", path);
+        }
+        else {
+            dirs[dirno++] = file;
+        }
     }
     else {
         for (int i = 0; i < argc; i++) {
             /* XXX should dirs be recorded is dir=dir, file="", or something else? */
             /* (maybe it should depend on whether it contains a slash,
              *  maybe dirname/basename should be used?) */
-            struct file *file = getfile(argv[i], "", 1);
-            if (isdir(file)) {
+            /* current rule:
+             * path is always set to the full path,
+             * name is set if we are listing its directory */
+            char *path = argv[i];
+            struct file *file = getfile(path, "", 1);
+            if (!file || !file->psb) {
+                continue;
+            }
+            else if (isdir(file)) {
                 /* add file to directories */
                 if (dirno == dirmax) {
                     struct file **newdirs = realloc(dirs, (dirmax+=1024)*sizeof(*newdirs));
@@ -360,7 +382,7 @@ int main(int argc, char *argv[])
     int nprinted = 0;
 
     /* print files first, sorted according to user preference */
-    if (options.sort) {
+    if (options.sort && fileno > 0) {
         qsort(files, fileno, sizeof(*files), options.sort);
     }
     for (int i = 0; i < fileno; i++) {
@@ -369,7 +391,7 @@ int main(int argc, char *argv[])
     }
 
     /* then print directories, sorted by name */
-    if (options.sort) {
+    if (options.sort && dirno > 0) {
         qsort(dirs, dirno, sizeof(*dirs), &sortbyname);
     }
     for (int i = 0; i < dirno; i++) {
