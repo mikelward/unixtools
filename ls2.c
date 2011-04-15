@@ -150,27 +150,33 @@ int isdir(struct file *fp)
     return S_ISDIR(fp->psb->st_mode);
 }
 
-int wantthisfile(struct file *fp, struct options *poptions)
+int wantthisfile(const char *filename, struct options *poptions)
 {
-    return poptions->all || (fp->filename[0] != '.');
+    return poptions->all || (filename[0] != '.');
+}
+
+unsigned long getdisplaysize(blkcnt_t blocks, struct options *poptions)
+{
+
+    /* yep, a file that's only using one block gets printed as size "0"!
+     * that's what GNU ls does anyway */
+    unsigned long size;
+    /* contortions to attempt to avoid overflow */
+    /* in both cases we want size = blocks * BSIZE / blocksize */
+    /* and in both cases we have to have larger / smaller
+     * to avoid truncating the answer down to zero */
+    if (DEV_BSIZE > poptions->blocksize) {
+        size = blocks * (DEV_BSIZE / poptions->blocksize);
+    } else {
+        size = blocks / (poptions->blocksize / DEV_BSIZE);
+    }
+    return size;
 }
 
 void listfile(struct file *fp, struct options *poptions)
 {
     if (poptions->size) {
-        /* yep, a file that's only using one block gets printed as size "0"!
-         * that's what ls does */
-        unsigned long size;
-        /* contortions to attempt to avoid overflow */
-        /* in both cases we want size = blocks * BSIZE / blocksize */
-        /* and in both cases we have to have larger / smaller
-         * to avoid truncating the answer down to zero */
-        if (DEV_BSIZE > poptions->blocksize) {
-            size = fp->psb->st_blocks * (DEV_BSIZE / poptions->blocksize);
-        } else {
-            size = fp->psb->st_blocks / (poptions->blocksize / DEV_BSIZE);
-        }
-        printf("%6lu ", size); 
+        printf("%6lu ", getdisplaysize(fp->psb->st_blocks, poptions)); 
     }
 
     printf("%s\n", fp->filename);
@@ -194,10 +200,14 @@ void listdir(struct file *fp, struct options *poptions)
         struct file **files = NULL;
         int filessize = 0;
         int filesinc = 256;
+        blkcnt_t totalblocks = 0;
         int nfiles = 0;
         int wantstat = needfilestat(poptions);
         struct dirent *pde;
         while ((pde = readdir(pdir))) {
+            if (!wantthisfile(pde->d_name, poptions)) {
+                continue;
+            }
             if (nfiles == filessize) {
                 struct file **newfiles = realloc(files, (filessize+=filesinc)*sizeof(*files));
                 if (!newfiles) {
@@ -213,15 +223,18 @@ void listdir(struct file *fp, struct options *poptions)
                 continue;
             }
             files[nfiles++] = file;
-        }
 
+            if (poptions->size) {
+                totalblocks += file->psb->st_blocks;
+            }
+        }
+        if (poptions->size) {
+            printf("total %lu\n", getdisplaysize(totalblocks, poptions));
+        }
         if (poptions->sort) {
             qsort(files, nfiles, sizeof(struct file *), poptions->sort);
         }
         for (int i = 0; i < nfiles; i++) {
-            if (!wantthisfile(files[i], poptions)) {
-                continue;
-            }
             listfile(files[i], poptions);
         }
         free(files);
