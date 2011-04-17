@@ -5,6 +5,7 @@ struct list {
 typedef struct list List;
 
 List *newlist(void);
+void freelist(List *list);
 void append(void *element, List *list);
 void *getitem(List *list, unsigned index);
 unsigned length(List *list);

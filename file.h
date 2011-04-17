@@ -22,6 +22,7 @@ void freefile(File *file);
 char *filename(File *file);
 int isdir(File *file);
 int comparebyname(const File **a, const File **b);
+char *makepath(const char *dirname, const char *filename);
 
 #endif
 /* vim: set ts=4 sw=4 tw=0 et:*/

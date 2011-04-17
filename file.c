@@ -43,9 +43,11 @@ void freefile(File *file)
 
     if (file->path) {
         free(file->path);
+        file->path = NULL;
     }
-    if (file->path) {
-        free(file->path);
+    if (file->pstat) {
+        free(file->pstat);
+        file->pstat = NULL;
     }
     free(file);
 }
@@ -62,8 +64,13 @@ char *filename(File *file)
         return NULL;
     }
 
+    //printf("duplicating %s\n", file->path);
     char *pathcopy = strdup(file->path);
-    char *name = strdup(basename(pathcopy));
+    //printf("pathcopy: %p=%s\n", pathcopy, pathcopy);
+    char *base = basename(pathcopy);
+    //printf("base: %p=%s\n", base, base);
+    char *name = strdup(base);
+    //printf("name: %p=%s\n", name, name);
     free(pathcopy);
     return name;
 }
@@ -89,6 +96,26 @@ int isdir(File *file)
     }
 
     return S_ISDIR(file->pstat->st_mode);
+}
+
+char *makepath(const char *dirname, const char *filename)
+{
+    char *path;
+    unsigned size;
+
+    size = snprintf(path, 0, "%s/%s", dirname, filename);
+    if (size < 1) {
+        fprintf(stderr, "makepath: snprintf is not C99 compliant?\n");
+        return NULL;
+    }
+    size += 1;                  /* allow for the null byte */
+    path = malloc(size);
+    if (path == NULL) {
+        fprintf(stderr, "makepath: Out of memory\n");
+        return NULL;
+    }
+    size = snprintf(path, size, "%s/%s", dirname, filename);
+    return path;
 }
 
 int comparebyname(const File **a, const File **b)
