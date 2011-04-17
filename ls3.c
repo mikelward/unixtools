@@ -29,7 +29,6 @@ typedef struct options {
     int all : 1;
     int directory : 1;
     int one : 1;
-    //int (*compare)(File **a, File **b);
     file_compare_function compare;
 } Options;
 
@@ -194,11 +193,8 @@ void listdir(File *dir, Options *poptions)
 
 void sortfiles(List *files, Options *poptions)
 {
-    //int (*compare)(const void *a, const void *b) = (int (*)(const void *, const void *))poptions->compare;
-    int (*compare)(const void *a, const void *b) = (qsort_compare_function)poptions->compare;
-    //qsort_compare_function qcompare = (qsort_compare_function)poptions->compare;
-    sort(files, compare);
-    //sort(files, qcompare);
+    qsort_compare_function qcompare = (qsort_compare_function)poptions->compare;
+    sort(files, qcompare);
 }
 
 void usage(void)

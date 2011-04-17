@@ -63,7 +63,7 @@ char *filename(File *file)
     }
 
     char *pathcopy = strdup(file->path);
-    const char *name = strdup(basename(pathcopy));
+    char *name = strdup(basename(pathcopy));
     free(pathcopy);
     return name;
 }
