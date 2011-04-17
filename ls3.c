@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 
     opterr = 0;     /* we will print our own error messages */
     int option;
-    while ((option = getopt(argc, argv, ":1adU")) != -1) {
+    while ((option = getopt(argc, argv, ":1adtU")) != -1) {
         switch(option) {
         case '1':
             options.one = 1;
@@ -64,6 +64,9 @@ int main(int argc, char **argv)
             break;
         case 'd':
             options.directory = 1;
+            break;
+        case 't':
+            options.compare = &comparebymtime;
             break;
         case 'U':
             options.compare = NULL;

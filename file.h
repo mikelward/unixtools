@@ -21,8 +21,10 @@ void freefile(File *file);
 /* caller must free returned filename if not NULL */
 char *filename(File *file);
 int isdir(File *file);
-int comparebyname(const File **a, const File **b);
 char *makepath(const char *dirname, const char *filename);
+
+int comparebyname(const File **a, const File **b);
+int comparebymtime(const File **a, const File **b);
 
 #endif
 /* vim: set ts=4 sw=4 tw=0 et:*/

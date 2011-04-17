@@ -141,4 +141,15 @@ int comparebyname(const File **a, const File **b)
     return strcoll(fa->path, fb->path);
 }
 
+int comparebymtime(const File **a, const File **b)
+{
+    File *fa = *(File **)a;
+    File *fb = *(File **)b;
+
+    struct stat *psa = getstat(fa);
+    struct stat *psb = getstat(fb);
+
+    return psa->st_mtime - psb->st_mtime;
+}
+
 /* vim: set ts=4 sw=4 tw=0 et:*/
