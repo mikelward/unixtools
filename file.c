@@ -55,7 +55,7 @@ void freefile(File *file)
 /*
  * uses icky basename() function
  * I'm following the POSIX version according to the Linux man pages
- * this I have to take a copy of the path
+ * thus I have to take a copy of the path
  */
 char *filename(File *file)
 {
@@ -71,7 +71,7 @@ char *filename(File *file)
     //printf("base: %p=%s\n", base, base);
     char *name = strdup(base);
     //printf("name: %p=%s\n", name, name);
-    free(pathcopy);
+    //free(pathcopy);
     return name;
 }
 
@@ -83,7 +83,7 @@ int isdir(File *file)
     }
 
     if (file->pstat == NULL) {
-        struct stat *pstat = malloc(sizeof(pstat));
+        struct stat *pstat = malloc(sizeof(*pstat));
         if (pstat == NULL) {
             fprintf(stderr, "isdir: Out of memory\n");
             return 0;
@@ -100,7 +100,7 @@ int isdir(File *file)
 
 char *makepath(const char *dirname, const char *filename)
 {
-    char *path;
+    char *path = NULL;
     unsigned size;
 
     size = snprintf(path, 0, "%s/%s", dirname, filename);

@@ -132,10 +132,7 @@ int main(int argc, char **argv)
 
 void listfile(File *file, Options *poptions)
 {
-    // fails when free'd for unknown reasons
     char *name = filename(file);
-    // also fails, why??
-    //char *name = strdup(file->path);
     if (name == NULL) {
         fprintf(stderr, "ls3: file is NULL\n");
         return;
