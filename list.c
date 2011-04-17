@@ -7,9 +7,9 @@ List *newlist(void)
 {
     List *lp = malloc(sizeof *lp);
     if (!lp) return lp;
-    lp->size = 1024;
+    lp->capacity = 1024;
     lp->next = 0;
-    lp->data = malloc(lp->size * sizeof(void *));
+    lp->data = malloc(lp->capacity * sizeof(void *));
     if (!lp->data) {
         free(lp);
         return NULL;
@@ -20,8 +20,8 @@ List *newlist(void)
 void append(void *element, List *list)
 {
     if (!list) return;
-    if (list->next == list->size) {
-        void **newdata = realloc(list->data, (list->size+=1024)*sizeof(*newdata));
+    if (list->next == list->capacity) {
+        void **newdata = realloc(list->data, (list->capacity+=1024)*sizeof(*newdata));
         if (!newdata) {
             free(list->data);
             fprintf(stderr, "Out of memory\n");

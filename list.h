@@ -1,6 +1,6 @@
 struct list {
     void **data;
-    unsigned size, next;
+    unsigned capacity, next;
 };
 typedef struct list List;
 
