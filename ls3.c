@@ -22,8 +22,10 @@
 #include "list.h"
 #include "file.h"
 
+/* typedefs to make function pointers readable */
 typedef int (*file_compare_function)(const File **a, const File **b);
 typedef int (*qsort_compare_function)(const void *a, const void *b);
+
 /* all the command line options */
 typedef struct options {
     int all : 1;
@@ -193,7 +195,12 @@ void listdir(File *dir, Options *poptions)
 
 void sortfiles(List *files, Options *poptions)
 {
+    /* our sort function takes two File **s
+     * qsort has to declare itself to take void pointers
+     * so it can work with any type
+     * cast our File ** function to void * to keep the compiler happy */
     qsort_compare_function qcompare = (qsort_compare_function)poptions->compare;
+
     sort(files, qcompare);
 }
 
