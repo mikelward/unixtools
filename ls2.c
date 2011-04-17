@@ -241,7 +241,7 @@ void listdir(File *fp, Options *poptions)
             printf("total %lu\n", getdisplaysize(totalblocks, poptions));
         }
         if (poptions->sort) {
-            sort(files, poptions->sort);
+            sortlist(files, poptions->sort);
         }
         unsigned nfiles = length(files);
         for (int i = 0; i < nfiles; i++) {
@@ -332,7 +332,7 @@ int main(int argc, char *argv[])
 
     /* print files first, sorted according to user preference */
     if (options.sort && length(files) > 0) {
-        sort(files, options.sort);
+        sortlist(files, options.sort);
     }
     for (int i = 0; i < length(files); i++) {
         File *file = getitem(files, i);
@@ -342,7 +342,7 @@ int main(int argc, char *argv[])
 
     /* then print directories, sorted by name */
     if (options.sort && length(dirs) > 0) {
-        sort(dirs, &sortbyname);
+        sortlist(dirs, &sortbyname);
     }
     for (int i = 0; i < length(dirs); i++) {
         File *dir = getitem(dirs, i);

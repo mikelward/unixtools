@@ -230,7 +230,7 @@ void sortfiles(List *files, Options *poptions)
      * cast our File ** function to void * to keep the compiler happy */
     qsort_compare_function qcompare = (qsort_compare_function)poptions->compare;
 
-    sort(files, qcompare);
+    sortlist(files, qcompare);
 }
 
 void usage(void)
