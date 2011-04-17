@@ -133,6 +133,12 @@ char *makepath(const char *dirname, const char *filename)
     return path;
 }
 
+/*
+ * returns:
+ * -1 if a's path should come before a's
+ *  0 if the paths are the same
+ *  1 if a's path should come after b's
+ */
 int comparebyname(const File **a, const File **b)
 {
     File *fa = *(File **)a;
@@ -141,6 +147,16 @@ int comparebyname(const File **a, const File **b)
     return strcoll(fa->path, fb->path);
 }
 
+/*
+ * returns:
+ * -1 if a should come before b (a is newer than b)
+ *  0 if a is the same age as b
+ *  1 if a should come after b (a is older than b)
+ *
+ *  this is backwards from normal,
+ *  but by default ls shows newest files first,
+ *  so it's what we want here
+ */
 int comparebymtime(const File **a, const File **b)
 {
     File *fa = *(File **)a;
@@ -149,7 +165,11 @@ int comparebymtime(const File **a, const File **b)
     struct stat *psa = getstat(fa);
     struct stat *psb = getstat(fb);
 
-    return psa->st_mtime - psb->st_mtime;
+    if (psa->st_mtime == psb->st_mtime) {
+        return strcoll(fa->path, fb->path);
+    } else {
+        return psa->st_mtime < psb->st_mtime;
+    }
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/
