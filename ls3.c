@@ -108,7 +108,7 @@ int main(int argc, char **argv)
             fprintf(stderr, "ls3: file is NULL\n");
             exit(1);
         }
-        if (isdir(file)) {
+        if (!options.directory && isdir(file)) {
             append(file, dirs);
         } else {
             append(file, files);
