@@ -64,15 +64,37 @@ char *filename(File *file)
         return NULL;
     }
 
-    //printf("duplicating %s\n", file->path);
     char *pathcopy = strdup(file->path);
-    //printf("pathcopy: %p=%s\n", pathcopy, pathcopy);
     char *base = basename(pathcopy);
-    //printf("base: %p=%s\n", base, base);
     char *name = strdup(base);
-    //printf("name: %p=%s\n", name, name);
-    //free(pathcopy);
+    free(pathcopy);
     return name;
+}
+
+/*
+ * fill the pstat field if it's not already populated
+ */
+struct stat *getstat(File *file)
+{
+    if (file == NULL) {
+        fprintf(stderr, "getstat: file is NULL\n");
+        return NULL;
+    }
+
+    if (file->pstat == NULL) {
+        struct stat *pstat = malloc(sizeof(*pstat));
+        if (pstat == NULL) {
+            fprintf(stderr, "getstat: Out of memory\n");
+            return NULL;
+        }
+        if (stat(file->path, pstat) != 0) {
+            fprintf(stderr, "getstat: Cannot stat %s\n", file->path);
+            return NULL;
+        }
+        file->pstat = pstat;
+    }
+
+    return file->pstat;
 }
 
 int isdir(File *file)
@@ -82,17 +104,10 @@ int isdir(File *file)
         return 0;
     }
 
-    if (file->pstat == NULL) {
-        struct stat *pstat = malloc(sizeof(*pstat));
-        if (pstat == NULL) {
-            fprintf(stderr, "isdir: Out of memory\n");
-            return 0;
-        }
-        if (stat(file->path, pstat) != 0) {
-            fprintf(stderr, "isdir: Cannot stat %s\n", file->path);
-            return 0;
-        }
-        file->pstat = pstat;
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        fprintf(stderr, "isdir: pstat is NULL\n");
+        return 0;
     }
 
     return S_ISDIR(file->pstat->st_mode);
