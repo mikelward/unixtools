@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 
     opterr = 0;     /* we will print our own error messages */
     int option;
-    while ((option = getopt(argc, argv, ":1ad")) != -1) {
+    while ((option = getopt(argc, argv, ":1adU")) != -1) {
         switch(option) {
         case '1':
             options.one = 1;
@@ -64,6 +64,9 @@ int main(int argc, char **argv)
             break;
         case 'd':
             options.directory = 1;
+            break;
+        case 'U':
+            options.compare = NULL;
             break;
         case ':':
             fprintf(stderr, "Missing argument to -%c\n", optopt);
@@ -204,6 +207,20 @@ void listdir(File *dir, Options *poptions)
 
 void sortfiles(List *files, Options *poptions)
 {
+    if (files == NULL) {
+        fprintf(stderr, "sortfiles: files is NULL\n");
+        return;
+    }
+    if (poptions == NULL) {
+        fprintf(stderr, "sortfiles: poptions is NULL\n");
+        return;
+    }
+
+    if (poptions->compare == NULL) {
+        /* user requested no sorting */
+        return;
+    }
+
     /* our sort function takes two File **s
      * qsort has to declare itself to take void pointers
      * so it can work with any type
@@ -215,7 +232,7 @@ void sortfiles(List *files, Options *poptions)
 
 void usage(void)
 {
-    fprintf(stderr, "Usage: ls3 [-1ad] <file>...\n");
+    fprintf(stderr, "Usage: ls3 [-1adU] <file>...\n");
 }
 
 int want(const char *path, Options *poptions)
