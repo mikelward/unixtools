@@ -118,11 +118,21 @@ int main(int argc, char **argv)
     listfiles(files, &options);
     freelist(files);
  
-    for (int i = 0, ndirs = length(dirs); i < ndirs; i++) {
+    int nfiles = length(files);
+    int ndirs = length(dirs);
+    int needlabel = nfiles > 0 || ndirs > 1;
+    for (int i = 0; i < ndirs; i++) {
         File *dir = getitem(dirs, i);
         if (dir == NULL) {
             fprintf(stderr, "ls3: dir is NULL\n");
             continue;
+        }
+        int neednewline = nfiles > 0 || i > 0;
+        if (neednewline) {
+            printf("\n");
+        }
+        if (needlabel) {
+            printf("%s:\n", dir->path);
         }
         listdir(dir, &options);
     }
