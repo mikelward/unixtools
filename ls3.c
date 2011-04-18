@@ -10,6 +10,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/param.h>
 #include <assert.h>
 #include <dirent.h>
 #include <errno.h>
@@ -31,12 +32,17 @@ typedef struct options {
     int all : 1;
     int directory : 1;
     int one : 1;
+    int size : 1;
     file_compare_function compare;
 } Options;
 
+/* getblocks is here rather than file because
+ * user options may change the units */
+unsigned getblocks(File *file);
 void listfile(File *file, Options *poptions);
 void listfiles(List *files, Options *poptions);
 void listdir(File *dir, Options *poptions);
+void printtotal(File *dir);
 void sortfiles(List *files, Options *poptions);
 void usage(void);
 int want(const char *path, Options *poptions);
@@ -50,11 +56,12 @@ int main(int argc, char **argv)
     options.all = 0;
     options.directory = 0;
     options.one = 1;
+    options.size = 0;
     options.compare = &comparebyname;
 
     opterr = 0;     /* we will print our own error messages */
     int option;
-    while ((option = getopt(argc, argv, ":1adtU")) != -1) {
+    while ((option = getopt(argc, argv, ":1adstU")) != -1) {
         switch(option) {
         case '1':
             options.one = 1;
@@ -64,6 +71,9 @@ int main(int argc, char **argv)
             break;
         case 'd':
             options.directory = 1;
+            break;
+        case 's':
+            options.size = 1;
             break;
         case 't':
             options.compare = &comparebymtime;
@@ -137,6 +147,9 @@ int main(int argc, char **argv)
         if (neednewline) {
             printf("\n");
         }
+        if (options.size) {
+            printtotal(dir);
+        }
         if (needlabel) {
             printf("%s:\n", dir->path);
         }
@@ -206,6 +219,23 @@ void listdir(File *dir, Options *poptions)
     }
 
     listfiles(files, poptions);
+}
+
+unsigned getblocks(File *file)
+{
+    struct stat *pstat = getstat(file);
+    return pstat->st_blocks;
+}
+
+void printtotal(File *dir)
+{
+    unsigned total = 0;
+    int ndirs = length(dir);
+    for (int i = 0; i < ndirs; i++) {
+        File *file = getitem(files, i);
+        total += getblocks(file);
+    }
+    printf("total %u\n", total);
 }
 
 void sortfiles(List *files, Options *poptions)
