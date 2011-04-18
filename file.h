@@ -13,6 +13,8 @@ typedef struct file {
     struct stat *pstat;
 } File;
 
+typedef int (*file_compare_function)(const File **a, const File **b);
+
 /* create a new File */
 File *newfile(const char *path);
 /* free any memory held by "file" */

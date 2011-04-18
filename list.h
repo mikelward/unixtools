@@ -4,6 +4,8 @@ struct list {
 };
 typedef struct list List;
 
+typedef int (*qsort_compare_function)(const void *a, const void *b);
+
 List *newlist(void);
 void freelist(List *list);
 void append(void *element, List *list);
