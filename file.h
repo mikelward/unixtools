@@ -24,6 +24,7 @@ void freefile(File *file);
 char *filename(File *file);
 int isdir(File *file);
 char *makepath(const char *dirname, const char *filename);
+struct stat *getstat(File *file);
 
 int comparebyname(const File **a, const File **b);
 int comparebymtime(const File **a, const File **b);
