@@ -6,7 +6,7 @@
  * several options
  */
 
-#define _BSD_SOURCE             /* for strdup() */
+#define _XOPEN_SOURCE 600       /* for strdup() */
 
 #include <sys/types.h>
 #include <sys/param.h>          /* for DEV_BSIZE */
