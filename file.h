@@ -1,8 +1,6 @@
 #ifndef FILE_H
 #define FILE_H
 
-#define _BSD_SOURCE             /* for strdup() */
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>

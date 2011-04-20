@@ -1,4 +1,4 @@
-#define _BSD_SOURCE
+#define _XOPEN_SOURCE 600   /* for strdup() */
 
 #include <libgen.h>
 #include <stdio.h>
