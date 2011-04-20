@@ -23,6 +23,7 @@ void freefile(File *file);
 /* caller must free returned filename if not NULL */
 char *filename(File *file);
 int isdir(File *file);
+int isexec(File *file);
 char *makepath(const char *dirname, const char *filename);
 struct stat *getstat(File *file);
 

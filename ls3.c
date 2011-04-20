@@ -27,6 +27,7 @@
 typedef struct options {
     int all : 1;
     int directory : 1;
+    int flags : 1;
     int one : 1;
     int size : 1;
     int blocksize;
@@ -52,13 +53,14 @@ int main(int argc, char **argv)
     options.all = 0;
     options.blocksize = 1024;
     options.directory = 0;
+    options.flags = 0;
     options.one = 1;
     options.size = 0;
     options.compare = &comparebyname;
 
     opterr = 0;     /* we will print our own error messages */
     int option;
-    while ((option = getopt(argc, argv, ":1adstU")) != -1) {
+    while ((option = getopt(argc, argv, ":1adFstU")) != -1) {
         switch(option) {
         case '1':
             options.one = 1;
@@ -68,6 +70,9 @@ int main(int argc, char **argv)
             break;
         case 'd':
             options.directory = 1;
+            break;
+        case 'F':
+            options.flags = 1;
             break;
         case 's':
             options.size = 1;
@@ -164,7 +169,27 @@ void listfile(File *file, Options *poptions)
         unsigned long blocks = getblocks(file, poptions);
         printf("%lu ", blocks);
     }
-    printf("%s\n", name);
+    /*
+    if (poptions->flags) {
+        if (isdir(file))
+            putchar('[');
+        else if (isexec(file))
+            putchar('*');
+    }
+    */
+        
+    printf("%s", name);
+
+    if (poptions->flags) {
+        if (isdir(file))
+            /*putchar(']');*/
+            putchar('/');
+        else if (isexec(file))
+            putchar('*');
+    }
+
+    putchar('\n');
+
     free(name);
 }
 

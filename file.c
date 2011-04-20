@@ -113,6 +113,22 @@ int isdir(File *file)
     return S_ISDIR(file->pstat->st_mode);
 }
 
+int isexec(File *file)
+{
+    if (file == NULL) {
+        fprintf(stderr, "isexec: file is NULL\n");
+        return 0;
+    }
+
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        fprintf(stderr, "isexec: pstat is NULL\n");
+        return 0;
+    }
+
+    return file->pstat->st_mode & 0111;
+}
+
 char *makepath(const char *dirname, const char *filename)
 {
     char *path = NULL;
