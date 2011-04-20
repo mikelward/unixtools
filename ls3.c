@@ -10,6 +10,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/param.h>
 #include <assert.h>
 #include <dirent.h>
 #include <errno.h>
@@ -27,9 +28,14 @@ typedef struct options {
     int all : 1;
     int directory : 1;
     int one : 1;
+    int size : 1;
+    int blocksize;
     file_compare_function compare;
 } Options;
 
+/* getblocks is here rather than file because
+ * user options may change the units */
+unsigned long getblocks(File *file, Options *poptions);
 void listfile(File *file, Options *poptions);
 void listfiles(List *files, Options *poptions);
 void listdir(File *dir, Options *poptions);
@@ -44,13 +50,15 @@ int main(int argc, char **argv)
 
     Options options;
     options.all = 0;
+    options.blocksize = 1024;
     options.directory = 0;
     options.one = 1;
+    options.size = 0;
     options.compare = &comparebyname;
 
     opterr = 0;     /* we will print our own error messages */
     int option;
-    while ((option = getopt(argc, argv, ":1adtU")) != -1) {
+    while ((option = getopt(argc, argv, ":1adstU")) != -1) {
         switch(option) {
         case '1':
             options.one = 1;
@@ -60,6 +68,9 @@ int main(int argc, char **argv)
             break;
         case 'd':
             options.directory = 1;
+            break;
+        case 's':
+            options.size = 1;
             break;
         case 't':
             options.compare = &comparebymtime;
@@ -149,6 +160,10 @@ void listfile(File *file, Options *poptions)
         fprintf(stderr, "ls3: file is NULL\n");
         return;
     }
+    if (poptions->size) {
+        unsigned long blocks = getblocks(file, poptions);
+        printf("%lu ", blocks);
+    }
     printf("%s\n", name);
     free(name);
 }
@@ -189,6 +204,7 @@ void listdir(File *dir, Options *poptions)
         return;
     }
     struct dirent *dirent;
+    unsigned long totalblocks;
     while ((dirent = readdir(openeddir)) != NULL) {
         if (!want(dirent->d_name, poptions)) {
             continue;
@@ -199,9 +215,40 @@ void listdir(File *dir, Options *poptions)
             return;
         }
         append(file, files);
+        if (poptions->size) {
+            totalblocks += getblocks(file, poptions);
+        }
     }
 
+    if (poptions->size) {
+        printf("total %lu\n", totalblocks);
+    }
     listfiles(files, poptions);
+}
+
+unsigned long getblocks(File *file, Options *poptions)
+{
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        fprintf(stderr, "getblocks: pstat is NULL\n");
+        return 0;
+    }
+    if (poptions == NULL) {
+        fprintf(stderr, "getblocks: poptions is NULL\n");
+        return 0;
+    }
+    unsigned long blocks = pstat->st_blocks;
+    /* blocks are stored as an unsigned long on i686
+     * when dealing with integral types, we have to do
+     * larger / smaller to avoid getting zero for everything
+     * but we also want to do the blocksize/BSIZE calculation
+     * first to reduce the chances of overflow */
+    if (poptions->blocksize > DEV_BSIZE) {
+        return blocks / (poptions->blocksize / DEV_BSIZE);
+    }
+    else {
+        return blocks * (DEV_BSIZE / poptions->blocksize);
+    }
 }
 
 void sortfiles(List *files, Options *poptions)
