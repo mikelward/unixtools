@@ -6,7 +6,7 @@
  * - handling of symlink arguments
  */
 
-#define _POSIX_C_SOURCE 200809L /* for getopt() opt* variables */
+#define _POSIX_C_SOURCE 200809L /* getopt() and opt* come from <unistd.h> */
 
 #include <sys/types.h>
 #include <sys/stat.h>
