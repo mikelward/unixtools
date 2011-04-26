@@ -1,7 +1,7 @@
 CC=c99
 CFLAGS=-Wall -Werror -g
 
-all: tags ls2 ls3
+all: tags ls2
 
 tags: *.c
 	ctags -R
@@ -9,10 +9,7 @@ tags: *.c
 clean:
 	-rm *.o
 
-ls2: ls2.o list.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
-
-ls3: ls3.o file.o list.o
+ls2: ls2.o list.o file.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 #  vim: set ts=4 sw=4 tw=0 noet:
