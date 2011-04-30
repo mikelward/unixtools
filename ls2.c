@@ -37,7 +37,7 @@ typedef struct options {
     int one : 1;
     int size : 1;
     int blocksize;
-    int step;
+    int step;                   /* forwards = 1, reverse = -1 */
     file_compare_function compare;
 } Options;
 
