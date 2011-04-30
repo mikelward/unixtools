@@ -1,10 +1,20 @@
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "list.h"
 
+void test1(void);
+
 int main(int argc, const char *argv[])
+{
+    test1();
+
+    return 0;
+}
+
+void test1(void)
 {
     int i;
     List *pl = newlist();
@@ -19,7 +29,6 @@ int main(int argc, const char *argv[])
         int *pi = (int *)getitem(pl, i);
         printf("%d\n", *pi);
     }
-
-    return 0;
 }
+
 /* vim: set ts=4 sw=4 tw=0 et:*/
