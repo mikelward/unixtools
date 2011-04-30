@@ -37,6 +37,7 @@ typedef struct options {
     int one : 1;
     int size : 1;
     int blocksize;
+    int step;
     file_compare_function compare;
 } Options;
 
@@ -62,11 +63,12 @@ int main(int argc, char **argv)
     options.flags = 0;
     options.one = 1;
     options.size = 0;
+    options.step = 1;
     options.compare = &comparebyname;
 
     opterr = 0;     /* we will print our own error messages */
     int option;
-    while ((option = getopt(argc, argv, ":1adFstU")) != -1) {
+    while ((option = getopt(argc, argv, ":1adFstrU")) != -1) {
         switch(option) {
         case '1':
             options.one = 1;
@@ -79,6 +81,9 @@ int main(int argc, char **argv)
             break;
         case 'F':
             options.flags = 1;
+            break;
+        case 'r':
+            options.step = -1;
             break;
         case 's':
             options.size = 1;
@@ -143,6 +148,9 @@ int main(int argc, char **argv)
     listfiles(files, &options);
     freelist(files);
  
+    /*
+     * XXX make this use walklist
+     */
     int nfiles = length(files);
     int ndirs = length(dirs);
     int needlabel = nfiles > 0 || ndirs > 1;
@@ -200,6 +208,13 @@ void listfile(File *file, Options *poptions)
     free(name);
 }
 
+void listfilewalker(void *voidfile, void *poptions)
+{
+    File *file = (File *)voidfile;
+
+    listfile(file, (Options *)poptions);
+}
+
 void listfiles(List *files, Options *poptions)
 {
     if (files == NULL) {
@@ -213,6 +228,8 @@ void listfiles(List *files, Options *poptions)
     /* files are sorted according to user preference...*/
     sortfiles(files, poptions);
 
+    walklist(files, poptions->step, listfilewalker, poptions);
+/*
     for (int i = 0, nfiles = length(files); i < nfiles; i++) {
         File *file = getitem(files, i);
         if (file == NULL) {
@@ -221,6 +238,7 @@ void listfiles(List *files, Options *poptions)
         }
         listfile(file, poptions);
     }
+    */
 }
 
 void listdir(File *dir, Options *poptions)
@@ -299,13 +317,12 @@ void sortfiles(List *files, Options *poptions)
         return;
     }
 
-    /* our sort function takes two File **s
-     * qsort has to declare itself to take void pointers
-     * so it can work with any type
-     * cast our File ** function to void * to keep the compiler happy */
-    qsort_compare_function qcompare = (qsort_compare_function)poptions->compare;
+    /* our compare function takes two File **s
+     * our sort function says the compare function takes two void **s
+     * cast our File ** function to void ** to keep the compiler happy */
+    list_compare_function compare = (list_compare_function)poptions->compare;
 
-    sortlist(files, qcompare);
+    sortlist(files, compare);
 }
 
 void usage(void)
