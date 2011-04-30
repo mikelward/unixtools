@@ -108,6 +108,13 @@ int main(int argc, char **argv)
         }
     }
 
+    /*
+     * -U and -r together don't make sense
+     *  follow GNU ls and ignore -r */
+    if (options.compare == NULL) {
+        options.step = 1;
+    }
+
     /* skip program name and flags */ 
     argc -= optind, argv += optind;
 
@@ -230,6 +237,11 @@ void listfiles(List *files, Options *poptions)
 
     /*
      * sort files according to user preference...
+     *
+     * it would be nice to handle reverse order here,
+     * but the only way I can think to do it here involves
+     * global variables, which seems a bit ugly,
+     * so I do it as part of the printing instead
      */
     sortfiles(files, poptions);
 
@@ -330,7 +342,7 @@ void sortfiles(List *files, Options *poptions)
 
 void usage(void)
 {
-    fprintf(stderr, "Usage: ls2 [-1adU] <file>...\n");
+    fprintf(stderr, "Usage: ls2 [-1adFrstrU] <file>...\n");
 }
 
 int want(const char *path, Options *poptions)
