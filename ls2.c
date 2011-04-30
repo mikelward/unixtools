@@ -106,6 +106,7 @@ int main(int argc, char **argv)
     /* skip program name and flags */ 
     argc -= optind, argv += optind;
 
+    /* list current directory if no arguments were given */
     if (argc == 0) {
         argv[0] = ".";
         argc = 1;
