@@ -8,12 +8,14 @@
 void test1(void);
 void test2(void);
 void test3(void);
+void test4(void);
 
 int main(int argc, const char *argv[])
 {
     test1();
     test2();
     test3();
+    test4();
 
     return 0;
 }
@@ -96,8 +98,43 @@ void test3(void)
     }
 
     walklist(pl, 1, &sum, &total);
-    printf("total = %d\n", total);
+    //printf("total = %d\n", total);
     assert(total == 6);
+}
+
+void printintptr(void *elem, void *context)
+{
+    int *pi = (int *)elem;
+    printf("%d\n", *pi);
+}
+
+void checkbackwards(void *elem, void *voidlist)
+{
+    static int n = 0;
+
+    List *list = (List *)voidlist;
+    int *pi = (int *)elem;
+    unsigned size = length(list);
+    int *pj = (int *)getitem(list, size-1-n);
+
+    //printf("element %d is %d\n", size-1-n, *pj);
+    assert(*pi == *pj);
+
+    n++;
+}
+
+void test4(void)
+{
+    List *pl = newlist();
+    int i;
+
+    for (i = 1; i <= 3; i++) {
+        int *pi = malloc(sizeof *pi);
+        *pi = i;
+        append(pi, pl);
+    }
+
+    walklist(pl, -1, &checkbackwards, pl);
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/
