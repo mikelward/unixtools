@@ -59,4 +59,22 @@ void sortlist(List *list, int (*compare)(const void **a, const void **b))
     qsort(list->data, list->next, sizeof(void *), (qsort_compare_function)compare);
 }
 
+void walklist(List *list, int step, void (*func)(void *elem, void *context2), void *context)
+{
+    unsigned i, start, end;     /* end is first invalid index */
+
+    if (step < 0) {
+        start = list->next - 1;
+        end = -1;
+    }
+    else {
+        start = 0;
+        end = list->next;
+    }
+
+    for (i = start; i != end; i += step) {
+        (*func)((list->data)[i], context);
+    }
+}
+
 /* vim: set ts=4 sw=4 tw=0 et:*/

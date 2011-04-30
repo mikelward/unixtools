@@ -7,11 +7,13 @@
 
 void test1(void);
 void test2(void);
+void test3(void);
 
 int main(int argc, const char *argv[])
 {
     test1();
     test2();
+    test3();
 
     return 0;
 }
@@ -71,6 +73,31 @@ void test2(void)
         int *pi = getitem(pl, i);
         assert(*pi == is[i]);
     }
+}
+
+void sum(void *pnumber, void *context)
+{
+    int *ptotal = (int *)context;
+    int value = *(int *)pnumber;
+
+    *ptotal += value;
+}
+
+void test3(void)
+{
+    List *pl = newlist();
+    int i;
+    int total = 0;
+
+    for (i = 1; i <= 3; i++) {
+        int *pi = malloc(sizeof *pi);
+        *pi = i;
+        append(pi, pl);
+    }
+
+    walklist(pl, 1, &sum, &total);
+    printf("total = %d\n", total);
+    assert(total == 6);
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/
