@@ -54,9 +54,9 @@ void *getitem(List *list, unsigned index)
     return (list->data)[index];
 }
 
-void sortlist(List *list, int (*compare)(const void *a, const void *b))
+void sortlist(List *list, int (*compare)(const void **a, const void **b))
 {
-    qsort(list->data, list->next, sizeof(void *), compare);
+    qsort(list->data, list->next, sizeof(void *), (qsort_compare_function)compare);
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/
