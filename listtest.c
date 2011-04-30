@@ -19,7 +19,7 @@ void test1(void)
     int i;
     List *pl = newlist();
 
-    for (i = 0; i < 10000; i++) {
+    for (i = 0; i < 10; i++) {
         int *pi = malloc(sizeof(int));
         *pi = i;
         append(pi, pl);
@@ -27,7 +27,7 @@ void test1(void)
 
     for (i = 0; i < length(pl); i++) {
         int *pi = (int *)getitem(pl, i);
-        printf("%d\n", *pi);
+        assert(*pi == i);
     }
 }
 
