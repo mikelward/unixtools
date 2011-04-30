@@ -208,6 +208,9 @@ void listfile(File *file, Options *poptions)
     free(name);
 }
 
+/*
+ * casts arguments to the correct type then calls listfile on them
+ */
 void listfilewalker(void *voidfile, void *poptions)
 {
     File *file = (File *)voidfile;
@@ -225,20 +228,20 @@ void listfiles(List *files, Options *poptions)
         return;
     }
 
-    /* files are sorted according to user preference...*/
+    /*
+     * sort files according to user preference...
+     */
     sortfiles(files, poptions);
 
+    /* 
+     * ...then print them
+     *
+     * poptions->step tells walklist whether to print them in normal order
+     * or reverse order (-r flag)
+     *
+     * listfilewalker just calls listfile on each file
+     */
     walklist(files, poptions->step, listfilewalker, poptions);
-/*
-    for (int i = 0, nfiles = length(files); i < nfiles; i++) {
-        File *file = getitem(files, i);
-        if (file == NULL) {
-            fprintf(stderr, "listfiles: file is NULL\n");
-            continue;
-        }
-        listfile(file, poptions);
-    }
-    */
 }
 
 void listdir(File *dir, Options *poptions)
