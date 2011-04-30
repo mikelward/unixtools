@@ -6,7 +6,13 @@
  * - handling of symlink arguments
  */
 
-#define _POSIX_C_SOURCE 200809L /* getopt() and opt* come from <unistd.h> */
+/*
+ * according to POSIX 2008
+ * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/getopt.html>
+ * getopt(), optarg, optind, opterr, and optopt are declared by including
+ * <unistd.h> rather than <getopt.h>
+ */
+#define _POSIX_C_SOURCE 200809L /* needed to make getopt() and opt* visible */
 
 #include <sys/types.h>
 #include <sys/stat.h>
