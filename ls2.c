@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 
     opterr = 0;     /* we will print our own error messages */
     int option;
-    while ((option = getopt(argc, argv, ":1adFstrU")) != -1) {
+    while ((option = getopt(argc, argv, ":1adFfstrU")) != -1) {
         switch(option) {
         case '1':
             options.one = 1;
@@ -81,6 +81,9 @@ int main(int argc, char **argv)
             break;
         case 'F':
             options.flags = 1;
+            break;
+        case 'f':
+            options.compare = NULL;
             break;
         case 'r':
             options.step = -1;
@@ -342,7 +345,7 @@ void sortfiles(List *files, Options *poptions)
 
 void usage(void)
 {
-    fprintf(stderr, "Usage: ls2 [-1adFrstrU] <file>...\n");
+    fprintf(stderr, "Usage: ls2 [-1adFfrstU] <file>...\n");
 }
 
 int want(const char *path, Options *poptions)
