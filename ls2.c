@@ -18,16 +18,28 @@
 #include <sys/stat.h>
 #include <sys/param.h>
 #include <assert.h>
+#include <curses.h>
 #include <dirent.h>
 #include <errno.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <term.h>
 #include <unistd.h>
 
 #include "list.h"
 #include "file.h"
+
+typedef struct colors {
+    char *black;
+    char *red;
+    char *green;
+    char *yellow;
+    char *blue;
+    char *white;
+    char *none;
+} Colors;
 
 /* all the command line options */
 typedef struct options {
@@ -37,8 +49,10 @@ typedef struct options {
     int flags : 1;
     int one : 1;
     int size : 1;
-    int blocksize;
-    int step;                   /* forwards = 1, reverse = -1 */
+    int step : 2;                   /* forwards = 1, reverse = -1 */
+    int color : 1;                  /* whether to use color */
+    short blocksize;
+    Colors *pcolors;                /* the colors to use */
     file_compare_function compare;
 } Options;
 
@@ -48,6 +62,7 @@ unsigned long getblocks(File *file, Options *poptions);
 void listfile(File *file, Options *poptions);
 void listfiles(List *files, Options *poptions);
 void listdir(File *dir, Options *poptions);
+int setupcolors(Colors *pcolors);
 void sortfiles(List *files, Options *poptions);
 void usage(void);
 int want(const char *path, Options *poptions);
@@ -62,15 +77,17 @@ int main(int argc, char **argv)
     options.blocksize = 1024;
     options.directory = 0;
     options.dirsonly = 0;
+    options.color = 0;
     options.flags = 0;
     options.one = 1;
     options.size = 0;
     options.step = 1;
     options.compare = &comparebyname;
+    options.pcolors = NULL;
 
     opterr = 0;     /* we will print our own error messages */
     int option;
-    while ((option = getopt(argc, argv, ":1aDdFfstrU")) != -1) {
+    while ((option = getopt(argc, argv, ":1aDdFfGstrU")) != -1) {
         switch(option) {
         case '1':
             options.one = 1;
@@ -89,6 +106,9 @@ int main(int argc, char **argv)
             break;
         case 'f':
             options.compare = NULL;
+            break;
+        case 'G':
+            options.color = 1;
             break;
         case 'r':
             options.step = -1;
@@ -121,6 +141,12 @@ int main(int argc, char **argv)
      *  follow GNU ls and ignore -r */
     if (options.compare == NULL) {
         options.step = 1;
+    }
+
+    Colors colors;
+    if (options.color) {
+        options.color = setupcolors(&colors);
+        options.pcolors = &colors;
     }
 
     /* skip program name and flags */ 
@@ -211,7 +237,14 @@ void listfile(File *file, Options *poptions)
             putchar('*');
     }
     */
-        
+
+    if (poptions->color) {
+        if (isdir(file))
+            putp(poptions->pcolors->blue);
+        else if (isexec(file))
+            putp(poptions->pcolors->green);
+    }
+
     printf("%s", name);
 
     if (poptions->flags) {
@@ -221,6 +254,9 @@ void listfile(File *file, Options *poptions)
         else if (isexec(file))
             putchar('*');
     }
+
+    if (poptions->color)
+        putp(poptions->pcolors->none);
 
     putchar('\n');
 
@@ -352,9 +388,51 @@ void sortfiles(List *files, Options *poptions)
     sortlist(files, compare);
 }
 
+/**
+ * Try to set up color output.
+ *
+ * Returns 1 on success, 0 on failure.
+ */
+int setupcolors(Colors *pcolors)
+{
+    if (pcolors == NULL) {
+        fprintf(stderr, "setupcolors: pcolors is NULL\n");
+        return 0;
+    }
+
+    char *term = getenv("TERM");
+    if (term == NULL) {
+        return 0;
+    }
+
+    int errret;
+    if ((setupterm(term, 1, &errret)) == ERR) {
+        fprintf(stderr, "setupcolors: setupterm returned %d\n", errret);
+        return 0;
+    }
+
+    char *setaf = tigetstr("setaf");
+    if (setaf == NULL) {
+        return 0;
+    }
+    pcolors->black = strdup(tparm(setaf, COLOR_BLACK, NULL));
+    pcolors->red = strdup(tparm(setaf, COLOR_RED, NULL));
+    pcolors->green = strdup(tparm(setaf, COLOR_GREEN, NULL));
+    pcolors->yellow = strdup(tparm(setaf, COLOR_YELLOW, NULL));
+    pcolors->blue = strdup(tparm(setaf, COLOR_BLUE, NULL));
+    pcolors->white = strdup(tparm(setaf, COLOR_WHITE, NULL));
+    char *sgr0 = tigetstr("sgr0");
+    if (sgr0 == NULL) {
+        return 0;
+    }
+    pcolors->none = strdup(sgr0);
+
+    return 1;
+}
+
 void usage(void)
 {
-    fprintf(stderr, "Usage: ls2 [-1aDdFfrstU] <file>...\n");
+    fprintf(stderr, "Usage: ls2 [-1aDdFfGrstU] <file>...\n");
 }
 
 int want(const char *path, Options *poptions)

@@ -24,6 +24,6 @@ listtest: listtest.o list.o
 	./$@
 
 ls2: ls2.o list.o file.o
-	$(CC) $(LDFLAGS) -o $@ ls2.o list.o file.o
+	$(CC) $(LDFLAGS) -o $@ ls2.o list.o file.o -ltermcap
 
 #  vim: set ts=4 sw=4 tw=0 noet:
