@@ -280,8 +280,8 @@ void listdir(File *dir, Options *poptions)
         fprintf(stderr, "listdir: Cannot open %s\n", dir->path);
         return;
     }
-    struct dirent *dirent;
-    unsigned long totalblocks;
+    unsigned long totalblocks = 0;
+    struct dirent *dirent = NULL;
     while ((dirent = readdir(openeddir)) != NULL) {
         if (!want(dirent->d_name, poptions)) {
             continue;
