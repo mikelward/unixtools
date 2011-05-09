@@ -33,6 +33,7 @@
 typedef struct options {
     int all : 1;
     int directory : 1;
+    int dirsonly : 1;
     int flags : 1;
     int one : 1;
     int size : 1;
@@ -60,6 +61,7 @@ int main(int argc, char **argv)
     options.all = 0;
     options.blocksize = 1024;
     options.directory = 0;
+    options.dirsonly = 0;
     options.flags = 0;
     options.one = 1;
     options.size = 0;
@@ -68,13 +70,16 @@ int main(int argc, char **argv)
 
     opterr = 0;     /* we will print our own error messages */
     int option;
-    while ((option = getopt(argc, argv, ":1adFfstrU")) != -1) {
+    while ((option = getopt(argc, argv, ":1aDdFfstrU")) != -1) {
         switch(option) {
         case '1':
             options.one = 1;
             break;
         case 'a':
             options.all = 1;
+            break;
+        case 'D':
+            options.dirsonly = 1;
             break;
         case 'd':
             options.directory = 1;
@@ -190,6 +195,10 @@ void listfile(File *file, Options *poptions)
         fprintf(stderr, "ls2: file is NULL\n");
         return;
     }
+
+    if (poptions->dirsonly && !isdir(file))
+            return;
+
     if (poptions->size) {
         unsigned long blocks = getblocks(file, poptions);
         printf("%lu ", blocks);
@@ -345,7 +354,7 @@ void sortfiles(List *files, Options *poptions)
 
 void usage(void)
 {
-    fprintf(stderr, "Usage: ls2 [-1adFfrstU] <file>...\n");
+    fprintf(stderr, "Usage: ls2 [-1aDdFfrstU] <file>...\n");
 }
 
 int want(const char *path, Options *poptions)
