@@ -229,6 +229,12 @@ void listfile(File *file, Options *poptions)
         unsigned long blocks = getblocks(file, poptions);
         printf("%lu ", blocks);
     }
+
+    /*
+     * early versions of UNIX printed directories like [this]
+     * I'm tempted to do the same, but I'm currently focusing
+     * on making it work the same as BSD/GNU ls
+     */
     /*
     if (poptions->flags) {
         if (isdir(file))
@@ -247,6 +253,9 @@ void listfile(File *file, Options *poptions)
 
     printf("%s", name);
 
+    if (poptions->color)
+        putp(poptions->pcolors->none);
+
     if (poptions->flags) {
         if (isdir(file))
             /*putchar(']');*/
@@ -254,9 +263,6 @@ void listfile(File *file, Options *poptions)
         else if (isexec(file))
             putchar('*');
     }
-
-    if (poptions->color)
-        putp(poptions->pcolors->none);
 
     putchar('\n');
 
