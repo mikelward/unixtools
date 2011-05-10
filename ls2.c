@@ -458,7 +458,7 @@ int setupcolors(Colors *pcolors)
 
 void usage(void)
 {
-    fprintf(stderr, "Usage: ls2 [-1aDdFfGrstU] <file>...\n");
+    fprintf(stderr, "Usage: ls2 [-1aCDdFfGrstU] <file>...\n");
 }
 
 int want(const char *path, Options *poptions)
