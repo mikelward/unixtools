@@ -374,10 +374,15 @@ unsigned long getblocks(File *file, Options *poptions)
      * but we also want to do the blocksize/BSIZE calculation
      * first to reduce the chances of overflow */
     if (poptions->blocksize > DEV_BSIZE) {
-        return blocks / (poptions->blocksize / DEV_BSIZE);
+        int factor = poptions->blocksize / DEV_BSIZE;
+        /* round up to nearest integer
+         * e.g. if it takes 3 * 512 byte blocks,
+         * it would take 2 1024 byte blocks */
+        return (blocks+(factor/2)) / factor;
     }
     else {
-        return blocks * (DEV_BSIZE / poptions->blocksize);
+        int factor = DEV_BSIZE / poptions->blocksize;
+        return blocks * factor;
     }
 }
 
