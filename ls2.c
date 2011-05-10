@@ -93,6 +93,15 @@ int main(int argc, char **argv)
     options.compare = &comparebyname;
     options.pcolors = NULL;
 
+    /* use BLOCKSIZE as default blocksize if set */
+    char *blocksizeenv = getenv("BLOCKSIZE");
+    if (blocksizeenv != NULL) {
+        int blocksize = atoi(blocksizeenv);
+        if (blocksize != 0) {
+            options.blocksize = blocksize;
+        }
+    }
+
     /* turn -C on by default if output is a terminal */
     char *columnsenv = getenv("COLUMNS");
     if (columnsenv != NULL) {
@@ -105,7 +114,7 @@ int main(int argc, char **argv)
 
     opterr = 0;     /* we will print our own error messages */
     int option;
-    while ((option = getopt(argc, argv, ":1aCDdFfGstrU")) != -1) {
+    while ((option = getopt(argc, argv, ":1aCDdFfkGstrU")) != -1) {
         switch(option) {
         case '1':
             options.displaymode = DISPLAY_ONE_PER_LINE;
@@ -130,6 +139,9 @@ int main(int argc, char **argv)
             break;
         case 'G':
             options.color = 1;
+            break;
+        case 'k':
+            options.blocksize = 1024;
             break;
         case 'r':
             options.step = -1;
@@ -458,7 +470,7 @@ int setupcolors(Colors *pcolors)
 
 void usage(void)
 {
-    fprintf(stderr, "Usage: ls2 [-1aCDdFfGrstU] <file>...\n");
+    fprintf(stderr, "Usage: ls2 [-1aCDdFfGkrstU] <file>...\n");
 }
 
 int want(const char *path, Options *poptions)
