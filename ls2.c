@@ -47,14 +47,21 @@ typedef struct options {
     int directory : 1;
     int dirsonly : 1;
     int flags : 1;
-    int one : 1;
     int size : 1;
     int step : 2;                   /* forwards = 1, reverse = -1 */
     int color : 1;                  /* whether to use color */
     short blocksize;
+    short displaymode;
+    short width;                    /* how wide the screen is, 0 if unknown */
     Colors *pcolors;                /* the colors to use */
     file_compare_function compare;
 } Options;
+
+typedef struct file_data {
+    int maxwidth;
+} FileData;
+
+enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS };
 
 /* getblocks is here rather than file because
  * user options may change the units */
@@ -77,23 +84,37 @@ int main(int argc, char **argv)
     options.blocksize = 1024;
     options.directory = 0;
     options.dirsonly = 0;
+    options.displaymode = DISPLAY_ONE_PER_LINE;
     options.color = 0;
     options.flags = 0;
-    options.one = 1;
     options.size = 0;
     options.step = 1;
+    options.width = 0;
     options.compare = &comparebyname;
     options.pcolors = NULL;
 
+    /* turn -C on by default if output is a terminal */
+    char *columnsenv = getenv("COLUMNS");
+    if (columnsenv != NULL) {
+        int width = atoi(columnsenv);
+        if (width != 0) {
+            options.width = width;
+            options.displaymode = DISPLAY_IN_COLUMNS;
+        }
+    }
+
     opterr = 0;     /* we will print our own error messages */
     int option;
-    while ((option = getopt(argc, argv, ":1aDdFfGstrU")) != -1) {
+    while ((option = getopt(argc, argv, ":1aCDdFfGstrU")) != -1) {
         switch(option) {
         case '1':
-            options.one = 1;
+            options.displaymode = DISPLAY_ONE_PER_LINE;
             break;
         case 'a':
             options.all = 1;
+            break;
+        case 'C':
+            options.displaymode = DISPLAY_IN_COLUMNS;
             break;
         case 'D':
             options.dirsonly = 1;
@@ -136,9 +157,8 @@ int main(int argc, char **argv)
         }
     }
 
-    /*
-     * -U and -r together don't make sense
-     *  follow GNU ls and ignore -r */
+    /* it doesn't make sense to reverse unsorted output
+     * follow GNU ls and ignore -r */
     if (options.compare == NULL) {
         options.step = 1;
     }
