@@ -17,6 +17,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/param.h>
+#include <sys/ioctl.h>
 #include <assert.h>
 #include <curses.h>
 #include <dirent.h>
@@ -51,22 +52,24 @@ typedef struct options {
     int step : 2;                   /* forwards = 1, reverse = -1 */
     int color : 1;                  /* whether to use color */
     short blocksize;
-    short displaymode;
-    short width;                    /* how wide the screen is, 0 if unknown */
+    short displaymode;              /* one-per-line, columns, rows, etc. */ 
+    short screenwidth;              /* how wide the screen is, 0 if unknown */
     Colors *pcolors;                /* the colors to use */
     file_compare_function compare;
 } Options;
 
-typedef struct file_data {
-    int maxwidth;
-} FileData;
+typedef struct display_state {
+    short maxfilewidth;         /* how wide the biggest file name is */ 
+    short column;               /* current column, starting at 0 */
+    short maxcolumn;            /* screen width */
+} DisplayState;
 
 enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS };
 
 /* getblocks is here rather than file because
  * user options may change the units */
 unsigned long getblocks(File *file, Options *poptions);
-void listfile(File *file, Options *poptions);
+void listfile(File *file, Options *poptions, DisplayState *pstate);
 void listfiles(List *files, Options *poptions);
 void listdir(File *dir, Options *poptions);
 int setupcolors(Colors *pcolors);
@@ -89,7 +92,7 @@ int main(int argc, char **argv)
     options.flags = 0;
     options.size = 0;
     options.step = 1;
-    options.width = 0;
+    options.screenwidth = 0;
     options.compare = &comparebyname;
     options.pcolors = NULL;
 
@@ -102,13 +105,16 @@ int main(int argc, char **argv)
         }
     }
 
-    /* turn -C on by default if output is a terminal */
-    char *columnsenv = getenv("COLUMNS");
-    if (columnsenv != NULL) {
-        int width = atoi(columnsenv);
-        if (width != 0) {
-            options.width = width;
-            options.displaymode = DISPLAY_IN_COLUMNS;
+    /* if output is a terminal, get the terminal's width
+     * and turn on the -C flag */
+    if (isatty(STDOUT_FILENO)) {
+        struct winsize ws;
+        if ((ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws)) == 0) {
+            int width = ws.ws_col;
+            if (width != 0) {
+                options.screenwidth = width;
+                options.displaymode = DISPLAY_IN_COLUMNS;
+            }
         }
     }
 
@@ -246,7 +252,7 @@ int main(int argc, char **argv)
     freelist(dirs);
 }
 
-void listfile(File *file, Options *poptions)
+void listfile(File *file, Options *poptions, DisplayState *pstate)
 {
     char *name = filename(file);
     if (name == NULL) {
@@ -283,7 +289,13 @@ void listfile(File *file, Options *poptions)
             putp(poptions->pcolors->green);
     }
 
-    printf("%s", name);
+    /* field width for -C and -x flags */
+    if (pstate->maxfilewidth) {
+        printf("%-*s", pstate->maxfilewidth, name);
+        pstate->column += pstate->maxfilewidth;
+    } else
+        printf("%s", name);
+
 
     if (poptions->color)
         putp(poptions->pcolors->none);
@@ -296,19 +308,53 @@ void listfile(File *file, Options *poptions)
             putchar('*');
     }
 
-    putchar('\n');
+    if (poptions->displaymode == DISPLAY_ONE_PER_LINE)
+        putchar('\n');
+    else {
+        /* check if room for one more file... */
+        if (pstate->column + pstate->maxfilewidth >= pstate->maxcolumn) {
+            putchar('\n');
+            pstate->column = 0;
+        } else
+            putchar(' ');
+    }
 
     free(name);
 }
 
+typedef struct listfile_data {
+    Options *poptions;
+    DisplayState *pstate;
+} ListfileData;
+
 /*
  * casts arguments to the correct type then calls listfile on them
  */
-void listfilewalker(void *voidfile, void *poptions)
+void listfilewalker(void *voidfile, void *pvoiddata)
 {
     File *file = (File *)voidfile;
+    ListfileData *pdata = (ListfileData *)pvoiddata;
+    Options *poptions = pdata->poptions;
+    DisplayState *pstate = pdata->pstate;
 
-    listfile(file, (Options *)poptions);
+    listfile(file, poptions, pstate);
+}
+
+/*
+ * Determine how many characters would be required to print this file
+ * and update the passed in *pmaxwidth accordingly.
+ */
+void getwidthwalker(void *voidfile, void *pvoidmaxwidth)
+{
+    File *file = (File *)voidfile;
+    int *pmaxwidth = (int *)pvoidmaxwidth;
+
+    /* XXX allow for escaped characters, etc.
+     * obviously a better approach is to actually share the print
+     * routine, use that to print to a buffer, and get the length
+     * of the string printed to the buffer */
+    int width = strlen(filename(file));
+    *pmaxwidth = MAX(width, *pmaxwidth);
 }
 
 void listfiles(List *files, Options *poptions)
@@ -331,7 +377,25 @@ void listfiles(List *files, Options *poptions)
      */
     sortfiles(files, poptions);
 
-    /* 
+    /*
+     * ...if -C or -x options were specified, figure out how wide
+     * to make each column...
+     */
+    int maxfilewidth = 0;
+    if (poptions->displaymode != DISPLAY_ONE_PER_LINE) {
+        walklist(files, poptions->step, getwidthwalker, &maxfilewidth);
+    }
+
+    DisplayState state;
+    state.maxfilewidth = maxfilewidth;
+    state.column = 0;
+    state.maxcolumn = poptions->screenwidth;
+
+    ListfileData data;
+    data.poptions = poptions;
+    data.pstate = &state;
+
+    /*
      * ...then print them
      *
      * poptions->step tells walklist whether to print them in normal order
@@ -339,7 +403,7 @@ void listfiles(List *files, Options *poptions)
      *
      * listfilewalker just calls listfile on each file
      */
-    walklist(files, poptions->step, listfilewalker, poptions);
+    walklist(files, poptions->step, listfilewalker, &data);
 }
 
 void listdir(File *dir, Options *poptions)
