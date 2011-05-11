@@ -86,9 +86,17 @@ int main(int argc, char **argv)
     options.compare = &comparebyname;
     options.pcolors = NULL;
 
+    char *blocksizeenv = getenv("BLOCKSIZE");
+    if (blocksizeenv != NULL) {
+        int blocksize = atoi(blocksizeenv);
+        if (blocksize != 0) {
+            options.blocksize = blocksize;
+        }
+    }
+
     opterr = 0;     /* we will print our own error messages */
     int option;
-    while ((option = getopt(argc, argv, ":1aDdFfGstrU")) != -1) {
+    while ((option = getopt(argc, argv, ":1aDdFfGkstrU")) != -1) {
         switch(option) {
         case '1':
             options.one = 1;
@@ -110,6 +118,9 @@ int main(int argc, char **argv)
             break;
         case 'G':
             options.color = 1;
+            break;
+        case 'k':
+            options.blocksize = 1024;
             break;
         case 'r':
             options.step = -1;
@@ -364,10 +375,15 @@ unsigned long getblocks(File *file, Options *poptions)
      * but we also want to do the blocksize/BSIZE calculation
      * first to reduce the chances of overflow */
     if (poptions->blocksize > DEV_BSIZE) {
-        return blocks / (poptions->blocksize / DEV_BSIZE);
+        int factor = poptions->blocksize / DEV_BSIZE;
+        /* round up to nearest integer
+         * e.g. if it takes 3 * 512 byte blocks,
+         * it would take 2 1024 byte blocks */
+        return (blocks+(factor/2)) / factor;
     }
     else {
-        return blocks * (DEV_BSIZE / poptions->blocksize);
+        int factor = DEV_BSIZE / poptions->blocksize;
+        return blocks * factor;
     }
 }
 
@@ -439,7 +455,7 @@ int setupcolors(Colors *pcolors)
 
 void usage(void)
 {
-    fprintf(stderr, "Usage: ls2 [-1aDdFfGrstU] <file>...\n");
+    fprintf(stderr, "Usage: ls2 [-1aDdFfGkrstU] <file>...\n");
 }
 
 int want(const char *path, Options *poptions)
