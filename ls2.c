@@ -12,6 +12,7 @@
  * getopt(), optarg, optind, opterr, and optopt are declared by including
  * <unistd.h> rather than <getopt.h>
  */
+#define _XOPEN_SOURCE 600       /* for strdup() */
 #define _POSIX_C_SOURCE 200809L /* needed to make getopt() and opt* visible */
 
 #include <sys/types.h>
