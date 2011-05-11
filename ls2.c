@@ -2,15 +2,21 @@
  * simple reimplementation of ls
  *
  * TODO
- * - handling of symlink arguments
+ * - handling of symlink arguments (and -H and -L flags?)
  * - format the size column using the same width for every entry
- * - -C (column mode) (currently -C acts like -x)
  * - make -s and -C/-x work together
+ * - -C flag (currently -C acts like -x)
+ * - -l flag
+ * - -i flag
+ * - -q flag (on by default?) and -b flag
+ * - -c flag
+ * - -S flag
  * - other?
  *
  * NOTES
- * - BSD ls dirtotals are different to mine if using non-standard BLOCKSIZE
- *   I assume it's the total of each file, which I *think* is more correct
+ * - BSD ls dirtotals are different to mine if using non-standard BLOCKSIZE.
+ *   I assume it's the sum of the blocks calculated for each file,
+ *   which seems more correct to me, but this decision is not set in stone.
  */
 
 /*
