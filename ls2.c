@@ -78,7 +78,7 @@ enum flags { FLAGS_NONE, FLAGS_NORMAL, FLAGS_OLD };
  * user options may change the units */
 unsigned long getblocks(File *file, Options *poptions);
 int  listfile(File *file, Options *poptions);
-void listfilevoid(File *file, Options *poptions);
+void listfilewithnewline(File *file, Options *poptions);
 void listfiles(List *files, Options *poptions);
 void listdir(File *dir, Options *poptions);
 int setupcolors(Colors *pcolors);
@@ -357,11 +357,12 @@ int listfile(File *file, Options *poptions)
 }
 
 /*
- * wrapper for printlist/walklist which requires void return type
+ * for one-per-line mode
  */
-void listfilevoid(File *file, Options *poptions)
+void listfilewithnewline(File *file, Options *poptions)
 {
     listfile(file, poptions);
+    printf("\n");
 }
 
 int getfilewidth(void *vfile, void *pvoptions)
@@ -401,7 +402,7 @@ void listfiles(List *files, Options *poptions)
      */
     switch (poptions->displaymode) {
     case DISPLAY_ONE_PER_LINE:
-        printlist(files, (printer_func)&listfile, poptions);
+        printlist(files, (printer_func)&listfilewithnewline, poptions);
         break;
     case DISPLAY_IN_COLUMNS:
         printlistdown(files, poptions->screenwidth, (width_func)&getfilewidth, (printer_func)&listfile, poptions);
