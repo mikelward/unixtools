@@ -56,6 +56,8 @@ void freefile(File *file)
  * uses icky basename() function
  * I'm following the POSIX version according to the Linux man pages
  * thus I have to take a copy of the path
+ *
+ * caller should free the returned string
  */
 char *filename(File *file)
 {
