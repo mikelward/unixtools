@@ -308,7 +308,7 @@ int listfile(File *file, Options *poptions)
     }
 
     /* color the file (-G and -K) */
-    /* don't increment column here because the colors shouldn't
+    /* don't increment nchars here because the colors shouldn't
      * move the cursor */
     if (poptions->color) {
         if (isdir(file))
