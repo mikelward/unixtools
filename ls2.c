@@ -44,6 +44,9 @@
 #include "list.h"
 #include "file.h"
 
+/* terminal escape sequences for -G and -K flags
+ * not currently customizable
+ * see terminfo(3) for details */
 typedef struct colors {
     char *black;
     char *red;
@@ -57,7 +60,7 @@ typedef struct colors {
 /* all the command line options */
 typedef struct options {
     int all : 1;                    /* 1 = also print hidden files */
-    int directory : 1;              /* 1 = print the directory name rather than its contents */
+    int directory : 1;              /* 1 = print directory name rather than contents */
     int dirsonly : 1;               /* 1 = don't print regular files */
     unsigned flags : 2;             /*     print file "flags" */
     int size : 1;                   /* 1 = print file size in blocks */
@@ -67,7 +70,7 @@ typedef struct options {
     short displaymode;              /* one-per-line, columns, rows, etc. */ 
     short screenwidth;              /* how wide the screen is, 0 if unknown */
     Colors *pcolors;                /* the colors to use */
-    file_compare_function compare;
+    file_compare_function compare;  /* determines sort order */
 } Options;
 
 enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS, DISPLAY_IN_ROWS };
@@ -77,10 +80,10 @@ int  listfile(File *file, Options *poptions);
 void listfilewithnewline(File *file, Options *poptions);
 void listfiles(List *files, Options *poptions);
 void listdir(File *dir, Options *poptions);
-int setupcolors(Colors *pcolors);
+int  setupcolors(Colors *pcolors);
 void sortfiles(List *files, Options *poptions);
 void usage(void);
-int want(const char *path, Options *poptions);
+int  want(const char *path, Options *poptions);
 
 int main(int argc, char **argv)
 {
@@ -318,8 +321,9 @@ int listfile(File *file, Options *poptions)
     }
 
     /* color the file (-G and -K) */
-    /* don't increment nchars here because the colors shouldn't
-     * move the cursor */
+    /* these escape sequences shouldn't move the cursor,
+     * hence we don't increment nchars here */
+    /* TODO change this to something like setcolor(COLOR_BLUE) */
     if (poptions->color) {
         if (isdir(file))
             putp(poptions->pcolors->blue);
@@ -415,7 +419,9 @@ void listfiles(List *files, Options *poptions)
     /*
      * ...reverse the list if -r flag was given...
      * (we used to do this using a custom step in walklist,
-     *  but this became overly complicated)
+     *  but this became overly complicated.
+     *  it could also be done in sortfiles(), but I can't
+     *  think of a clean way to do that at the moment)
      */
     if (poptions->reverse) {
         reverselist(files);
@@ -426,13 +432,21 @@ void listfiles(List *files, Options *poptions)
      */
     switch (poptions->displaymode) {
     case DISPLAY_ONE_PER_LINE:
-        printlist(files, (printer_func)&listfilewithnewline, poptions);
+        printlist(
+            files,
+            (printer_func)&listfilewithnewline, poptions);
         break;
     case DISPLAY_IN_COLUMNS:
-        printlistdown(files, poptions->screenwidth, (width_func)&getfilewidth, (printer_func)&listfile, poptions);
+        printlistdown(
+            files,
+            poptions->screenwidth, (width_func)&getfilewidth,
+            (printer_func)&listfile, poptions);
         break;
     case DISPLAY_IN_ROWS:
-        printlistacross(files, poptions->screenwidth, (width_func)&getfilewidth, (printer_func)&listfile, poptions);
+        printlistacross(
+            files,
+            poptions->screenwidth, (width_func)&getfilewidth,
+            (printer_func)&listfile, poptions);
         break;
     }
 }
@@ -506,6 +520,11 @@ void sortfiles(List *files, Options *poptions)
  * Try to set up color output.
  *
  * Returns 1 on success, 0 on failure.
+ *
+ * TODO This could be cleaned up a bit,
+ * perhaps use an array for the colors, etc.
+ * And maybe there's a way to get this
+ * more simply.
  */
 int setupcolors(Colors *pcolors)
 {
