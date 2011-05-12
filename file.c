@@ -1,5 +1,7 @@
 #define _XOPEN_SOURCE 600   /* for strdup() */
 
+#include <sys/stat.h>
+#include <sys/param.h>      /* for DEV_BSIZE */
 #include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -187,6 +189,32 @@ int comparebymtime(const File **a, const File **b)
         return strcoll(fa->path, fb->path);
     } else {
         return psa->st_mtime < psb->st_mtime;
+    }
+}
+
+unsigned long getblocks(File *file, int blocksize)
+{
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        fprintf(stderr, "getblocks: pstat is NULL\n");
+        return 0;
+    }
+    unsigned long blocks = pstat->st_blocks;
+    /* blocks are stored as an unsigned long on i686
+     * when dealing with integral types, we have to do
+     * larger / smaller to avoid getting zero for everything
+     * but we also want to do the blocksize/BSIZE calculation
+     * first to reduce the chances of overflow */
+    if (blocksize > DEV_BSIZE) {
+        int factor = blocksize / DEV_BSIZE;
+        /* round up to nearest integer
+         * e.g. if it takes 3 * 512 byte blocks,
+         * it would take 2 1024 byte blocks */
+        return (blocks+(factor/2)) / factor;
+    }
+    else {
+        int factor = DEV_BSIZE / blocksize;
+        return blocks * factor;
     }
 }
 

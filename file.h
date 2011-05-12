@@ -24,6 +24,7 @@ int isdir(File *file);
 int isexec(File *file);
 char *makepath(const char *dirname, const char *filename);
 struct stat *getstat(File *file);
+unsigned long getblocks(File *file, int blocksize);
 
 int comparebyname(const File **a, const File **b);
 int comparebymtime(const File **a, const File **b);

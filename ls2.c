@@ -28,7 +28,6 @@
 #define _POSIX_C_SOURCE 200809L /* needed to make getopt() and opt* visible */
 
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <assert.h>
@@ -74,9 +73,6 @@ typedef struct options {
 enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS, DISPLAY_IN_ROWS };
 enum flags { FLAGS_NONE, FLAGS_NORMAL, FLAGS_OLD };
 
-/* getblocks is here rather than file because
- * user options may change the units */
-unsigned long getblocks(File *file, Options *poptions);
 int  listfile(File *file, Options *poptions);
 void listfilewithnewline(File *file, Options *poptions);
 void listfiles(List *files, Options *poptions);
@@ -289,7 +285,7 @@ int listfile(File *file, Options *poptions)
 
     if (poptions->size) {
         /* XXX take width into account here */
-        unsigned long blocks = getblocks(file, poptions);
+        unsigned long blocks = getblocks(file, poptions->blocksize);
         printf("%lu ", blocks);
     }
 
@@ -439,7 +435,7 @@ void listdir(File *dir, Options *poptions)
         }
         append(file, files);
         if (poptions->size) {
-            totalblocks += getblocks(file, poptions);
+            totalblocks += getblocks(file, poptions->blocksize);
         }
     }
 
@@ -447,36 +443,6 @@ void listdir(File *dir, Options *poptions)
         printf("total %lu\n", totalblocks);
     }
     listfiles(files, poptions);
-}
-
-unsigned long getblocks(File *file, Options *poptions)
-{
-    struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        fprintf(stderr, "getblocks: pstat is NULL\n");
-        return 0;
-    }
-    if (poptions == NULL) {
-        fprintf(stderr, "getblocks: poptions is NULL\n");
-        return 0;
-    }
-    unsigned long blocks = pstat->st_blocks;
-    /* blocks are stored as an unsigned long on i686
-     * when dealing with integral types, we have to do
-     * larger / smaller to avoid getting zero for everything
-     * but we also want to do the blocksize/BSIZE calculation
-     * first to reduce the chances of overflow */
-    if (poptions->blocksize > DEV_BSIZE) {
-        int factor = poptions->blocksize / DEV_BSIZE;
-        /* round up to nearest integer
-         * e.g. if it takes 3 * 512 byte blocks,
-         * it would take 2 1024 byte blocks */
-        return (blocks+(factor/2)) / factor;
-    }
-    else {
-        int factor = DEV_BSIZE / poptions->blocksize;
-        return blocks * factor;
-    }
 }
 
 void sortfiles(List *files, Options *poptions)
