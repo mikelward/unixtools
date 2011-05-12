@@ -52,12 +52,42 @@ unsigned length(List *list)
 
 void *getitem(List *list, unsigned index)
 {
+    if (list == NULL || list->next < index)
+        return NULL;
+
     return (list->data)[index];
+}
+
+void setitem(List *list, unsigned index, void *elem)
+{
+    if (list == NULL || list->next < index)
+        return;
+
+    (list->data)[index] = elem;
 }
 
 void sortlist(List *list, list_compare_function compare)
 {
+    if (list == NULL || length(list) < 1)
+        return;
+
     qsort(list->data, list->next, sizeof(void *), (qsort_compare_function)compare);
+}
+
+void reverselist(List *list)
+{
+    if (list == NULL || length(list) < 1)
+        return;
+
+    int l = length(list);
+    int m = l / 2;
+    int last = l - 1;
+    for (int i = 0; i <= m; i++) {
+        void *t = getitem(list, i);
+        int j = last - i;
+        setitem(list, i, getitem(list, j));
+        setitem(list, j, t);
+    }
 }
 
 void walklist(List *list, walker_func func, void *context)

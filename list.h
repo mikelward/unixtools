@@ -14,8 +14,10 @@ List *newlist(void);
 void freelist(List *list);
 void append(void *element, List *list);
 void *getitem(List *list, unsigned index);
+void setitem(List *list, unsigned index, void *element);
 unsigned length(List *list);
 void sortlist(List *list, list_compare_function compare);
+void reverselist(List *list);
 void walklist(List *list, walker_func func, void *context);
 void printlist(List *list, printer_func printer, void *pvoptions);
 void printlistacross(List *list,

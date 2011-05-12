@@ -394,7 +394,7 @@ void listfiles(List *files, Options *poptions)
      * than make printlist* functions much more complex
      */
     if (poptions->reverse) {
-        /* TODO reverse list here */
+        reverselist(files);
     }
 
     /*

@@ -21,7 +21,7 @@ int main(int argc, const char *argv[])
     test1();
     test2();
     test3();
-    //test4();
+    test4();
     test5();
     test6();
     test7();
@@ -131,28 +131,33 @@ void donothing(void *elem, void *context)
 }
 
 /*
- * pass in the element AND the whole list
- * figure out which element we expect,
- * get that element from the list,
- * and assert that elem == that element
+ * Return true if the list is in descending order.
+ *
+ * @param vpthisint     Pointer to an integer element (as void *)
+ * @param vpplastint    Pointer to pointer to previous integer element
+ *                      (NULL on first pass)
  */
-void checkbackwards(void *elem, void *voidlist)
+void checkbackwards(void *vpthisint, void *vpplastint /* really void ** */)
 {
-    static int n = 0;
+    if (vpthisint == NULL || vpplastint == NULL)
+        return;
 
-    List *list = (List *)voidlist;
-    int *pi = (int *)elem;
-    unsigned size = length(list);
-    int *pj = (int *)getitem(list, size-1-n);
+    int *pthisint = (int *)vpthisint;
+    int thisint = *pthisint;
 
-    //printf("element %d is %d\n", size-1-n, *pj);
-    assert(*pi == *pj);
+    int **pplastint = (int **)vpplastint;
+    int *plastint = *pplastint;
 
-    n++;
+    if (plastint != NULL) {
+        /* we have a previous int */
+        int lastint = *plastint;
+
+        assert(thisint <= lastint);
+    }
+
+    *pplastint = pthisint;
 }
 
-/*
- * backwards support temporarily removed to simplify things
 void test4(void)
 {
     List *pl = newlist();
@@ -166,9 +171,15 @@ void test4(void)
         append(pi, pl);
     }
 
-    walklist(pl, -1, &checkbackwards, pl);
+    printf("before reversing\n");
+    walklist(pl, &printintptr, NULL);
+    reverselist(pl);
+    printf("after reversing\n");
+    walklist(pl, &printintptr, NULL);
+
+    int *pi = &i;
+    walklist(pl, &checkbackwards, &pi);
 }
-*/
 
 void test5(void)
 {
