@@ -1,5 +1,8 @@
 *.swp
 *.o
+*.out
+*.log
+*.core
 ls2
 tags
 listtest
