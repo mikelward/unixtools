@@ -290,7 +290,7 @@ int listfile(File *file, Options *poptions)
     }
 
     /*
-     * print a character that shows the file's type (-F)
+     * print a character *before* the file showing its type (-O)
      *
      * early versions of UNIX printed directories like [this]
      */
@@ -307,7 +307,7 @@ int listfile(File *file, Options *poptions)
         break;
     }
 
-    /* color the file (-G) */
+    /* color the file (-G and -K) */
     /* don't increment column here because the colors shouldn't
      * move the cursor */
     if (poptions->color) {
@@ -324,7 +324,7 @@ int listfile(File *file, Options *poptions)
     if (poptions->color)
         putp(poptions->pcolors->none);
 
-    /* print a character that shows the file's type (-F) */
+    /* print a character after the file showing its type (-F and -O) */
     switch (poptions->flags) {
     case FLAGS_NORMAL:
         if (isdir(file))
