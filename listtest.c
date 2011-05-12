@@ -244,9 +244,8 @@ void test8(void)
 int getintwidth(void *pvint, void *pvoptions)
 {
     int *pi = (int *)pvint;
-    /* XXX use asprintf etc. */
     char buf[1024];
-    return sprintf(buf, "%d", *pi);
+    return snprintf(buf, 1024, "%d", *pi);
 }
 
 int printint(void *pv, void *pvoptions)
