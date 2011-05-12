@@ -51,19 +51,19 @@ typedef struct colors {
     char *yellow;
     char *blue;
     char *white;
-    char *none;
+    char *none;                     /* escape sequence to go back to default color */
 } Colors;
 
 /* all the command line options */
 typedef struct options {
-    int all : 1;
-    int directory : 1;
-    int dirsonly : 1;
-    unsigned flags : 2;
-    int size : 1;
-    int reverse : 1;                /* forwards = 0, reverse = 1 */
-    int color : 1;                  /* whether to use color */
-    short blocksize;
+    int all : 1;                    /* 1 = also print hidden files */
+    int directory : 1;              /* 1 = print the directory name rather than its contents */
+    int dirsonly : 1;               /* 1 = don't print regular files */
+    unsigned flags : 2;             /*     print file "flags" */
+    int size : 1;                   /* 1 = print file size in blocks */
+    int reverse : 1;                /* 0 = forwards, 1 = reverse1 */
+    int color : 1;                  /* 1 = colorize file and directory names */
+    short blocksize;                /* units for -s option */
     short displaymode;              /* one-per-line, columns, rows, etc. */ 
     short screenwidth;              /* how wide the screen is, 0 if unknown */
     Colors *pcolors;                /* the colors to use */
@@ -122,6 +122,9 @@ int main(int argc, char **argv)
             }
         }
     }
+    /* default width is 80 so we can do columns or rows
+     * if the user explicitly specified the -C or -x option
+     * (as per BSD and GNU) */
     if (options.screenwidth == 0)
         options.screenwidth = 80;
 
@@ -193,8 +196,8 @@ int main(int argc, char **argv)
         }
     }
 
-    /* don't reverse output if it's unsorted */
-    /* (as per BSD and GNU) */
+    /* don't reverse output if it's unsorted
+     * (as per BSD and GNU) */
     if (options.compare == NULL) {
         options.reverse = 0;
     }
@@ -270,6 +273,13 @@ int main(int argc, char **argv)
     freelist(dirs);
 }
 
+/**
+ * Print the file.
+ *
+ * Returns the number of printable characters used,
+ * e.g. so that the calling function can pad to the
+ * next logical column with spaces.
+ */
 int listfile(File *file, Options *poptions)
 {
     char *name = filename(file);
@@ -352,8 +362,10 @@ int listfile(File *file, Options *poptions)
     return nchars;
 }
 
-/*
- * for one-per-line mode
+/**
+ * Print the file with a newline.
+ *
+ * This is needed for one-per-line display mode.
  */
 void listfilewithnewline(File *file, Options *poptions)
 {
@@ -361,6 +373,15 @@ void listfilewithnewline(File *file, Options *poptions)
     printf("\n");
 }
 
+/**
+ * Return the number of characters needed to print this file.
+ *
+ * Used to calculate the maximum number of characters for all
+ * files so we can set up a column with if -C or -x flags were
+ * given.
+ *
+ * TODO Try to share as much of the logic with listfile().
+ */
 int getfilewidth(void *vfile, void *pvoptions)
 {
     File *file = (File *)vfile;
@@ -370,6 +391,12 @@ int getfilewidth(void *vfile, void *pvoptions)
     return len;
 }
 
+/**
+ * Print the given file list using the specified options.
+ *
+ * This function does any required sorting and figures out
+ * what display format to use for printing.
+ */
 void listfiles(List *files, Options *poptions)
 {
     if (files == NULL) {
@@ -410,6 +437,9 @@ void listfiles(List *files, Options *poptions)
     }
 }
 
+/**
+ * Print the contents of the given directory.
+ */
 void listdir(File *dir, Options *poptions)
 {
     List *files = newlist();
@@ -445,6 +475,9 @@ void listdir(File *dir, Options *poptions)
     listfiles(files, poptions);
 }
 
+/**
+ * Sort "files" based on the specified options.
+ */
 void sortfiles(List *files, Options *poptions)
 {
     if (files == NULL) {
@@ -511,11 +544,18 @@ int setupcolors(Colors *pcolors)
     return 1;
 }
 
+/**
+ * Print the help message.
+ */
 void usage(void)
 {
     fprintf(stderr, "Usage: ls2 [-1aCDdFfGkKOrstUx] <file>...\n");
 }
 
+/**
+ * Returns true if we should print this file,
+ * false otherwise.
+ */
 int want(const char *path, Options *poptions)
 {
     if (path == NULL) {
