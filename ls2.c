@@ -5,6 +5,7 @@
  * - handling of symlink arguments (and -H and -L flags?)
  * - format the size column using the same width for every entry
  * - make -s and -C/-x work together
+ * - make -D work again
  * - -l flag
  * - -i flag
  * - -q flag (on by default?) and -b flag
@@ -145,6 +146,8 @@ int main(int argc, char **argv)
             options.displaymode = DISPLAY_IN_COLUMNS;
             break;
         case 'D':
+            fprintf(stderr, "ls2: -D option is currently broken\n");
+            exit(2);
             options.dirsonly = 1;
             break;
         case 'd':
