@@ -211,21 +211,17 @@ void printlistdown(List *list,
         for (col = 0; col < cols; col++) {
             int idx = col*rows + row;
             if (idx >= len) {
-                printf("\n");
                 break;
             }
             void *elem = getitem(list, idx);
             int nchars = printer(elem, pvoptions);
             if (col == cols-1) {
-                printf("\n");
                 break;
             }
             else {
                 printspaces(colwidth-nchars);
             }
         }
-    }
-    if (col != 0) {
         printf("\n");
     }
 }
