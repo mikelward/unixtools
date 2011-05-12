@@ -269,7 +269,9 @@ void test9(void)
         append(pi, pl);
     }
 
-    printlistacross(pl, 10, &getintwidth, &printint, NULL);
+    int screenwidth = 10;
+    printf("print across (screenwidth=%d)\n", screenwidth);
+    printlistacross(pl, screenwidth, &getintwidth, &printint, NULL);
 }
 
 void test10(void)
@@ -277,13 +279,17 @@ void test10(void)
     List *pl = newlist();
     int i;
 
+    fprintf(stderr, "%s\n", __func__);
+
     for (i = 0; i <= 9; i++) {
         int *pi = malloc(sizeof *pi);
         *pi = i;
         append(pi, pl);
     }
 
-    printlistdown(pl, 10, &getintwidth, &printint, NULL);
+    int screenwidth = 10;
+    printf("print down (screenwidth=%d)\n", screenwidth);
+    printlistdown(pl, screenwidth, &getintwidth, &printint, NULL);
 }
 
 
