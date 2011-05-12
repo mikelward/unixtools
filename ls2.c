@@ -390,15 +390,16 @@ void listfiles(List *files, Options *poptions)
     sortfiles(files, poptions);
 
     /*
-     * much easier to reverse the list
-     * than make printlist* functions much more complex
+     * ...reverse the list if -r flag was given...
+     * (we used to do this using a custom step in walklist,
+     *  but this became overly complicated)
      */
     if (poptions->reverse) {
         reverselist(files);
     }
 
     /*
-     * ...then print them
+     * ...and finally print the files
      */
     switch (poptions->displaymode) {
     case DISPLAY_ONE_PER_LINE:
