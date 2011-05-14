@@ -11,6 +11,7 @@
  * - -q flag (on by default?) and -b flag
  * - -c flag
  * - -S flag
+ * - correctly calculate column width of extended ("wide") characters
  * - other?
  *
  * NOTES
