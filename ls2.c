@@ -85,7 +85,7 @@ void listdir(File *dir, Options *poptions);
 int  setupcolors(Colors *pcolors);
 void sortfiles(List *files, Options *poptions);
 void usage(void);
-int  want(const char *path, Options *poptions);
+int  want(File *file, Options *poptions);
 
 int main(int argc, char **argv)
 {
@@ -147,8 +147,6 @@ int main(int argc, char **argv)
             options.displaymode = DISPLAY_IN_COLUMNS;
             break;
         case 'D':
-            fprintf(stderr, "ls2: -D option is currently broken\n");
-            exit(2);
             options.dirsonly = 1;
             break;
         case 'd':
@@ -294,9 +292,6 @@ int listfile(File *file, Options *poptions)
         fprintf(stderr, "ls2: file is NULL\n");
         return 0;
     }
-
-    if (poptions->dirsonly && !isdir(file))
-            return 0;
 
     int nchars = 0;
 
@@ -473,13 +468,17 @@ void listdir(File *dir, Options *poptions)
     unsigned long totalblocks = 0;
     struct dirent *dirent = NULL;
     while ((dirent = readdir(openeddir)) != NULL) {
-        if (!want(dirent->d_name, poptions)) {
+        /* TODO: merge this hidden file check with want() */
+        if (!poptions->all && dirent->d_name[0] == '.') {
             continue;
         }
         File *file = newfile(makepath(dir->path, dirent->d_name));
         if (file == NULL) {
             fprintf(stderr, "listdir: file is NULL\n");
             return;
+        }
+        if (!want(file, poptions)) {
+            continue;
         }
         append(file, files);
         if (poptions->size) {
@@ -579,16 +578,19 @@ void usage(void)
  * Returns true if we should print this file,
  * false otherwise.
  */
-int want(const char *path, Options *poptions)
+int want(File *file, Options *poptions)
 {
-    if (path == NULL) {
+    if (file == NULL) {
+        fprintf(stderr, "want: file is NULL\n");
+        return 0;
+    } else if (file->path == NULL) {
         fprintf(stderr, "want: path is NULL\n");
         return 0;
     } else if (poptions == NULL) {
         fprintf(stderr, "want: poptions is NULL\n");
         return 0;
     }
-    return poptions->all || path[0] != '.';
+    return !poptions->dirsonly || isdir(file);
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/
