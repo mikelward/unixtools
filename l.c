@@ -68,6 +68,7 @@ typedef struct options {
     int dirsonly : 1;               /* 1 = don't print regular files */
     int inode : 1;                  /* 1 = print the inode number */
     unsigned flags : 2;             /*     print file "flags" */
+    int mymodes : 1;                /* display rwx modes for current user */
     int size : 1;                   /* 1 = print file size in blocks */
     int reverse : 1;                /* 0 = forwards, 1 = reverse1 */
     int color : 1;                  /* 1 = colorize file and directory names */
@@ -113,6 +114,7 @@ int main(int argc, char **argv)
     options.color = 0;
     options.flags = FLAGS_NONE;
     options.inode = 0;
+    options.mymodes = 0;
     options.size = 0;
     options.reverse = 0;
     options.screenwidth = 0;
@@ -148,7 +150,7 @@ int main(int argc, char **argv)
 
     opterr = 0;     /* we will print our own error messages */
     int option;
-    while ((option = getopt(argc, argv, ":1aCDdFfKkGiOstrUx")) != -1) {
+    while ((option = getopt(argc, argv, ":1aCDdFfKkGiMOstrUx")) != -1) {
         switch(option) {
         case '1':
             options.displaymode = DISPLAY_ONE_PER_LINE;
@@ -184,6 +186,9 @@ int main(int argc, char **argv)
             break;
         case 'i':
             options.inode = 1;
+            break;
+        case 'M':
+            options.mymodes = 1;
             break;
         case 'O':
             options.flags = FLAGS_OLD;
@@ -319,6 +324,7 @@ FieldList *getfields(File *file, Options *poptions)
         Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
         if (field == NULL) {
             fprintf(stderr, "getfields: field is NULL\n");
+            walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
         }
@@ -331,10 +337,31 @@ FieldList *getfields(File *file, Options *poptions)
         Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
         if (field == NULL) {
             fprintf(stderr, "getfields: field is NULL\n");
+            walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
         }
         append(field, fieldlist);
+    }
+
+    if (poptions->mymodes) {
+        char *mymodes = getmymodes(file);
+        if (mymodes == NULL) {
+            fprintf(stderr, "getfields: mymodes is NULL\n");
+            walklist(fieldlist, free);
+            free(fieldlist);
+            return NULL;
+        }
+        int width = strlen(mymodes);
+        Field *field = newfield(mymodes, ALIGN_RIGHT, width);
+        if (field == NULL) {
+            fprintf(stderr, "getfields: field is NULL\n");
+            walklist(fieldlist, free);
+            free(fieldlist);
+            return NULL;
+        }
+        append(field, fieldlist);
+        free(mymodes);
     }
 
     /*

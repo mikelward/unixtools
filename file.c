@@ -252,4 +252,39 @@ ino_t getinode(File *file)
     return pstat->st_ino;
 }
 
+char *getmymodes(File *file)
+{
+    if (file == NULL) {
+        fprintf(stderr, "getinode: file is NULL\n");
+        return 0;
+    }
+    char *path = file->path;
+    char *pbuf, *p;
+
+    pbuf = malloc(4 * sizeof(*pbuf));
+    if (pbuf == NULL) {
+        fprintf(stderr, "getmymodes: pbuf is NULL\n");
+        return NULL;
+    }
+    p = pbuf;
+
+    if (access(path, R_OK) == 0)
+        (*p++) = 'r';
+    else
+        (*p++) = '-';
+
+    if (access(path, W_OK) == 0)
+        (*p++) = 'w';
+    else
+        (*p++) = '-';
+
+    if (access(path, X_OK) == 0)
+        (*p++) = 'x';
+    else
+        (*p++) = '-';
+
+    *p = '\0';
+    return pbuf;
+}
+
 /* vim: set ts=4 sw=4 tw=0 et:*/

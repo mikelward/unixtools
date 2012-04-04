@@ -27,6 +27,7 @@ char *makepath(const char *dirname, const char *filename);
 struct stat *getstat(File *file);
 unsigned long getblocks(File *file, int blocksize);
 ino_t getinode(File *file);
+char *getmymodes(File *file);
 
 int comparebyname(const File **a, const File **b);
 int comparebymtime(const File **a, const File **b);
