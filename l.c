@@ -66,6 +66,7 @@ typedef struct options {
     int all : 1;                    /* 1 = also print hidden files */
     int directory : 1;              /* 1 = print directory name rather than contents */
     int dirsonly : 1;               /* 1 = don't print regular files */
+    int inode : 1;                  /* 1 = print the inode number */
     unsigned flags : 2;             /*     print file "flags" */
     int size : 1;                   /* 1 = print file size in blocks */
     int reverse : 1;                /* 0 = forwards, 1 = reverse1 */
@@ -111,6 +112,7 @@ int main(int argc, char **argv)
     options.displaymode = DISPLAY_ONE_PER_LINE;
     options.color = 0;
     options.flags = FLAGS_NONE;
+    options.inode = 0;
     options.size = 0;
     options.reverse = 0;
     options.screenwidth = 0;
@@ -146,7 +148,7 @@ int main(int argc, char **argv)
 
     opterr = 0;     /* we will print our own error messages */
     int option;
-    while ((option = getopt(argc, argv, ":1aCDdFfKkGOstrUx")) != -1) {
+    while ((option = getopt(argc, argv, ":1aCDdFfKkGiOstrUx")) != -1) {
         switch(option) {
         case '1':
             options.displaymode = DISPLAY_ONE_PER_LINE;
@@ -179,6 +181,9 @@ int main(int argc, char **argv)
             break;
         case 'k':
             options.blocksize = 1024;
+            break;
+        case 'i':
+            options.inode = 1;
             break;
         case 'O':
             options.flags = FLAGS_OLD;
@@ -306,6 +311,18 @@ FieldList *getfields(File *file, Options *poptions)
     if (fieldlist == NULL) {
         fprintf(stderr, "getfields: fieldlist is NULL\n");
         return NULL;
+    }
+
+    if (poptions->inode) {
+        ino_t inode = getinode(file);
+        long width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", inode);
+        Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
+        if (field == NULL) {
+            fprintf(stderr, "getfields: field is NULL\n");
+            free(fieldlist);
+            return NULL;
+        }
+        append(field, fieldlist);
     }
 
     if (poptions->size) {

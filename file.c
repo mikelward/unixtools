@@ -210,6 +210,10 @@ int comparebymtime(const File **a, const File **b)
 
 unsigned long getblocks(File *file, int blocksize)
 {
+    if (file == NULL) {
+        fprintf(stderr, "getblocks: file is NULL\n");
+        return 0;
+    }
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
         fprintf(stderr, "getblocks: pstat is NULL\n");
@@ -232,6 +236,20 @@ unsigned long getblocks(File *file, int blocksize)
         int factor = DEV_BSIZE / blocksize;
         return blocks * factor;
     }
+}
+
+ino_t getinode(File *file)
+{
+    if (file == NULL) {
+        fprintf(stderr, "getinode: file is NULL\n");
+        return 0;
+    }
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        fprintf(stderr, "getinode: pstat is NULL\n");
+        return 0;
+    }
+    return pstat->st_ino;
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/
