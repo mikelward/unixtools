@@ -3,9 +3,6 @@
  *
  * TODO
  * - handling of symlink arguments (and -H and -L flags?)
- * - format the size column using the same width for every entry
- * - make -s and -C/-x work together
- * - make -D work again
  * - -l flag
  * - -i flag
  * - -q flag (on by default?) and -b flag
@@ -43,6 +40,9 @@
 #include <term.h>
 #include <unistd.h>
 
+#include "buf.h"
+#include "display.h"
+#include "field.h"
 #include "list.h"
 #include "file.h"
 
@@ -75,13 +75,22 @@ typedef struct options {
     file_compare_function compare;  /* determines sort order */
 } Options;
 
+typedef List FileList;              /* list of files */
+typedef List FieldList;             /* list of fields for a single file */
+typedef List FileFieldList;         /* list of fields for each file */
+typedef List StringList;            /* list of C strings */
+
 enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS, DISPLAY_IN_ROWS };
 enum flags { FLAGS_NONE, FLAGS_NORMAL, FLAGS_OLD };
+
+const int columnmargin = 1;
 
 int  listfile(File *file, Options *poptions);
 void listfilewithnewline(File *file, Options *poptions);
 void listfiles(List *files, Options *poptions);
 void listdir(File *dir, Options *poptions);
+int  printname(File *file, Options *poptions, char *buf, size_t bufsize);
+int  printsize(File *file, Options *poptions);
 int  setupcolors(Colors *pcolors);
 void sortfiles(List *files, Options *poptions);
 void usage(void);
@@ -279,41 +288,62 @@ int main(int argc, char **argv)
 }
 
 /**
- * Print the file.
+ * Returns a list of Fields for the given file.
  *
- * Returns the number of printable characters used,
- * e.g. so that the calling function can pad to the
- * next logical column with spaces.
+ * Which fields are returned is controlled by poptions.
  */
-int listfile(File *file, Options *poptions)
+FieldList *getfields(File *file, Options *poptions)
 {
-    char *name = filename(file);
-    if (name == NULL) {
-        fprintf(stderr, "ls2: file is NULL\n");
-        return 0;
+    if (file == NULL) {
+        fprintf(stderr, "getfields: file is NULL\n");
+        return NULL;
     }
 
-    int nchars = 0;
-
+    char snprintfbuf[1024];
+    List *fieldlist = newlist();
+    if (fieldlist == NULL) {
+        fprintf(stderr, "getfields: fieldlist is NULL\n");
+        return NULL;
+    }
+    
     if (poptions->size) {
-        /* XXX take width into account here */
         unsigned long blocks = getblocks(file, poptions->blocksize);
-        printf("%lu ", blocks);
+        int width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", blocks);
+        Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
+        if (field == NULL) {
+            fprintf(stderr, "getfields: field is NULL\n");
+            free(fieldlist);
+            return NULL;
+        }
+        append(field, fieldlist);
     }
+
+    /*
+     * flags, color start, filename, color end, and flags are made into a single field
+     * since we don't want spaces in between
+     */
 
     /*
      * print a character *before* the file showing its type (-O)
      *
      * early versions of UNIX printed directories like [this]
      */
+    Buf *buf = newbuf();
+    if (buf == NULL) {
+        fprintf(stderr, "getfields: buf is NULL\n");
+        walklist(fieldlist, (walker_func)freefield);
+        freelist(fieldlist);
+        return NULL;
+    }
+        
     switch (poptions->flags) {
     case FLAGS_NORMAL:
         break;
     case FLAGS_OLD:
         if (isdir(file))
-            nchars += printf("[");
+            bufappend(buf, "[", 1, 1);
         else if (isexec(file))
-            nchars += printf("*");
+            bufappend(buf, "*", 1, 1);
         break;
     case FLAGS_NONE:
         break;
@@ -321,77 +351,197 @@ int listfile(File *file, Options *poptions)
 
     /* color the file (-G and -K) */
     /* these escape sequences shouldn't move the cursor,
-     * hence we don't increment nchars here */
+     * hence the 4th arg to bufappend is 0 */
     /* TODO change this to something like setcolor(COLOR_BLUE) */
+    int colorused = 0;
     if (poptions->color) {
-        if (isdir(file))
-            putp(poptions->pcolors->blue);
-        else if (isexec(file))
-            putp(poptions->pcolors->green);
+        if (isdir(file)) {
+            bufappend(buf, poptions->pcolors->blue, strlen(poptions->pcolors->blue), 0);
+            colorused = 1;
+        } else if (isexec(file)) {
+            bufappend(buf, poptions->pcolors->green, strlen(poptions->pcolors->green), 0);
+            colorused = 1;
+        }
     }
 
     /* print the file name */
-    nchars += printf("%s", name);
+    int width = printname(file, poptions, snprintfbuf, sizeof(snprintfbuf));
+    bufappend(buf, snprintfbuf, width, width);
 
-    /* reset the color back to normal (-G) */
-    if (poptions->color)
-        putp(poptions->pcolors->none);
+    /* reset the color back to normal (-G and -K) */
+    if (colorused) {
+        bufappend(buf, poptions->pcolors->none, strlen(poptions->pcolors->none), 0);
+    }
 
     /* print a character after the file showing its type (-F and -O) */
     switch (poptions->flags) {
     case FLAGS_NORMAL:
         if (isdir(file))
-            nchars += printf("/");
+            bufappend(buf, "/", 1, 1);
         else if (isexec(file))
-            nchars += printf("*");
+            bufappend(buf, "*", 1, 1);
         else
-            nchars += printf(" ");
+            bufappend(buf, " ", 1, 1);
         break;
     case FLAGS_OLD:
         if (isdir(file))
-            nchars += printf("]");
+            bufappend(buf, "]", 1, 1);
         else if (isexec(file))
-            nchars += printf("*");
+            bufappend(buf, "*", 1, 1);
         else
-            nchars += printf(" ");
-        break;
-    case FLAGS_NONE:
-        nchars += printf(" ");
+            bufappend(buf, " ", 1, 1);
         break;
     }
 
-    free(name);
+    enum align align = ALIGN_NONE;
+    if (poptions->displaymode != DISPLAY_ONE_PER_LINE) {
+        align = ALIGN_LEFT;
+    }
 
-    return nchars;
+    append(newfield(bufdata(buf), align, bufscreenpos(buf)), fieldlist);
+
+    return (FieldList *)fieldlist;
+}
+
+void printwithnewline(void *string)
+{
+    puts((char *)string);
+}
+
+StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
+{
+    if (filefields == NULL) {
+        fprintf(stderr, "makefilestrings: filefields is NULL\n");
+        return NULL;
+    }
+    if (fieldwidths == NULL) {
+        fprintf(stderr, "makefilestrings: fieldwidths is NULL\n");
+        return NULL;
+    }
+
+    char snprintfbuf[1024];
+    StringList *filestrings = newlist();
+    if (filestrings == NULL) {
+        fprintf(stderr, "makefilestrings: filestrings is NULL\n");
+        return NULL;
+    }
+
+    int nfiles = length(filefields);
+    for (int i = 0; i < nfiles; i++) {
+        Buf *buf = newbuf();
+        if (buf == NULL) {
+            fprintf(stderr, "makefilestrings: buf is NULL\n");
+            walklist(filestrings, free);
+            freelist(filestrings);
+            return NULL;
+        }
+        /* XXX could be simpler? */
+        List *fields = getitem(filefields, i);
+        int nfields = length(fields);
+        for (int j = 0; j < nfields; j++) {
+            Field *field = getitem(fields, j);
+            if (field == NULL) {
+                fprintf(stderr, "makefilestrings: field is NULL\n");
+                walklist(filestrings, free);
+                freelist(filestrings);
+                freebuf(buf);
+                return NULL;
+            }
+            enum align align = fieldalign(field);
+            int screenwidth = fieldwidth(field);
+            int paddedwidth = fieldwidths[j];
+    
+            if (align == ALIGN_RIGHT) {
+                for (int k = 0; k < paddedwidth - screenwidth; k++) {
+                    bufappend(buf, " ", 1, 1);
+                }
+            }
+            /* always print as many characters as needed */
+            int nchars = snprintf(snprintfbuf, sizeof(snprintfbuf),
+                "%s", fieldstring(field));
+            bufappend(buf, snprintfbuf, nchars, screenwidth);
+            if (align == ALIGN_LEFT) {
+                for (int k = 0; k < paddedwidth - screenwidth; k++) {
+                    bufappend(buf, " ", 1, 1);
+                }
+            }
+            if (j != nfields - 1) {
+                for (int k = 0; k < columnmargin; k++) {
+                    bufappend(buf, " ", 1, 1);
+                }
+            }
+        }
+        append(bufdata(buf), filestrings);
+        free(buf);      /* not freebuf because we want to keep the buf->data */
+    }
+
+    return filestrings;
 }
 
 /**
- * Print the file with a newline.
- *
- * This is needed for one-per-line display mode.
+ * Return an array of the maximum widths of the fields for the given list of list of fields.
  */
-void listfilewithnewline(File *file, Options *poptions)
+int *getmaxfilefieldwidths(FileFieldList *filefields)
 {
-    listfile(file, poptions);
-    printf("\n");
+    if (filefields == NULL) {
+        fprintf(stderr, "getmaxfilefieldwidths: filefields is NULL\n");
+        return NULL;
+    }
+    int nfiles = length(filefields);
+    if (nfiles == 0) {
+        return NULL;
+    }
+
+    FieldList *firstfilefields = getitem(filefields, 0);
+    if (firstfilefields == NULL) {
+        fprintf(stderr, "getmaxfilefieldwidths: firstfilefields is NULL\n");
+        return NULL;
+    }
+    int nfields = length(firstfilefields);
+    int *maxfieldwidths = calloc(nfields, sizeof(*maxfieldwidths)+1);
+    for (int i = 0; i < nfiles; i++) {
+        FieldList *fields = getitem(filefields, i);
+        if (fields == NULL) {
+            fprintf(stderr, "getmaxfilefieldwidths: fields is NULL\n");
+            continue;
+        }
+        for (int j = 0; j < nfields; j++) {
+            Field *field = getitem(fields, j);
+            int width = fieldwidth(field);
+            if (width > maxfieldwidths[j]) {
+                maxfieldwidths[j] = width;
+            }
+        }
+    }
+    return maxfieldwidths;
 }
 
-/**
- * Return the number of characters needed to print this file.
- *
- * Used to calculate the maximum number of characters for all
- * files so we can set up a column with if -C or -x flags were
- * given.
- *
- * TODO Try to share as much of the logic with listfile().
- */
-int getfilewidth(void *vfile, void *pvoptions)
+void printfields(FieldList *fields)
 {
-    File *file = (File *)vfile;
-    char *name = filename(file);
-    int len = strlen(name);
-    free(name);
-    return len;
+    int nfields = length(fields);
+    for (int i = 0; i < nfields; i++) {
+        Field *field = getitem(fields, i);
+        printf("%s ", fieldstring(field));
+    }
+}
+
+List *getfields2(File *file, void *pvoptions)
+{
+    return getfields(file, (Options *)pvoptions);
+}
+
+int getfilewidth(int *fieldwidths)
+{
+    if (fieldwidths == NULL) {
+        return 0;
+    }
+
+    /* -1 because the loop adds an extra margin even for the first field */
+    int total = -columnmargin;
+    for (int i = 0; fieldwidths[i] != 0; i++) {
+        total += fieldwidths[i] + columnmargin;
+    }
+    return total;
 }
 
 /**
@@ -407,6 +557,11 @@ void listfiles(List *files, Options *poptions)
         return;
     } else if (poptions == NULL) {
         fprintf(stderr, "listfiles: poptions is NULL\n");
+        return;
+    }
+
+    int nfiles = length(files);
+    if (nfiles == 0) {
         return;
     }
 
@@ -427,25 +582,31 @@ void listfiles(List *files, Options *poptions)
     }
 
     /*
-     * ...and finally print the files
+     * ...construct the fields to output for each file...
+     */
+    FileFieldList *filefields = map(files, (map_func)getfields2, poptions);
+    int *fieldwidths = getmaxfilefieldwidths(filefields);
+
+    /*
+     * ...make the output for each file into a single string...
+     * (each string being of the same length for use in a columns/rows)
+     */
+    StringList *filestrings = makefilestrings(filefields, fieldwidths);
+    int filewidth = getfilewidth(fieldwidths);
+
+    /*
+     * ...and finally print the output
      */
     switch (poptions->displaymode) {
     case DISPLAY_ONE_PER_LINE:
-        printlist(
-            files,
-            (printer_func)&listfilewithnewline, poptions);
+        walklist(filestrings, printwithnewline);
+        /*printdown(filestrings, 0, 0);*/
         break;
     case DISPLAY_IN_COLUMNS:
-        printlistdown(
-            files,
-            poptions->screenwidth, (width_func)&getfilewidth,
-            (printer_func)&listfile, poptions);
+        printdown(filestrings, filewidth, poptions->screenwidth);
         break;
     case DISPLAY_IN_ROWS:
-        printlistacross(
-            files,
-            poptions->screenwidth, (width_func)&getfilewidth,
-            (printer_func)&listfile, poptions);
+        printacross(filestrings, filewidth, poptions->screenwidth);
         break;
     }
 }
@@ -491,6 +652,32 @@ void listdir(File *dir, Options *poptions)
     }
     listfiles(files, poptions);
 }
+
+int printname(File *file, Options *poptions,
+              char *buf, size_t bufsize)
+{
+    if (buf == NULL) {
+        fprintf(stderr, "printname: buf is NULL\n");
+        return 0;
+    }
+    char *name = filename(file);
+    if (name == NULL) {
+        fprintf(stderr, "printname: file is NULL\n");
+        *buf = '\0';
+        return 0;
+    }
+
+    int width = snprintf(buf, bufsize, "%s", name);
+    free(name);
+    return width;
+}
+
+/*
+int printsize(File *file, Options *poptions,
+              char *buf, size_t bufsize)
+{
+}
+*/
 
 /**
  * Sort "files" based on the specified options.

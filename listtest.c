@@ -115,18 +115,18 @@ void test3(void)
         append(pi, pl);
     }
 
-    walklist(pl, &sum, &total);
+    walklistcontext(pl, &sum, &total);
     //printf("total = %d\n", total);
     assert(total == 6);
 }
 
-void printintptr(void *elem, void *context)
+void printintptr(void *elem)
 {
     int *pi = (int *)elem;
     printf("%d\n", *pi);
 }
 
-void donothing(void *elem, void *context)
+void donothing(void *elem)
 {
 }
 
@@ -172,13 +172,13 @@ void test4(void)
     }
 
     printf("before reversing\n");
-    walklist(pl, &printintptr, NULL);
+    walklist(pl, &printintptr);
     reverselist(pl);
     printf("after reversing\n");
-    walklist(pl, &printintptr, NULL);
+    walklist(pl, &printintptr);
 
     int *pi = &i;
-    walklist(pl, &checkbackwards, &pi);
+    walklistcontext(pl, &checkbackwards, &pi);
 }
 
 void test5(void)
@@ -194,7 +194,7 @@ void test5(void)
         append(pi, pl);
     }
 
-    walklist(pl, &printintptr, NULL);
+    walklist(pl, &printintptr);
 }
 
 void test6(void)
@@ -210,7 +210,7 @@ void test6(void)
         append(pi, pl);
     }
 
-    walklist(pl, &donothing, NULL);
+    walklist(pl, &donothing);
 }
 
 void test7(void)
@@ -219,7 +219,7 @@ void test7(void)
 
     fprintf(stderr, "%s\n", __func__);
 
-    walklist(pl, &printintptr, NULL);
+    walklist(pl, &printintptr);
 }
 
 /*
@@ -237,7 +237,7 @@ void test8(void)
         append(pi, pl);
     }
 
-    walklist(pl, 3, &printintptr, NULL);
+    walklist(pl, 3, &printintptr);
 }
 */
 
