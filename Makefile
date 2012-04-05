@@ -2,7 +2,7 @@ CC=cc
 CFLAGS=-std=c99 -Wall -Werror -g
 
 TESTS=listtest
-PROGS=ls2
+PROGS=l
 DESTDIR=/usr/local
 
 all: tags $(TESTS) $(PROGS)
@@ -33,7 +33,7 @@ listtest: listtest.o list.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ listtest.o list.o
 	./$@
 
-ls2: ls2.o display.o list.o file.o field.o buf.o
+l: l.o display.o list.o file.o field.o buf.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ -ltermcap
 
 install: $(PROGS)
