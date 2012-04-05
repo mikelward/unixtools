@@ -3,15 +3,16 @@ CFLAGS=-std=c99 -Wall -Werror -g
 
 TESTS=listtest
 PROGS=ls2
+DESTDIR=/usr/local
 
 all: tags $(TESTS) $(PROGS)
 
 tags: *.c
-	-rm $@
+	$(RM) $@
 	ctags -f $@ *.c *.h
 
 clean:
-	-rm *.o
+	$(RM) *.o
 
 buf.o: buf.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -34,5 +35,17 @@ listtest: listtest.o list.o
 
 ls2: ls2.o display.o list.o file.o field.o buf.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ -ltermcap
+
+install: $(PROGS)
+	@for prog in $(PROGS); do \
+		echo install $$prog $(DESTDIR)/bin; \
+		install $$prog $(DESTDIR)/bin; \
+	done
+
+uninstall: $(PROGS)
+	@for prog in $(PROGS); do \
+		echo rm $(DESTDIR)/bin/$$prog; \
+		rm $(DESTDIR)/bin/$$prog; \
+	done
 
 #  vim: set ts=4 sw=4 tw=0 noet:
