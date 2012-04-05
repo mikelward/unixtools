@@ -55,6 +55,8 @@ typedef struct colors {
     char *green;
     char *yellow;
     char *blue;
+    char *magenta;
+    char *cyan;
     char *white;
     char *none;                     /* escape sequence to go back to default color */
 } Colors;
@@ -305,7 +307,7 @@ FieldList *getfields(File *file, Options *poptions)
         fprintf(stderr, "getfields: fieldlist is NULL\n");
         return NULL;
     }
-    
+
     if (poptions->size) {
         unsigned long blocks = getblocks(file, poptions->blocksize);
         int width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", blocks);
@@ -335,13 +337,15 @@ FieldList *getfields(File *file, Options *poptions)
         freelist(fieldlist);
         return NULL;
     }
-        
+
     switch (poptions->flags) {
     case FLAGS_NORMAL:
         break;
     case FLAGS_OLD:
         if (isdir(file))
             bufappend(buf, "[", 1, 1);
+        else if (islink(file))
+            bufappend(buf, "@", 1, 1);
         else if (isexec(file))
             bufappend(buf, "*", 1, 1);
         break;
@@ -357,6 +361,9 @@ FieldList *getfields(File *file, Options *poptions)
     if (poptions->color) {
         if (isdir(file)) {
             bufappend(buf, poptions->pcolors->blue, strlen(poptions->pcolors->blue), 0);
+            colorused = 1;
+        } else if (islink(file)) {
+            bufappend(buf, poptions->pcolors->cyan, strlen(poptions->pcolors->cyan), 0);
             colorused = 1;
         } else if (isexec(file)) {
             bufappend(buf, poptions->pcolors->green, strlen(poptions->pcolors->green), 0);
@@ -378,6 +385,8 @@ FieldList *getfields(File *file, Options *poptions)
     case FLAGS_NORMAL:
         if (isdir(file))
             bufappend(buf, "/", 1, 1);
+        else if (islink(file))
+            bufappend(buf, "@", 1, 1);
         else if (isexec(file))
             bufappend(buf, "*", 1, 1);
         else
@@ -743,6 +752,8 @@ int setupcolors(Colors *pcolors)
     pcolors->green = strdup(tparm(setaf, COLOR_GREEN, NULL));
     pcolors->yellow = strdup(tparm(setaf, COLOR_YELLOW, NULL));
     pcolors->blue = strdup(tparm(setaf, COLOR_BLUE, NULL));
+    pcolors->magenta = strdup(tparm(setaf, COLOR_MAGENTA, NULL));
+    pcolors->cyan = strdup(tparm(setaf, COLOR_CYAN, NULL));
     pcolors->white = strdup(tparm(setaf, COLOR_WHITE, NULL));
     char *sgr0 = tigetstr("sgr0");
     if (sgr0 == NULL) {

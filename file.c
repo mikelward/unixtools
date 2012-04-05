@@ -91,8 +91,8 @@ struct stat *getstat(File *file)
             fprintf(stderr, "getstat: Out of memory\n");
             return NULL;
         }
-        if (stat(file->path, pstat) != 0) {
-            fprintf(stderr, "getstat: Cannot stat %s\n", file->path);
+        if (lstat(file->path, pstat) != 0) {
+            fprintf(stderr, "getstat: Cannot lstat %s\n", file->path);
             return NULL;
         }
         file->pstat = pstat;
@@ -131,6 +131,22 @@ int isexec(File *file)
     }
 
     return file->pstat->st_mode & 0111;
+}
+
+int islink(File *file)
+{
+    if (file == NULL) {
+        fprintf(stderr, "islink: file is NULL\n");
+        return 0;
+    }
+
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        fprintf(stderr, "isdir: pstat is NULL\n");
+        return 0;
+    }
+
+    return S_ISLNK(file->pstat->st_mode);
 }
 
 char *makepath(const char *dirname, const char *filename)

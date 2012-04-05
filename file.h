@@ -22,6 +22,7 @@ void freefile(File *file);
 char *filename(File *file);
 int isdir(File *file);
 int isexec(File *file);
+int islink(File *file);
 char *makepath(const char *dirname, const char *filename);
 struct stat *getstat(File *file);
 unsigned long getblocks(File *file, int blocksize);
