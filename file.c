@@ -1,4 +1,4 @@
-#define _XOPEN_SOURCE 600   /* for strdup() */
+#define _XOPEN_SOURCE 600   /* for strdup(), snprintf() */
 
 #include <sys/stat.h>
 #include <sys/param.h>      /* for DEV_BSIZE */
@@ -8,23 +8,24 @@
 #include <string.h>
 
 #include "file.h"
+#include "logging.h"
 
 File *newfile(const char *path)
 {
     if (path == NULL) {
-        fprintf(stderr, "newfile: path is NULL\n");
+        errorf(__func__, "path is NULL\n");
         return NULL;
     }
 
     File *file = malloc(sizeof *file);
     if (file == NULL) {
-        fprintf(stderr, "newfile: Out of memory\n");
+        errorf(__func__, "Out of memory\n");
         return NULL;
     }
 
     char *copy = strdup(path);
     if (copy == NULL) {
-        fprintf(stderr, "newfile: copy is NULL\n");
+        errorf(__func__, "copy is NULL\n");
         return NULL;
     }
     file->path = copy;
@@ -39,7 +40,7 @@ File *newfile(const char *path)
 void freefile(File *file)
 {
     if (file == NULL) {
-        fprintf(stderr, "freefile: file is NULL\n");
+        errorf(__func__, "file is NULL\n");
         return;
     }
 
@@ -64,7 +65,7 @@ void freefile(File *file)
 char *filename(File *file)
 {
     if (file == NULL) {
-        fprintf(stderr, "filename: file is NULL\n");
+        errorf(__func__, "file is NULL\n");
         return NULL;
     }
 
@@ -81,18 +82,18 @@ char *filename(File *file)
 struct stat *getstat(File *file)
 {
     if (file == NULL) {
-        fprintf(stderr, "getstat: file is NULL\n");
+        errorf(__func__, "file is NULL\n");
         return NULL;
     }
 
     if (file->pstat == NULL) {
         struct stat *pstat = malloc(sizeof(*pstat));
         if (pstat == NULL) {
-            fprintf(stderr, "getstat: Out of memory\n");
+            errorf(__func__, "Out of memory\n");
             return NULL;
         }
         if (lstat(file->path, pstat) != 0) {
-            fprintf(stderr, "getstat: Cannot lstat %s\n", file->path);
+            errorf(__func__, "Cannot lstat %s\n", file->path);
             return NULL;
         }
         file->pstat = pstat;
@@ -104,13 +105,13 @@ struct stat *getstat(File *file)
 int isdir(File *file)
 {
     if (file == NULL) {
-        fprintf(stderr, "isdir: file is NULL\n");
+        errorf(__func__, "file is NULL\n");
         return 0;
     }
 
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        fprintf(stderr, "isdir: pstat is NULL\n");
+        errorf(__func__, "pstat is NULL\n");
         return 0;
     }
 
@@ -120,13 +121,13 @@ int isdir(File *file)
 int isexec(File *file)
 {
     if (file == NULL) {
-        fprintf(stderr, "isexec: file is NULL\n");
+        errorf(__func__, "file is NULL\n");
         return 0;
     }
 
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        fprintf(stderr, "isexec: pstat is NULL\n");
+        errorf(__func__, "pstat is NULL\n");
         return 0;
     }
 
@@ -136,13 +137,13 @@ int isexec(File *file)
 int islink(File *file)
 {
     if (file == NULL) {
-        fprintf(stderr, "islink: file is NULL\n");
+        errorf(__func__, "file is NULL\n");
         return 0;
     }
 
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        fprintf(stderr, "isdir: pstat is NULL\n");
+        errorf(__func__, "pstat is NULL\n");
         return 0;
     }
 
@@ -156,13 +157,13 @@ char *makepath(const char *dirname, const char *filename)
 
     size = snprintf(path, 0, "%s/%s", dirname, filename);
     if (size < 1) {
-        fprintf(stderr, "makepath: snprintf is not C99 compliant?\n");
+        errorf(__func__, "snprintf is not C99 compliant?\n");
         return NULL;
     }
     size += 1;                  /* allow for the null byte */
     path = malloc(size);
     if (path == NULL) {
-        fprintf(stderr, "makepath: Out of memory\n");
+        errorf(__func__, "Out of memory\n");
         return NULL;
     }
     size = snprintf(path, size, "%s/%s", dirname, filename);
@@ -211,12 +212,12 @@ int comparebymtime(const File **a, const File **b)
 unsigned long getblocks(File *file, int blocksize)
 {
     if (file == NULL) {
-        fprintf(stderr, "getblocks: file is NULL\n");
+        errorf(__func__, "file is NULL\n");
         return 0;
     }
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        fprintf(stderr, "getblocks: pstat is NULL\n");
+        errorf(__func__, "pstat is NULL\n");
         return 0;
     }
     unsigned long blocks = pstat->st_blocks;
@@ -241,12 +242,12 @@ unsigned long getblocks(File *file, int blocksize)
 ino_t getinode(File *file)
 {
     if (file == NULL) {
-        fprintf(stderr, "getinode: file is NULL\n");
+        errorf(__func__, "file is NULL\n");
         return 0;
     }
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        fprintf(stderr, "getinode: pstat is NULL\n");
+        errorf(__func__, "pstat is NULL\n");
         return 0;
     }
     return pstat->st_ino;
@@ -255,7 +256,7 @@ ino_t getinode(File *file)
 char *getmymodes(File *file)
 {
     if (file == NULL) {
-        fprintf(stderr, "getinode: file is NULL\n");
+        errorf(__func__, "file is NULL\n");
         return 0;
     }
     char *path = file->path;
@@ -263,7 +264,7 @@ char *getmymodes(File *file)
 
     pbuf = malloc(4 * sizeof(*pbuf));
     if (pbuf == NULL) {
-        fprintf(stderr, "getmymodes: pbuf is NULL\n");
+        errorf(__func__, "pbuf is NULL\n");
         return NULL;
     }
     p = pbuf;

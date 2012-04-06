@@ -23,7 +23,7 @@
  * getopt(), optarg, optind, opterr, and optopt are declared by including
  * <unistd.h> rather than <getopt.h>
  */
-#define _XOPEN_SOURCE 600       /* for strdup() */
+#define _XOPEN_SOURCE 600       /* for strdup(), snprintf() */
 #define _POSIX_C_SOURCE 200809L /* needed to make getopt() and opt* visible */
 
 #include <sys/types.h>
@@ -43,8 +43,9 @@
 #include "buf.h"
 #include "display.h"
 #include "field.h"
-#include "list.h"
 #include "file.h"
+#include "list.h"
+#include "logging.h"
 
 /* terminal escape sequences for -G and -K flags
  * not currently customizable
@@ -100,11 +101,11 @@ void sortfiles(List *files, Options *poptions);
 void usage(void);
 int  want(File *file, Options *poptions);
 
-#define MYNAME "l"
 #define OPTSTRING "1aCDdFfGiKkMOstrUx"
 
 int main(int argc, char **argv)
 {
+    myname = "l";
     /* so that file names are sorted according to the user's locale */
     setlocale(LC_ALL, "");
 
@@ -212,11 +213,11 @@ int main(int argc, char **argv)
             options.displaymode = DISPLAY_IN_ROWS;
             break;
         case ':':
-            fprintf(stderr, "Missing argument to -%c\n", optopt);
+            error("Missing argument to -%c\n", optopt);
             usage();
             exit(2);
         case '?':
-            fprintf(stderr, "Unknown option -%c\n", optopt);
+            error("Unknown option -%c\n", optopt);
             usage();
             exit(2);
         default:
@@ -253,18 +254,18 @@ int main(int argc, char **argv)
      */
     List *files = newlist();
     if (files == NULL) {
-        fprintf(stderr, MYNAME ": files is NULL\n");
+        error("files is NULL\n");
         exit(1);
     }
     List *dirs = newlist();
     if (dirs == NULL) {
-        fprintf(stderr, MYNAME ": dirs is NULL\n");
+        error("dirs is NULL\n");
         exit(1);
     }
     for (int i = 0; i < argc; i++) {
         File *file = newfile(argv[i]);
         if (file == NULL) {
-            fprintf(stderr, MYNAME ": file is NULL\n");
+            error("file is NULL\n");
             exit(1);
         }
         if (!options.directory && isdir(file)) {
@@ -286,7 +287,7 @@ int main(int argc, char **argv)
     for (int i = 0; i < ndirs; i++) {
         File *dir = getitem(dirs, i);
         if (dir == NULL) {
-            fprintf(stderr, MYNAME ": dir is NULL\n");
+            error("dir is NULL\n");
             continue;
         }
         int neednewline = nfiles > 0 || i > 0;
@@ -310,14 +311,14 @@ int main(int argc, char **argv)
 FieldList *getfields(File *file, Options *poptions)
 {
     if (file == NULL) {
-        fprintf(stderr, "getfields: file is NULL\n");
+        errorf(__func__, "file is NULL\n");
         return NULL;
     }
 
     char snprintfbuf[1024];
     List *fieldlist = newlist();
     if (fieldlist == NULL) {
-        fprintf(stderr, "getfields: fieldlist is NULL\n");
+        errorf(__func__, "fieldlist is NULL\n");
         return NULL;
     }
 
@@ -326,7 +327,7 @@ FieldList *getfields(File *file, Options *poptions)
         long width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", inode);
         Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
         if (field == NULL) {
-            fprintf(stderr, "getfields: field is NULL\n");
+            errorf(__func__, "field is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
@@ -339,7 +340,7 @@ FieldList *getfields(File *file, Options *poptions)
         int width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", blocks);
         Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
         if (field == NULL) {
-            fprintf(stderr, "getfields: field is NULL\n");
+            errorf(__func__, "field is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
@@ -350,7 +351,7 @@ FieldList *getfields(File *file, Options *poptions)
     if (poptions->mymodes) {
         char *mymodes = getmymodes(file);
         if (mymodes == NULL) {
-            fprintf(stderr, "getfields: mymodes is NULL\n");
+            errorf(__func__, "mymodes is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
@@ -358,7 +359,7 @@ FieldList *getfields(File *file, Options *poptions)
         int width = strlen(mymodes);
         Field *field = newfield(mymodes, ALIGN_RIGHT, width);
         if (field == NULL) {
-            fprintf(stderr, "getfields: field is NULL\n");
+            errorf(__func__, "field is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
@@ -379,7 +380,7 @@ FieldList *getfields(File *file, Options *poptions)
      */
     Buf *buf = newbuf();
     if (buf == NULL) {
-        fprintf(stderr, "getfields: buf is NULL\n");
+        errorf(__func__, "buf is NULL\n");
         walklist(fieldlist, (walker_func)freefield);
         freelist(fieldlist);
         return NULL;
@@ -467,18 +468,18 @@ void printwithnewline(void *string)
 StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
 {
     if (filefields == NULL) {
-        fprintf(stderr, "makefilestrings: filefields is NULL\n");
+        errorf(__func__, "filefields is NULL\n");
         return NULL;
     }
     if (fieldwidths == NULL) {
-        fprintf(stderr, "makefilestrings: fieldwidths is NULL\n");
+        errorf(__func__, "fieldwidths is NULL\n");
         return NULL;
     }
 
     char snprintfbuf[1024];
     StringList *filestrings = newlist();
     if (filestrings == NULL) {
-        fprintf(stderr, "makefilestrings: filestrings is NULL\n");
+        errorf(__func__, "filestrings is NULL\n");
         return NULL;
     }
 
@@ -486,7 +487,7 @@ StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
     for (int i = 0; i < nfiles; i++) {
         Buf *buf = newbuf();
         if (buf == NULL) {
-            fprintf(stderr, "makefilestrings: buf is NULL\n");
+            errorf(__func__, "buf is NULL\n");
             walklist(filestrings, free);
             freelist(filestrings);
             return NULL;
@@ -497,7 +498,7 @@ StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
         for (int j = 0; j < nfields; j++) {
             Field *field = getitem(fields, j);
             if (field == NULL) {
-                fprintf(stderr, "makefilestrings: field is NULL\n");
+                errorf(__func__, "field is NULL\n");
                 walklist(filestrings, free);
                 freelist(filestrings);
                 freebuf(buf);
@@ -540,7 +541,7 @@ StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
 int *getmaxfilefieldwidths(FileFieldList *filefields)
 {
     if (filefields == NULL) {
-        fprintf(stderr, "getmaxfilefieldwidths: filefields is NULL\n");
+        errorf(__func__, "filefields is NULL\n");
         return NULL;
     }
     int nfiles = length(filefields);
@@ -550,7 +551,7 @@ int *getmaxfilefieldwidths(FileFieldList *filefields)
 
     FieldList *firstfilefields = getitem(filefields, 0);
     if (firstfilefields == NULL) {
-        fprintf(stderr, "getmaxfilefieldwidths: firstfilefields is NULL\n");
+        errorf(__func__, "firstfilefields is NULL\n");
         return NULL;
     }
     int nfields = length(firstfilefields);
@@ -558,7 +559,7 @@ int *getmaxfilefieldwidths(FileFieldList *filefields)
     for (int i = 0; i < nfiles; i++) {
         FieldList *fields = getitem(filefields, i);
         if (fields == NULL) {
-            fprintf(stderr, "getmaxfilefieldwidths: fields is NULL\n");
+            errorf(__func__, "fields is NULL\n");
             continue;
         }
         for (int j = 0; j < nfields; j++) {
@@ -609,10 +610,10 @@ int getfilewidth(int *fieldwidths)
 void listfiles(List *files, Options *poptions)
 {
     if (files == NULL) {
-        fprintf(stderr, "listfiles: files is NULL\n");
+        errorf(__func__, "files is NULL\n");
         return;
     } else if (poptions == NULL) {
-        fprintf(stderr, "listfiles: poptions is NULL\n");
+        errorf(__func__, "poptions is NULL\n");
         return;
     }
 
@@ -674,12 +675,12 @@ void listdir(File *dir, Options *poptions)
 {
     List *files = newlist();
     if (files == NULL) {
-        fprintf(stderr, "listdir: files in NULL\n");
+        errorf(__func__, "files in NULL\n");
         return;
     }
     DIR *openeddir = opendir(dir->path);
     if (openeddir == NULL) {
-        fprintf(stderr, "listdir: Cannot open %s\n", dir->path);
+        errorf(__func__, "Cannot open %s\n", dir->path);
         return;
     }
     unsigned long totalblocks = 0;
@@ -691,7 +692,7 @@ void listdir(File *dir, Options *poptions)
         }
         File *file = newfile(makepath(dir->path, dirent->d_name));
         if (file == NULL) {
-            fprintf(stderr, "listdir: file is NULL\n");
+            errorf(__func__, "file is NULL\n");
             return;
         }
         if (!want(file, poptions)) {
@@ -713,12 +714,12 @@ int printname(File *file, Options *poptions,
               char *buf, size_t bufsize)
 {
     if (buf == NULL) {
-        fprintf(stderr, "printname: buf is NULL\n");
+        errorf(__func__, "buf is NULL\n");
         return 0;
     }
     char *name = filename(file);
     if (name == NULL) {
-        fprintf(stderr, "printname: file is NULL\n");
+        errorf(__func__, "file is NULL\n");
         *buf = '\0';
         return 0;
     }
@@ -741,11 +742,11 @@ int printsize(File *file, Options *poptions,
 void sortfiles(List *files, Options *poptions)
 {
     if (files == NULL) {
-        fprintf(stderr, "sortfiles: files is NULL\n");
+        errorf(__func__, "files is NULL\n");
         return;
     }
     if (poptions == NULL) {
-        fprintf(stderr, "sortfiles: poptions is NULL\n");
+        errorf(__func__, "poptions is NULL\n");
         return;
     }
 
@@ -775,7 +776,7 @@ void sortfiles(List *files, Options *poptions)
 int setupcolors(Colors *pcolors)
 {
     if (pcolors == NULL) {
-        fprintf(stderr, "setupcolors: pcolors is NULL\n");
+        errorf(__func__, "pcolors is NULL\n");
         return 0;
     }
 
@@ -786,7 +787,7 @@ int setupcolors(Colors *pcolors)
 
     int errret;
     if ((setupterm(term, 1, &errret)) == ERR) {
-        fprintf(stderr, "setupcolors: setupterm returned %d\n", errret);
+        errorf(__func__, "setupterm returned %d\n", errret);
         return 0;
     }
 
@@ -816,7 +817,7 @@ int setupcolors(Colors *pcolors)
  */
 void usage(void)
 {
-    fprintf(stderr, "Usage: " MYNAME " [-" OPTSTRING "] <file>...\n");
+    fprintf(stderr, "Usage: %s: %s: <file>...\n", myname, OPTSTRING);
 }
 
 /**
@@ -826,13 +827,13 @@ void usage(void)
 int want(File *file, Options *poptions)
 {
     if (file == NULL) {
-        fprintf(stderr, "want: file is NULL\n");
+        errorf(__func__, "file is NULL\n");
         return 0;
     } else if (file->path == NULL) {
-        fprintf(stderr, "want: path is NULL\n");
+        errorf(__func__, "path is NULL\n");
         return 0;
     } else if (poptions == NULL) {
-        fprintf(stderr, "want: poptions is NULL\n");
+        errorf(__func__, "poptions is NULL\n");
         return 0;
     }
     return !poptions->dirsonly || isdir(file);

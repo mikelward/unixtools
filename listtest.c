@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "list.h"
+#include "logging.h"
 
 void test1(void);
 void test2(void);
@@ -37,7 +38,7 @@ void test1(void)
     int i;
     List *pl = newlist();
 
-    fprintf(stderr, "%s\n", __func__);
+    error("%s\n", __func__);
 
     for (i = 0; i < 10; i++) {
         int *pi = malloc(sizeof(int));
@@ -76,7 +77,7 @@ void test2(void)
     int i;
     size_t nelems = sizeof(is) / sizeof(is[0]);
 
-    fprintf(stderr, "%s\n", __func__);
+    error("%s\n", __func__);
 
     for (i = 0; i < nelems; i++) {
         int *pi = malloc(sizeof *pi);
@@ -107,7 +108,7 @@ void test3(void)
     int i;
     int total = 0;
 
-    fprintf(stderr, "%s\n", __func__);
+    error("%s\n", __func__);
 
     for (i = 1; i <= 3; i++) {
         int *pi = malloc(sizeof *pi);
@@ -163,7 +164,7 @@ void test4(void)
     List *pl = newlist();
     int i;
 
-    fprintf(stderr, "%s\n", __func__);
+    error("%s\n", __func__);
 
     for (i = 1; i <= 3; i++) {
         int *pi = malloc(sizeof *pi);
@@ -186,7 +187,7 @@ void test5(void)
     List *pl = newlist();
     int i;
 
-    fprintf(stderr, "%s\n", __func__);
+    error("%s\n", __func__);
 
     for (i = 0; i <= 6; i++) {
         int *pi = malloc(sizeof *pi);
@@ -202,7 +203,7 @@ void test6(void)
     List *pl = newlist();
     int i;
 
-    fprintf(stderr, "%s\n", __func__);
+    error("%s\n", __func__);
 
     for (i = 0; i <= 1000000; i++) {
         int *pi = malloc(sizeof *pi);
@@ -217,7 +218,7 @@ void test7(void)
 {
     List *pl = newlist();
 
-    fprintf(stderr, "%s\n", __func__);
+    error("%s\n", __func__);
 
     walklist(pl, &printintptr);
 }
@@ -229,7 +230,7 @@ void test8(void)
     List *pl = newlist();
     int i;
 
-    fprintf(stderr, "%s\n", __func__);
+    error("%s\n", __func__);
 
     for (i = 0; i <= 9; i++) {
         int *pi = malloc(sizeof *pi);
@@ -260,7 +261,7 @@ void test9(void)
     List *pl = newlist();
     int i;
 
-    fprintf(stderr, "%s\n", __func__);
+    error("%s\n", __func__);
 
     for (i = 0; i <= 9; i++) {
         int *pi = malloc(sizeof *pi);
@@ -278,7 +279,7 @@ void test10(void)
     List *pl = newlist();
     int i;
 
-    fprintf(stderr, "%s\n", __func__);
+    error("%s\n", __func__);
 
     for (i = 0; i <= 9; i++) {
         int *pi = malloc(sizeof *pi);

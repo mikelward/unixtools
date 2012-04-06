@@ -1,5 +1,6 @@
 #include "display.h"
 #include "list.h"
+#include "logging.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -29,7 +30,7 @@ const int outermargin = 2;
 void printacross(StringList *list, int stringwidth, int screenwidth)
 {
     if (list == NULL) {
-        fprintf(stderr, "printacross: list is NULL\n");
+        errorf(__func__, "list is NULL\n");
         return;
     }
     int len = length(list);
@@ -71,7 +72,7 @@ void printacross(StringList *list, int stringwidth, int screenwidth)
 void printdown(StringList *list, int stringwidth, int screenwidth)
 {
     if (list == NULL) {
-        fprintf(stderr, "printdown: list is NULL\n");
+        errorf(__func__, "list is NULL\n");
         return;
     }
     int len = length(list);

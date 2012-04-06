@@ -29,11 +29,14 @@ listtest.o: listtest.c
 list.o: list.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-listtest: listtest.o list.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ listtest.o list.o
+logging.o: logging.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+listtest: listtest.o list.o logging.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 	./$@
 
-l: l.o display.o list.o file.o field.o buf.o
+l: l.o display.o list.o file.o field.o buf.o logging.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ -ltermcap
 
 install: $(PROGS)
