@@ -100,6 +100,9 @@ void sortfiles(List *files, Options *poptions);
 void usage(void);
 int  want(File *file, Options *poptions);
 
+#define MYNAME "l"
+#define OPTSTRING "1aCDdFfGiKkMOstrUx"
+
 int main(int argc, char **argv)
 {
     /* so that file names are sorted according to the user's locale */
@@ -150,7 +153,7 @@ int main(int argc, char **argv)
 
     opterr = 0;     /* we will print our own error messages */
     int option;
-    while ((option = getopt(argc, argv, ":1aCDdFfKkGiMOstrUx")) != -1) {
+    while ((option = getopt(argc, argv, ":" OPTSTRING)) != -1) {
         switch(option) {
         case '1':
             options.displaymode = DISPLAY_ONE_PER_LINE;
@@ -250,18 +253,18 @@ int main(int argc, char **argv)
      */
     List *files = newlist();
     if (files == NULL) {
-        fprintf(stderr, "ls2: files is NULL\n");
+        fprintf(stderr, MYNAME ": files is NULL\n");
         exit(1);
     }
     List *dirs = newlist();
     if (dirs == NULL) {
-        fprintf(stderr, "ls2: dirs is NULL\n");
+        fprintf(stderr, MYNAME ": dirs is NULL\n");
         exit(1);
     }
     for (int i = 0; i < argc; i++) {
         File *file = newfile(argv[i]);
         if (file == NULL) {
-            fprintf(stderr, "ls2: file is NULL\n");
+            fprintf(stderr, MYNAME ": file is NULL\n");
             exit(1);
         }
         if (!options.directory && isdir(file)) {
@@ -283,7 +286,7 @@ int main(int argc, char **argv)
     for (int i = 0; i < ndirs; i++) {
         File *dir = getitem(dirs, i);
         if (dir == NULL) {
-            fprintf(stderr, "ls2: dir is NULL\n");
+            fprintf(stderr, MYNAME ": dir is NULL\n");
             continue;
         }
         int neednewline = nfiles > 0 || i > 0;
@@ -813,7 +816,7 @@ int setupcolors(Colors *pcolors)
  */
 void usage(void)
 {
-    fprintf(stderr, "Usage: ls2 [-1aCDdFfGkKOrstUx] <file>...\n");
+    fprintf(stderr, "Usage: " MYNAME " [-" OPTSTRING "] <file>...\n");
 }
 
 /**
