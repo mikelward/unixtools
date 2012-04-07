@@ -4,11 +4,11 @@
  * TODO
  * - handling of symlink arguments (and -H and -L flags?)
  * - -l flag
- * - -i flag
  * - -q flag (on by default?) and -b flag
  * - -c flag
  * - -S flag
  * - correctly calculate column width of extended ("wide") characters
+ * - remove remaining statically-sized buffers (search for 1024)
  * - other?
  *
  * NOTES
@@ -162,8 +162,14 @@ int main(int argc, char **argv)
         case 'a':
             options.all = 1;
             break;
+        case 'b':
+            /* reserved for escaped control characters mode */
+            break;
         case 'C':
             options.displaymode = DISPLAY_IN_COLUMNS;
+            break;
+        case 'c':
+            /* reserved for ctime display */
             break;
         case 'D':
             options.dirsonly = 1;
@@ -181,6 +187,9 @@ int main(int argc, char **argv)
             /* for compatibility with FreeBSD */
             options.color = 1;
             break;
+        case 'g':
+            /* reserved for group field */
+            break;
         case 'K':
             /* K = "kolor", somewhat mnemonic and unused in GNU ls */
             options.color = 1;
@@ -191,17 +200,41 @@ int main(int argc, char **argv)
         case 'i':
             options.inode = 1;
             break;
+        case 'l':
+            /* reserved for long output mode */
+            break;
         case 'M':
             options.mymodes = 1;
+            break;
+        case 'm':
+            /* reserved for modes field (or maybe blocksize=1048576 or stream mode) */
+            break;
+        case 'N':
+            /* possibly reserved for literal control character mode */
+            break;
+        case 'n':
+            /* possibly reserved for numeric owner and group option? */
             break;
         case 'O':
             options.flags = FLAGS_OLD;
             break;
+        case 'o':
+            /* reserved for owner (user) field */
+            break;
+        case 'p':
+            /* reserved for permissions (modes) field */
+            break;
         case 'r':
             options.reverse = 1;
             break;
+        case 'S':
+            /* possibly reserved for sort by size option */
+            break;
         case 's':
             options.size = 1;
+            break;
+        case 'T':
+            /* reserved for time field (display time without -l) */
             break;
         case 't':
             options.compare = &comparebymtime;
@@ -376,7 +409,7 @@ FieldList *getfields(File *file, Options *poptions)
     /*
      * print a character *before* the file showing its type (-O)
      *
-     * early versions of UNIX printed directories like [this]
+     * early versions of BSD printed directories like [this]
      */
     Buf *buf = newbuf();
     if (buf == NULL) {
