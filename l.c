@@ -818,7 +818,7 @@ int printname(File *file, Options *poptions,
         errorf(__func__, "buf is NULL\n");
         return 0;
     }
-    char *name = filename(file);
+    char *name = getname(file);
     if (name == NULL) {
         errorf(__func__, "file is NULL\n");
         *buf = '\0';

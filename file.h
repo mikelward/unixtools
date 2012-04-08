@@ -20,7 +20,6 @@ File *newfile(const char *path);
 void freefile(File *file);
 
 /* caller must free returned filename if not NULL */
-char *filename(File *file);
 int isdir(File *file);
 int isexec(File *file);
 int islink(File *file);
@@ -29,6 +28,7 @@ struct stat *getstat(File *file);
 unsigned long getblocks(File *file, int blocksize);
 ino_t getinode(File *file);
 char *getmymodes(File *file);
+char *getname(File *file);
 File *gettarget(File *file);
 
 int comparebyname(const File **a, const File **b);

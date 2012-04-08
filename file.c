@@ -71,7 +71,7 @@ void freefile(File *file)
  *
  * caller should free the returned string
  */
-char *filename(File *file)
+char *getname(File *file)
 {
     if (file == NULL) {
         errorf(__func__, "file is NULL\n");
@@ -124,7 +124,7 @@ int isdir(File *file)
         return 0;
     }
 
-    return S_ISDIR(file->pstat->st_mode);
+    return S_ISDIR(pstat->st_mode);
 }
 
 int isexec(File *file)
@@ -140,7 +140,7 @@ int isexec(File *file)
         return 0;
     }
 
-    return file->pstat->st_mode & 0111;
+    return pstat->st_mode & (S_IXUSR|S_IXGRP|S_IXOTH);
 }
 
 int islink(File *file)
@@ -156,7 +156,7 @@ int islink(File *file)
         return 0;
     }
 
-    return S_ISLNK(file->pstat->st_mode);
+    return S_ISLNK(pstat->st_mode);
 }
 
 char *makepath(const char *dirname, const char *filename)
