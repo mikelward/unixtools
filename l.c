@@ -7,6 +7,7 @@
  * - -q flag (on by default?) and -b flag
  * - -c flag
  * - -S flag
+ * - fix handling of dangling symlinks / unstat'able files
  * - correctly calculate column width of extended ("wide") characters
  * - remove remaining statically-sized buffers (search for 1024)
  * - other?
@@ -316,13 +317,13 @@ int main(int argc, char **argv)
         }
     }
 
+    int nfiles = length(files);
     listfiles(files, &options);
+    freelist(files, (free_func)freefile);
  
     /*
      * XXX make this use walklist
      */
-    int nfiles = length(files);
-    freelist(files, (free_func)freefile);
     int ndirs = length(dirs);
     int needlabel = nfiles > 0 || ndirs > 1;
     for (int i = 0; i < ndirs; i++) {
