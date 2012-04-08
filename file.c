@@ -60,8 +60,6 @@ void freefile(File *file)
         freefile(target);
         target = nexttarget;
     }
-
-    free(file);
 }
 
 /*
