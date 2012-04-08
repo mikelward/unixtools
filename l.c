@@ -310,10 +310,12 @@ int main(int argc, char **argv)
             error("file is NULL\n");
             exit(1);
         }
-        if (!options.directory && isdir(file)) {
-            append(file, dirs);
-        } else {
-            append(file, files);
+        if (isstat(file)) {
+            if (!options.directory && isdir(file)) {
+                append(file, dirs);
+            } else {
+                append(file, files);
+            }
         }
     }
 
@@ -362,7 +364,9 @@ void getnamefieldhelper(File *file, Options *poptions, Buf *buf)
     case FLAGS_NORMAL:
         break;
     case FLAGS_OLD:
-        if (isdir(file))
+        if (!isstat(file))
+            bufappend(buf, "?", 1, 1);
+        else if (isdir(file))
             bufappend(buf, "[", 1, 1);
         else if (islink(file))
             bufappend(buf, "@", 1, 1);
@@ -379,7 +383,10 @@ void getnamefieldhelper(File *file, Options *poptions, Buf *buf)
     /* TODO change this to something like setcolor(COLOR_BLUE) */
     int colorused = 0;
     if (poptions->color) {
-        if (isdir(file)) {
+        if (!isstat(file)) {
+            bufappend(buf, poptions->pcolors->red, strlen(poptions->pcolors->red), 0);
+            colorused = 1;
+        } else if (isdir(file)) {
             bufappend(buf, poptions->pcolors->blue, strlen(poptions->pcolors->blue), 0);
             colorused = 1;
         } else if (islink(file)) {
@@ -402,7 +409,9 @@ void getnamefieldhelper(File *file, Options *poptions, Buf *buf)
     /* print a character after the file showing its type (-F and -O) */
     switch (poptions->flags) {
     case FLAGS_NORMAL:
-        if (isdir(file))
+        if (!isstat(file))
+            bufappend(buf, "?", 1, 1);
+        else if (isdir(file))
             bufappend(buf, "/", 1, 1);
         else if (islink(file))
             bufappend(buf, "@", 1, 1);
@@ -412,7 +421,9 @@ void getnamefieldhelper(File *file, Options *poptions, Buf *buf)
             bufappend(buf, " ", 1, 1);
         break;
     case FLAGS_OLD:
-        if (isdir(file))
+        if (!isstat(file))
+            bufappend(buf, "?", 1, 1);
+        else if (isdir(file))
             bufappend(buf, "]", 1, 1);
         else if (isexec(file))
             bufappend(buf, "*", 1, 1);
@@ -441,7 +452,7 @@ Field *getnamefield(File *file, Options *poptions)
 
     getnamefieldhelper(file, poptions, buf);
     if (poptions->linktarget) {
-        while (islink(file)) {
+        while (isstat(file) && islink(file)) {
             file = gettarget(file);
             bufappend(buf, " -> ", 4, 4);
             getnamefieldhelper(file, poptions, buf);
@@ -489,7 +500,7 @@ FieldList *getfields(File *file, Options *poptions)
     File *link = file;
     if (poptions->linktarget) {
         File *target = NULL;
-        while (islink(file)) {
+        while (isstat(file) && islink(file)) {
             target = gettarget(file);
             if (target == NULL) {
                 errorf(__func__, "target is NULL\n");
@@ -502,8 +513,13 @@ FieldList *getfields(File *file, Options *poptions)
     }
 
     if (poptions->inode) {
-        ino_t inode = getinode(file);
-        long width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", inode);
+        int width;
+        if (isstat(file)) {
+            ino_t inode = getinode(file);
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", inode);
+        } else {
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "?");
+        }
         Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
         if (field == NULL) {
             errorf(__func__, "field is NULL\n");
@@ -515,8 +531,13 @@ FieldList *getfields(File *file, Options *poptions)
     }
 
     if (poptions->size) {
-        unsigned long blocks = getblocks(file, poptions->blocksize);
-        int width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", blocks);
+        int width;
+        if (isstat(file)) {
+            unsigned long blocks = getblocks(file, poptions->blocksize);
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", blocks);
+        } else {
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "?");
+        }
         Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
         if (field == NULL) {
             errorf(__func__, "field is NULL\n");
@@ -946,6 +967,7 @@ int want(File *file, Options *poptions)
         errorf(__func__, "poptions is NULL\n");
         return 0;
     }
+    /* XXX what to do if we can't lstat the file? */
     return !poptions->dirsonly || isdir(file);
 }
 

@@ -33,6 +33,7 @@ File *newfile(const char *path)
 
     /* to be filled in as and when required */
     /* calling code must check if these are NULL */
+    file->didstat = 0;
     file->pstat = NULL;
     file->target = NULL;
 
@@ -93,20 +94,32 @@ struct stat *getstat(File *file)
         return NULL;
     }
 
-    if (file->pstat == NULL) {
+    if (!file->didstat) {
         struct stat *pstat = malloc(sizeof(*pstat));
         if (pstat == NULL) {
             errorf(__func__, "Out of memory\n");
             return NULL;
         }
+        errno = 0;
+        file->didstat = 1;
         if (lstat(file->path, pstat) != 0) {
-            errorf(__func__, "Cannot lstat %s\n", file->path);
+            errorf(__func__, "Cannot lstat %s: %s\n", file->path, strerror(errno));
             return NULL;
         }
         file->pstat = pstat;
     }
 
     return file->pstat;
+}
+
+int isstat(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return 0;
+    }
+
+    return getstat(file) != NULL;
 }
 
 int isdir(File *file)
@@ -278,18 +291,24 @@ char *getmymodes(File *file)
 
     if (access(path, R_OK) == 0)
         (*p++) = 'r';
-    else
+    else if (errno == EACCES)
         (*p++) = '-';
+    else
+        (*p++) = '?';
 
     if (access(path, W_OK) == 0)
         (*p++) = 'w';
-    else
+    else if (errno == EACCES)
         (*p++) = '-';
+    else
+        (*p++) = '?';
 
     if (access(path, X_OK) == 0)
         (*p++) = 'x';
-    else
+    else if (errno == EACCES)
         (*p++) = '-';
+    else
+        (*p++) = '?';
 
     *p = '\0';
     return pbuf;
