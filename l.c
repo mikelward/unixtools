@@ -75,7 +75,7 @@ typedef struct options {
     int size : 1;                   /* 1 = print file size in blocks */
     int reverse : 1;                /* 0 = forwards, 1 = reverse1 */
     int color : 1;                  /* 1 = colorize file and directory names */
-    short blocksize;                /* units for -s option */
+    int blocksize;                  /* units for -s option */
     short displaymode;              /* one-per-line, columns, rows, etc. */ 
     short screenwidth;              /* how wide the screen is, 0 if unknown */
     Colors *pcolors;                /* the colors to use */
