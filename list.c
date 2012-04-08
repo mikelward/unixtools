@@ -22,13 +22,16 @@ List *newlist(void)
     return lp;
 }
 
-void freelist(List *list)
+void freelist(List *list, walker_func freeelem)
 {
     for (int i = 0; i < list->next; i++) {
         void *elem = (list->data)[i];
-        free(elem);
-        elem = NULL;
+        if (elem != NULL) {
+            freeelem(elem);
+            elem = NULL;
+        }
     }
+    free(list);
 }
 
 void append(void *element, List *list)

@@ -317,12 +317,12 @@ int main(int argc, char **argv)
     }
 
     listfiles(files, &options);
-    freelist(files);
  
     /*
      * XXX make this use walklist
      */
     int nfiles = length(files);
+    freelist(files, (free_func)freefile);
     int ndirs = length(dirs);
     int needlabel = nfiles > 0 || ndirs > 1;
     for (int i = 0; i < ndirs; i++) {
@@ -341,7 +341,7 @@ int main(int argc, char **argv)
         listdir(dir, &options);
     }
 
-    freelist(dirs);
+    freelist(dirs, (free_func)freefile);
 }
 
 void getnamefieldhelper(File *file, Options *poptions, Buf *buf)
@@ -589,8 +589,7 @@ StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
         Buf *buf = newbuf();
         if (buf == NULL) {
             errorf(__func__, "buf is NULL\n");
-            walklist(filestrings, free);
-            freelist(filestrings);
+            freelist(filestrings, (free_func)free);
             return NULL;
         }
         /* XXX could be simpler? */
@@ -600,8 +599,7 @@ StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
             Field *field = getitem(fields, j);
             if (field == NULL) {
                 errorf(__func__, "field is NULL\n");
-                walklist(filestrings, free);
-                freelist(filestrings);
+                freelist(filestrings, (free_func)free);
                 freebuf(buf);
                 return NULL;
             }
@@ -656,7 +654,7 @@ int *getmaxfilefieldwidths(FileFieldList *filefields)
         return NULL;
     }
     int nfields = length(firstfilefields);
-    int *maxfieldwidths = calloc(nfields, sizeof(*maxfieldwidths)+1);
+    int *maxfieldwidths = calloc(nfields+1, sizeof(*maxfieldwidths));
     for (int i = 0; i < nfiles; i++) {
         FieldList *fields = getitem(filefields, i);
         if (fields == NULL) {
@@ -744,6 +742,7 @@ void listfiles(List *files, Options *poptions)
      */
     FileFieldList *filefields = map(files, (map_func)getfields2, poptions);
     int *fieldwidths = getmaxfilefieldwidths(filefields);
+    /* we don't own files, so don't free it here */
 
     /*
      * ...make the output for each file into a single string...
@@ -751,6 +750,9 @@ void listfiles(List *files, Options *poptions)
      */
     StringList *filestrings = makefilestrings(filefields, fieldwidths);
     int filewidth = getfilewidth(fieldwidths);
+    free(fieldwidths);
+    fieldwidths = NULL;
+    freelist(filefields, (free_func)freefield);
 
     /*
      * ...and finally print the output
@@ -767,6 +769,8 @@ void listfiles(List *files, Options *poptions)
         printacross(filestrings, filewidth, poptions->screenwidth);
         break;
     }
+
+    freelist(filestrings, (free_func)free);
 }
 
 /**
@@ -791,7 +795,9 @@ void listdir(File *dir, Options *poptions)
         if (!poptions->all && dirent->d_name[0] == '.') {
             continue;
         }
-        File *file = newfile(makepath(dir->path, dirent->d_name));
+        char *path = makepath(dir->path, dirent->d_name);
+        File *file = newfile(path);
+        free(path);
         if (file == NULL) {
             errorf(__func__, "file is NULL\n");
             return;
@@ -804,11 +810,13 @@ void listdir(File *dir, Options *poptions)
             totalblocks += getblocks(file, poptions->blocksize);
         }
     }
+    closedir(openeddir);
 
     if (poptions->size) {
         printf("total %lu\n", totalblocks);
     }
     listfiles(files, poptions);
+    freelist(files, (free_func)freefile);
 }
 
 int printname(File *file, Options *poptions,

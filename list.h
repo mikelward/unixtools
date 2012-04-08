@@ -10,13 +10,14 @@ typedef struct list List;
 typedef int (*qsort_compare_function)(const void *a, const void *b);
 typedef int (*list_compare_function)(const void **a, const void **b);
 typedef void * (*map_func)(void *elem, void *context);
+typedef void (*free_func)(void *elem);
 typedef void (*walker_func)(void *elem);
 typedef void (*walker_context_func)(void *elem, void *context);
 typedef int (*printer_func)(void *elem, void *pvoptions);
 typedef int (*width_func)(void *elem, void *pvoptions);
 
 List *newlist(void);
-void freelist(List *list);
+void freelist(List *list, free_func freeelem);
 
 void append(void *element, List *list);
 unsigned length(List *list);
