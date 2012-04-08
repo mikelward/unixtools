@@ -1,7 +1,8 @@
-#define _XOPEN_SOURCE 600   /* for strdup(), snprintf() */
+#define _XOPEN_SOURCE 600   /* for readlink(), strdup(), snprintf() */
 
 #include <sys/stat.h>
 #include <sys/param.h>      /* for DEV_BSIZE */
+#include <errno.h>
 #include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,8 +32,9 @@ File *newfile(const char *path)
     file->path = copy;
 
     /* to be filled in as and when required */
-    /* calling code must check if this is NULL */
+    /* calling code must check if these are NULL */
     file->pstat = NULL;
+    file->target = NULL;
 
     return file;
 }
@@ -52,6 +54,13 @@ void freefile(File *file)
         free(file->pstat);
         file->pstat = NULL;
     }
+    File *target = file->target;
+    while (target != NULL) {
+        File *nexttarget = target->target;
+        freefile(target);
+        target = nexttarget;
+    }
+
     free(file);
 }
 
@@ -286,6 +295,38 @@ char *getmymodes(File *file)
 
     *p = '\0';
     return pbuf;
+}
+
+File *gettarget(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return NULL;
+    }
+    if (!islink(file)) {
+        errorf(__func__, "%s is not a symlink\n", file->path);
+        return NULL;
+    }
+    if (file->target == NULL) {
+        char targetpath[PATH_MAX];
+        /* note: readlink(3p) not readlink(2) */
+        errno = 0;
+        int nchars = readlink(file->path, targetpath, sizeof(targetpath)-1);
+        if (nchars == -1) {
+            errorf(__func__, "Error getting symlink target: %s\n", strerror(errno));
+            return NULL;
+        } else if (nchars == sizeof(targetpath)-1) {
+            errorf(__func__, "Symlink target too long for buffer\n");
+            return NULL;
+        }
+        targetpath[nchars] = '\0';
+        file->target = newfile(targetpath);
+        if (file->target == NULL) {
+            errorf(__func__, "newfile returned NULL\n");
+            return NULL;
+        }
+    }
+    return file->target;
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/

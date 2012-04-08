@@ -11,7 +11,7 @@
 
 Buf *newbuf(void)
 {
-    Buf *buf = malloc(sizeof(buf));
+    Buf *buf = malloc(sizeof(*buf));
     if (buf == NULL) {
         errorf(__func__, "buf is NULL\n");
         return NULL;
@@ -30,8 +30,9 @@ Buf *newbuf(void)
 void freebuf(Buf *buf)
 {
     if (buf) {
-        if (buf->data)
+        if (buf->data) {
             free(buf->data);
+        }
         free(buf);
     }
 }

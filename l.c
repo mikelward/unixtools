@@ -68,6 +68,7 @@ typedef struct options {
     int directory : 1;              /* 1 = print directory name rather than contents */
     int dirsonly : 1;               /* 1 = don't print regular files */
     int inode : 1;                  /* 1 = print the inode number */
+    int linktarget : 1;             /* 1 = print symlink targets */
     unsigned flags : 2;             /*     print file "flags" */
     int mymodes : 1;                /* display rwx modes for current user */
     int size : 1;                   /* 1 = print file size in blocks */
@@ -101,7 +102,7 @@ void sortfiles(List *files, Options *poptions);
 void usage(void);
 int  want(File *file, Options *poptions);
 
-#define OPTSTRING "1aCDdFfGiKkMOstrUx"
+#define OPTSTRING "1aCDdFfGiKkLMOstrUx"
 
 int main(int argc, char **argv)
 {
@@ -118,6 +119,7 @@ int main(int argc, char **argv)
     options.color = 0;
     options.flags = FLAGS_NONE;
     options.inode = 0;
+    options.linktarget = 0;
     options.mymodes = 0;
     options.size = 0;
     options.reverse = 0;
@@ -200,6 +202,9 @@ int main(int argc, char **argv)
         case 'i':
             options.inode = 1;
             break;
+        case 'L':
+            options.linktarget = 1;
+            break;
         case 'l':
             /* reserved for long output mode */
             break;
@@ -220,6 +225,9 @@ int main(int argc, char **argv)
             break;
         case 'o':
             /* reserved for owner (user) field */
+            break;
+        case 'P':
+            /* reserved for physical mode (don't follow symlinks) */
             break;
         case 'p':
             /* reserved for permissions (modes) field */
@@ -336,6 +344,124 @@ int main(int argc, char **argv)
     freelist(dirs);
 }
 
+void getnamefieldhelper(File *file, Options *poptions, Buf *buf)
+{
+    char snprintfbuf[1024];
+
+    assert(file != NULL);
+    assert(poptions != NULL);
+    assert(buf != NULL);
+
+    /*
+     * print a character *before* the file showing its type (-O)
+     *
+     * early versions of BSD printed directories like [this]
+     */
+    switch (poptions->flags) {
+    case FLAGS_NORMAL:
+        break;
+    case FLAGS_OLD:
+        if (isdir(file))
+            bufappend(buf, "[", 1, 1);
+        else if (islink(file))
+            bufappend(buf, "@", 1, 1);
+        else if (isexec(file))
+            bufappend(buf, "*", 1, 1);
+        break;
+    case FLAGS_NONE:
+        break;
+    }
+
+    /* color the file (-G and -K) */
+    /* these escape sequences shouldn't move the cursor,
+     * hence the 4th arg to bufappend is 0 */
+    /* TODO change this to something like setcolor(COLOR_BLUE) */
+    int colorused = 0;
+    if (poptions->color) {
+        if (isdir(file)) {
+            bufappend(buf, poptions->pcolors->blue, strlen(poptions->pcolors->blue), 0);
+            colorused = 1;
+        } else if (islink(file)) {
+            bufappend(buf, poptions->pcolors->cyan, strlen(poptions->pcolors->cyan), 0);
+            colorused = 1;
+        } else if (isexec(file)) {
+            bufappend(buf, poptions->pcolors->green, strlen(poptions->pcolors->green), 0);
+            colorused = 1;
+        }
+    }
+
+    int width = printname(file, poptions, snprintfbuf, sizeof(snprintfbuf));
+    bufappend(buf, snprintfbuf, width, width);
+
+    /* reset the color back to normal (-G and -K) */
+    if (colorused) {
+        bufappend(buf, poptions->pcolors->none, strlen(poptions->pcolors->none), 0);
+    }
+
+    /* print a character after the file showing its type (-F and -O) */
+    switch (poptions->flags) {
+    case FLAGS_NORMAL:
+        if (isdir(file))
+            bufappend(buf, "/", 1, 1);
+        else if (islink(file))
+            bufappend(buf, "@", 1, 1);
+        else if (isexec(file))
+            bufappend(buf, "*", 1, 1);
+        else
+            bufappend(buf, " ", 1, 1);
+        break;
+    case FLAGS_OLD:
+        if (isdir(file))
+            bufappend(buf, "]", 1, 1);
+        else if (isexec(file))
+            bufappend(buf, "*", 1, 1);
+        else
+            bufappend(buf, " ", 1, 1);
+        break;
+    }
+}
+
+Field *getnamefield(File *file, Options *poptions)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return NULL;
+    }
+    if (poptions == NULL) {
+        errorf(__func__, "options is NULL\n");
+        return NULL;
+    }
+
+    Buf *buf = newbuf();
+    if (buf == NULL) {
+        errorf(__func__, "buf is NULL\n");
+        return NULL;
+    }
+
+    getnamefieldhelper(file, poptions, buf);
+    if (poptions->linktarget) {
+        while (islink(file)) {
+            file = gettarget(file);
+            bufappend(buf, " -> ", 4, 4);
+            getnamefieldhelper(file, poptions, buf);
+        }
+    }
+
+    enum align align = ALIGN_NONE;
+    if (poptions->displaymode != DISPLAY_ONE_PER_LINE) {
+        align = ALIGN_LEFT;
+    }
+
+    Field *field = newfield(bufdata(buf), align, bufscreenpos(buf));
+    if (field == NULL) {
+        errorf(__func__, "field is NULL\n");
+        return NULL;
+    }
+    freebuf(buf);
+    return field;
+}
+
+
 /**
  * Returns a list of Fields for the given file.
  *
@@ -353,6 +479,25 @@ FieldList *getfields(File *file, Options *poptions)
     if (fieldlist == NULL) {
         errorf(__func__, "fieldlist is NULL\n");
         return NULL;
+    }
+
+    /*
+     * with -L, display information about the link target file by setting file = target
+     * the originally named file is saved as "link" for displaying the name
+     */
+    File *link = file;
+    if (poptions->linktarget) {
+        File *target = NULL;
+        while (islink(file)) {
+            target = gettarget(file);
+            if (target == NULL) {
+                errorf(__func__, "target is NULL\n");
+                walklist(fieldlist, free);
+                free(fieldlist);
+                return NULL;
+            }
+            file = target;
+        }
     }
 
     if (poptions->inode) {
@@ -402,94 +547,17 @@ FieldList *getfields(File *file, Options *poptions)
     }
 
     /*
+     * print the file name with flags and colors if requested
      * flags, color start, filename, color end, and flags are made into a single field
      * since we don't want spaces in between
+     * if -L is given and the file is a symlink, the returned fields include the name
+     * of the link's target (multiple times if there are multiple links)
+     * i.e. link -> file
+     * or even link -> link -> link -> file
      */
-
-    /*
-     * print a character *before* the file showing its type (-O)
-     *
-     * early versions of BSD printed directories like [this]
-     */
-    Buf *buf = newbuf();
-    if (buf == NULL) {
-        errorf(__func__, "buf is NULL\n");
-        walklist(fieldlist, (walker_func)freefield);
-        freelist(fieldlist);
-        return NULL;
-    }
-
-    switch (poptions->flags) {
-    case FLAGS_NORMAL:
-        break;
-    case FLAGS_OLD:
-        if (isdir(file))
-            bufappend(buf, "[", 1, 1);
-        else if (islink(file))
-            bufappend(buf, "@", 1, 1);
-        else if (isexec(file))
-            bufappend(buf, "*", 1, 1);
-        break;
-    case FLAGS_NONE:
-        break;
-    }
-
-    /* color the file (-G and -K) */
-    /* these escape sequences shouldn't move the cursor,
-     * hence the 4th arg to bufappend is 0 */
-    /* TODO change this to something like setcolor(COLOR_BLUE) */
-    int colorused = 0;
-    if (poptions->color) {
-        if (isdir(file)) {
-            bufappend(buf, poptions->pcolors->blue, strlen(poptions->pcolors->blue), 0);
-            colorused = 1;
-        } else if (islink(file)) {
-            bufappend(buf, poptions->pcolors->cyan, strlen(poptions->pcolors->cyan), 0);
-            colorused = 1;
-        } else if (isexec(file)) {
-            bufappend(buf, poptions->pcolors->green, strlen(poptions->pcolors->green), 0);
-            colorused = 1;
-        }
-    }
-
-    /* print the file name */
-    int width = printname(file, poptions, snprintfbuf, sizeof(snprintfbuf));
-    bufappend(buf, snprintfbuf, width, width);
-
-    /* reset the color back to normal (-G and -K) */
-    if (colorused) {
-        bufappend(buf, poptions->pcolors->none, strlen(poptions->pcolors->none), 0);
-    }
-
-    /* print a character after the file showing its type (-F and -O) */
-    switch (poptions->flags) {
-    case FLAGS_NORMAL:
-        if (isdir(file))
-            bufappend(buf, "/", 1, 1);
-        else if (islink(file))
-            bufappend(buf, "@", 1, 1);
-        else if (isexec(file))
-            bufappend(buf, "*", 1, 1);
-        else
-            bufappend(buf, " ", 1, 1);
-        break;
-    case FLAGS_OLD:
-        if (isdir(file))
-            bufappend(buf, "]", 1, 1);
-        else if (isexec(file))
-            bufappend(buf, "*", 1, 1);
-        else
-            bufappend(buf, " ", 1, 1);
-        break;
-    }
-
-    enum align align = ALIGN_NONE;
-    if (poptions->displaymode != DISPLAY_ONE_PER_LINE) {
-        align = ALIGN_LEFT;
-    }
-
-    append(newfield(bufdata(buf), align, bufscreenpos(buf)), fieldlist);
-
+    Field *field = getnamefield(link, poptions);
+    append(field, fieldlist);
+    
     return (FieldList *)fieldlist;
 }
 

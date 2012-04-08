@@ -9,6 +9,7 @@
 typedef struct file {
     char *path;
     struct stat *pstat;
+    struct file *target;           /* holds target file if this file is a symlink */
 } File;
 
 typedef int (*file_compare_function)(const File **a, const File **b);
@@ -28,6 +29,7 @@ struct stat *getstat(File *file);
 unsigned long getblocks(File *file, int blocksize);
 ino_t getinode(File *file);
 char *getmymodes(File *file);
+File *gettarget(File *file);
 
 int comparebyname(const File **a, const File **b);
 int comparebymtime(const File **a, const File **b);
