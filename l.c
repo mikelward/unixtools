@@ -425,6 +425,8 @@ void getnamefieldhelper(File *file, Options *poptions, Buf *buf)
             bufappend(buf, "?", 1, 1);
         else if (isdir(file))
             bufappend(buf, "]", 1, 1);
+        else if (islink(file))
+            bufappend(buf, "@", 1, 1);
         else if (isexec(file))
             bufappend(buf, "*", 1, 1);
         else
