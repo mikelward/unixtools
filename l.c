@@ -96,7 +96,7 @@ int  listfile(File *file, Options *poptions);
 void listfilewithnewline(File *file, Options *poptions);
 void listfiles(List *files, Options *poptions);
 void listdir(File *dir, Options *poptions);
-int  printname(File *file, Options *poptions, char *buf, size_t bufsize);
+int  printname(const char *name, Options *poptions, char *buf, size_t bufsize);
 int  printsize(File *file, Options *poptions);
 int  setupcolors(Colors *pcolors);
 void sortfiles(List *files, Options *poptions);
@@ -347,7 +347,7 @@ int main(int argc, char **argv)
     freelist(dirs, (free_func)freefile);
 }
 
-void getnamefieldhelper(File *file, Options *poptions, Buf *buf)
+void getnamefieldhelper(File *file, Options *poptions, Buf *buf, int showpath)
 {
     char snprintfbuf[1024];
 
@@ -398,8 +398,15 @@ void getnamefieldhelper(File *file, Options *poptions, Buf *buf)
         }
     }
 
-    int width = printname(file, poptions, snprintfbuf, sizeof(snprintfbuf));
+    char *name;
+    if (showpath) {
+        name = getpath(file);
+    } else {
+        name = getname(file);
+    }
+    int width = printname(name, poptions, snprintfbuf, sizeof(snprintfbuf));
     bufappend(buf, snprintfbuf, width, width);
+    free(name);
 
     /* reset the color back to normal (-G and -K) */
     if (colorused) {
@@ -452,12 +459,12 @@ Field *getnamefield(File *file, Options *poptions)
         return NULL;
     }
 
-    getnamefieldhelper(file, poptions, buf);
+    getnamefieldhelper(file, poptions, buf, 0);
     if (poptions->linktarget) {
         while (isstat(file) && islink(file)) {
             file = gettarget(file);
             bufappend(buf, " -> ", 4, 4);
-            getnamefieldhelper(file, poptions, buf);
+            getnamefieldhelper(file, poptions, buf, 1);
         }
     }
 
@@ -843,14 +850,12 @@ void listdir(File *dir, Options *poptions)
     freelist(files, (free_func)freefile);
 }
 
-int printname(File *file, Options *poptions,
-              char *buf, size_t bufsize)
+int printname(const char *name, Options *poptions, char *buf, size_t bufsize)
 {
     if (buf == NULL) {
         errorf(__func__, "buf is NULL\n");
         return 0;
     }
-    char *name = getname(file);
     if (name == NULL) {
         errorf(__func__, "file is NULL\n");
         *buf = '\0';
@@ -858,7 +863,6 @@ int printname(File *file, Options *poptions,
     }
 
     int width = snprintf(buf, bufsize, "%s", name);
-    free(name);
     return width;
 }
 

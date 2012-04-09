@@ -31,6 +31,7 @@ ino_t getinode(File *file);
 char *getmymodes(File *file);
 /* caller must free returned name if not NULL */
 char *getname(File *file);
+char *getpath(File *file);
 File *gettarget(File *file);
 
 int comparebyname(const File **a, const File **b);

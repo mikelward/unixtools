@@ -79,9 +79,20 @@ char *getname(File *file)
 
     char *pathcopy = strdup(file->path);
     char *base = basename(pathcopy);
-    char *name = strdup(base);
+    char *namecopy = strdup(base);
     free(pathcopy);
-    return name;
+    return namecopy;
+}
+
+char *getpath(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return NULL;
+    }
+
+    char *pathcopy = strdup(file->path);
+    return pathcopy;
 }
 
 /*
