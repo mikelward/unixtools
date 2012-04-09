@@ -950,7 +950,7 @@ int setupcolors(Colors *pcolors)
  */
 void usage(void)
 {
-    fprintf(stderr, "Usage: %s: %s: <file>...\n", myname, OPTSTRING);
+    fprintf(stderr, "Usage: %s [-%s] [<file>]...\n", myname, OPTSTRING);
 }
 
 /**
