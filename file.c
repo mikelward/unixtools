@@ -291,6 +291,78 @@ char *getgroup(File *file)
     return getgroupname(group);
 }
 
+char *getmodes(File *file)
+{
+    /* e.g. -rwxr-xr-x\0 */
+    char *modes = malloc(11);
+    if (modes == NULL) {
+        errorf(__func__, "out of memory");
+        return NULL;
+    }
+
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        errorf(__func__, "pstat is NULL");
+        return NULL;
+    }
+
+    char *p = modes;
+    if (islink(file)) {
+        *p++ = 'l';
+    } else if (isdir(file)) {
+        *p++ = 'd';
+    } else {
+        *p++ = '-';
+    }
+
+    if (pstat->st_mode & S_IRUSR)
+        *p++ = 'r';
+    else
+        *p++ = '-';
+
+    if (pstat->st_mode & S_IWUSR)
+        *p++ = 'w';
+    else
+        *p++ = '-';
+
+    if (pstat->st_mode & S_IXUSR)
+        *p++ = 'x';
+    else
+        *p++ = '-';
+
+    if (pstat->st_mode & S_IRGRP)
+        *p++ = 'r';
+    else
+        *p++ = '-';
+
+    if (pstat->st_mode & S_IWGRP)
+        *p++ = 'w';
+    else
+        *p++ = '-';
+
+    if (pstat->st_mode & S_IXGRP)
+        *p++ = 'x';
+    else
+        *p++ = '-';
+
+    if (pstat->st_mode & S_IROTH)
+        *p++ = 'r';
+    else
+        *p++ = '-';
+
+    if (pstat->st_mode & S_IWOTH)
+        *p++ = 'w';
+    else
+        *p++ = '-';
+
+    if (pstat->st_mode & S_IXOTH)
+        *p++ = 'x';
+    else
+        *p++ = '-';
+
+    *p++ = '\0';
+    return modes;
+}
 
 ino_t getinode(File *file)
 {

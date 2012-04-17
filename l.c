@@ -72,6 +72,7 @@ typedef struct options {
     int linktarget : 1;             /* 1 = print symlink targets */
     unsigned flags : 2;             /*     print file "flags" */
     int group : 1;                  /* display the groupname of the file's group */
+    int modes : 1;                  /* displays file modes, e.g. -rwxr-xr-x */
     int owner : 1;                  /* display the username of the file's owner */
     int perms : 1;                  /* display rwx modes for current user */
     int size : 1;                   /* 1 = print file size in blocks */
@@ -105,7 +106,7 @@ void sortfiles(List *files, Options *poptions);
 void usage(void);
 int  want(File *file, Options *poptions);
 
-#define OPTSTRING "1aCDdFfGgiKkLOopstrUx"
+#define OPTSTRING "1aCDdFfGgiKkLMOopstrUx"
 
 int main(int argc, char **argv)
 {
@@ -123,6 +124,7 @@ int main(int argc, char **argv)
     options.flags = FLAGS_NONE;
     options.inode = 0;
     options.linktarget = 0;
+    options.modes = 0;
     options.owner = 0;
     options.perms = 0;
     options.size = 0;
@@ -211,6 +213,9 @@ int main(int argc, char **argv)
             break;
         case 'l':
             /* reserved for long output mode */
+            break;
+        case 'M':
+            options.modes = 1;
             break;
         case 'm':
             /* reserved for modes field (or maybe blocksize=1048576 or stream mode) */
@@ -519,6 +524,24 @@ FieldList *getfields(File *file, Options *poptions)
             }
             file = target;
         }
+    }
+
+    if (poptions->modes) {
+        int width;
+        if (isstat(file)) {
+            char *modes = getmodes(file);
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", modes);
+        } else {
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "?");
+        }
+        Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
+        if (field == NULL) {
+            errorf(__func__, "field is NULL\n");
+            walklist(fieldlist, free);
+            free(fieldlist);
+            return NULL;
+        }
+        append(field, fieldlist);
     }
 
     if (poptions->inode) {
