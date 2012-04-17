@@ -37,6 +37,7 @@ char *getname(File *file);
 char *getowner(File *file);
 char *getpath(File *file);
 char *getperms(File *file);
+long getsize(File *file);
 File *gettarget(File *file);
 
 int comparebyname(const File **a, const File **b);

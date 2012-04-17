@@ -436,7 +436,19 @@ char *getowner(File *file)
         // TODO snprintf("%u", stat->st_uid);
     }
 
+    // TODO free user
     return getusername(user);
+}
+
+long getsize(File *file)
+{
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        errorf(__func__, "pstat is NULL");
+        return -1;
+    }
+
+    return (long)pstat->st_size;
 }
 
 File *gettarget(File *file)

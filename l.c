@@ -66,6 +66,7 @@ typedef struct colors {
 /* all the command line options */
 typedef struct options {
     int all : 1;                    /* 1 = also print hidden files */
+    int bytes : 1;                  /* 1 = print file size in bytes */
     int directory : 1;              /* 1 = print directory name rather than contents */
     int dirsonly : 1;               /* 1 = don't print regular files */
     int inode : 1;                  /* 1 = print the inode number */
@@ -106,7 +107,7 @@ void sortfiles(List *files, Options *poptions);
 void usage(void);
 int  want(File *file, Options *poptions);
 
-#define OPTSTRING "1aCDdFfGgiKkLMOopstrUx"
+#define OPTSTRING "1aBCDdFfGgiKkLMOopstrUx"
 
 int main(int argc, char **argv)
 {
@@ -117,6 +118,7 @@ int main(int argc, char **argv)
     Options options;
     options.all = 0;
     options.blocksize = 1024;
+    options.bytes = 0;
     options.directory = 0;
     options.dirsonly = 0;
     options.displaymode = DISPLAY_ONE_PER_LINE;
@@ -169,6 +171,9 @@ int main(int argc, char **argv)
             break;
         case 'a':
             options.all = 1;
+            break;
+        case 'B':
+            options.bytes = 1;
             break;
         case 'b':
             /* reserved for escaped control characters mode */
@@ -526,15 +531,15 @@ FieldList *getfields(File *file, Options *poptions)
         }
     }
 
-    if (poptions->modes) {
+    if (poptions->size) {
         int width;
         if (isstat(file)) {
-            char *modes = getmodes(file);
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", modes);
+            unsigned long blocks = getblocks(file, poptions->blocksize);
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", blocks);
         } else {
             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "?");
         }
-        Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
+        Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
         if (field == NULL) {
             errorf(__func__, "field is NULL\n");
             walklist(fieldlist, free);
@@ -553,6 +558,25 @@ FieldList *getfields(File *file, Options *poptions)
             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "?");
         }
         Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
+        if (field == NULL) {
+            errorf(__func__, "field is NULL\n");
+            walklist(fieldlist, free);
+            free(fieldlist);
+            return NULL;
+        }
+        append(field, fieldlist);
+    }
+
+    if (poptions->modes) {
+        int width;
+        if (isstat(file)) {
+            char *modes = getmodes(file);
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", modes);
+            free(modes);
+        } else {
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "?");
+        }
+        Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
         if (field == NULL) {
             errorf(__func__, "field is NULL\n");
             walklist(fieldlist, free);
@@ -588,24 +612,6 @@ FieldList *getfields(File *file, Options *poptions)
         append(field, fieldlist);
     }
 
-    if (poptions->size) {
-        int width;
-        if (isstat(file)) {
-            unsigned long blocks = getblocks(file, poptions->blocksize);
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", blocks);
-        } else {
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "?");
-        }
-        Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
-        if (field == NULL) {
-            errorf(__func__, "field is NULL\n");
-            walklist(fieldlist, free);
-            free(fieldlist);
-            return NULL;
-        }
-        append(field, fieldlist);
-    }
-
     if (poptions->perms) {
         char *perms = getperms(file);
         if (perms == NULL) {
@@ -624,6 +630,19 @@ FieldList *getfields(File *file, Options *poptions)
         }
         append(field, fieldlist);
         free(perms);
+    }
+
+    if (poptions->bytes) {
+        long bytes = getsize(file);
+        int width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%ld", bytes);
+        Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
+        if (field == NULL) {
+            errorf(__func__, "field is NULL\n");
+            walklist(fieldlist, free);
+            free(fieldlist);
+            return NULL;
+        }
+        append(field, fieldlist);
     }
 
     /*
