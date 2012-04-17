@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "user.h"
+
 typedef struct file {
     char *path;
     int didstat;
@@ -29,6 +31,7 @@ char *makepath(const char *dirname, const char *filename);
 unsigned long getblocks(File *file, int blocksize);
 ino_t getinode(File *file);
 char *getmymodes(File *file);
+char *getowner(File *file);
 /* caller must free returned name if not NULL */
 char *getname(File *file);
 char *getpath(File *file);
