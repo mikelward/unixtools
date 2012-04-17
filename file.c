@@ -325,6 +325,26 @@ char *getmymodes(File *file)
     return pbuf;
 }
 
+char *getowner(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return NULL;
+    }
+    struct stat *stat = getstat(file);
+    if (stat == NULL) {
+        errorf(__func__, "stat is NULL\n");
+        return NULL;
+    }
+
+    User *user = newuser(stat->st_uid);
+    if (user == NULL) {
+        // TODO snprintf("%u", stat->st_uid);
+    }
+
+    return getusername(user);
+}
+
 File *gettarget(File *file)
 {
     if (file == NULL) {

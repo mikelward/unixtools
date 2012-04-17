@@ -72,6 +72,7 @@ typedef struct options {
     int linktarget : 1;             /* 1 = print symlink targets */
     unsigned flags : 2;             /*     print file "flags" */
     int mymodes : 1;                /* display rwx modes for current user */
+    int owner : 1;                  /* display the username of the file's owner */
     int size : 1;                   /* 1 = print file size in blocks */
     int reverse : 1;                /* 0 = forwards, 1 = reverse1 */
     int color : 1;                  /* 1 = colorize file and directory names */
@@ -103,7 +104,7 @@ void sortfiles(List *files, Options *poptions);
 void usage(void);
 int  want(File *file, Options *poptions);
 
-#define OPTSTRING "1aCDdFfGiKkLMOstrUx"
+#define OPTSTRING "1aCDdFfGiKkLMOostrUx"
 
 int main(int argc, char **argv)
 {
@@ -122,6 +123,7 @@ int main(int argc, char **argv)
     options.inode = 0;
     options.linktarget = 0;
     options.mymodes = 0;
+    options.owner = 0;
     options.size = 0;
     options.reverse = 0;
     options.screenwidth = 0;
@@ -225,7 +227,7 @@ int main(int argc, char **argv)
             options.flags = FLAGS_OLD;
             break;
         case 'o':
-            /* reserved for owner (user) field */
+            options.owner = 1;
             break;
         case 'P':
             /* reserved for physical mode (don't follow symlinks) */
@@ -519,6 +521,19 @@ FieldList *getfields(File *file, Options *poptions)
             }
             file = target;
         }
+    }
+
+    if (poptions->owner) {
+        char *owner = getowner(file);
+        int width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", owner);
+        Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
+        if (field == NULL) {
+            errorf(__func__, "field is NULL");
+            walklist(fieldlist, free);
+            free(fieldlist);
+            return NULL;
+        }
+        append(field, fieldlist);
     }
 
     if (poptions->inode) {
