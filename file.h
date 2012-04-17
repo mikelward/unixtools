@@ -31,11 +31,11 @@ char *makepath(const char *dirname, const char *filename);
 unsigned long getblocks(File *file, int blocksize);
 char *getgroup(File *file);
 ino_t getinode(File *file);
-char *getmymodes(File *file);
 /* caller must free returned name if not NULL */
 char *getname(File *file);
 char *getowner(File *file);
 char *getpath(File *file);
+char *getperms(File *file);
 File *gettarget(File *file);
 
 int comparebyname(const File **a, const File **b);

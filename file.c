@@ -306,7 +306,7 @@ ino_t getinode(File *file)
     return pstat->st_ino;
 }
 
-char *getmymodes(File *file)
+char *getperms(File *file)
 {
     if (file == NULL) {
         errorf(__func__, "file is NULL\n");

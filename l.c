@@ -72,8 +72,8 @@ typedef struct options {
     int linktarget : 1;             /* 1 = print symlink targets */
     unsigned flags : 2;             /*     print file "flags" */
     int group : 1;                  /* display the groupname of the file's group */
-    int mymodes : 1;                /* display rwx modes for current user */
     int owner : 1;                  /* display the username of the file's owner */
+    int perms : 1;                  /* display rwx modes for current user */
     int size : 1;                   /* 1 = print file size in blocks */
     int reverse : 1;                /* 0 = forwards, 1 = reverse1 */
     int color : 1;                  /* 1 = colorize file and directory names */
@@ -105,7 +105,7 @@ void sortfiles(List *files, Options *poptions);
 void usage(void);
 int  want(File *file, Options *poptions);
 
-#define OPTSTRING "1aCDdFfGgiKkLMOostrUx"
+#define OPTSTRING "1aCDdFfGgiKkLOopstrUx"
 
 int main(int argc, char **argv)
 {
@@ -123,8 +123,8 @@ int main(int argc, char **argv)
     options.flags = FLAGS_NONE;
     options.inode = 0;
     options.linktarget = 0;
-    options.mymodes = 0;
     options.owner = 0;
+    options.perms = 0;
     options.size = 0;
     options.reverse = 0;
     options.screenwidth = 0;
@@ -212,9 +212,6 @@ int main(int argc, char **argv)
         case 'l':
             /* reserved for long output mode */
             break;
-        case 'M':
-            options.mymodes = 1;
-            break;
         case 'm':
             /* reserved for modes field (or maybe blocksize=1048576 or stream mode) */
             break;
@@ -234,7 +231,7 @@ int main(int argc, char **argv)
             /* reserved for physical mode (don't follow symlinks) */
             break;
         case 'p':
-            /* reserved for permissions (modes) field */
+            options.perms = 1;
             break;
         case 'r':
             options.reverse = 1;
@@ -586,16 +583,16 @@ FieldList *getfields(File *file, Options *poptions)
         append(field, fieldlist);
     }
 
-    if (poptions->mymodes) {
-        char *mymodes = getmymodes(file);
-        if (mymodes == NULL) {
-            errorf(__func__, "mymodes is NULL\n");
+    if (poptions->perms) {
+        char *perms = getperms(file);
+        if (perms == NULL) {
+            errorf(__func__, "perms is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
         }
-        int width = strlen(mymodes);
-        Field *field = newfield(mymodes, ALIGN_RIGHT, width);
+        int width = strlen(perms);
+        Field *field = newfield(perms, ALIGN_RIGHT, width);
         if (field == NULL) {
             errorf(__func__, "field is NULL\n");
             walklist(fieldlist, free);
@@ -603,7 +600,7 @@ FieldList *getfields(File *file, Options *poptions)
             return NULL;
         }
         append(field, fieldlist);
-        free(mymodes);
+        free(perms);
     }
 
     /*
