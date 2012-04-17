@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "file.h"
+#include "group.h"
 #include "logging.h"
 
 File *newfile(const char *path)
@@ -269,6 +270,27 @@ unsigned long getblocks(File *file, int blocksize)
         return blocks * factor;
     }
 }
+
+char *getgroup(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return NULL;
+    }
+    struct stat *stat = getstat(file);
+    if (stat == NULL) {
+        errorf(__func__, "stat is NULL\n");
+        return NULL;
+    }
+
+    Group *group = newgroup(stat->st_gid);
+    if (group == NULL) {
+        // TODO snprintf("%u", stat->st_gid);
+    }
+
+    return getgroupname(group);
+}
+
 
 ino_t getinode(File *file)
 {

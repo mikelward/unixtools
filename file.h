@@ -29,11 +29,12 @@ int islink(File *file);
 /* caller must free returned path if not NULL */
 char *makepath(const char *dirname, const char *filename);
 unsigned long getblocks(File *file, int blocksize);
+char *getgroup(File *file);
 ino_t getinode(File *file);
 char *getmymodes(File *file);
-char *getowner(File *file);
 /* caller must free returned name if not NULL */
 char *getname(File *file);
+char *getowner(File *file);
 char *getpath(File *file);
 File *gettarget(File *file);
 

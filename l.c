@@ -71,6 +71,7 @@ typedef struct options {
     int inode : 1;                  /* 1 = print the inode number */
     int linktarget : 1;             /* 1 = print symlink targets */
     unsigned flags : 2;             /*     print file "flags" */
+    int group : 1;                  /* display the groupname of the file's group */
     int mymodes : 1;                /* display rwx modes for current user */
     int owner : 1;                  /* display the username of the file's owner */
     int size : 1;                   /* 1 = print file size in blocks */
@@ -104,7 +105,7 @@ void sortfiles(List *files, Options *poptions);
 void usage(void);
 int  want(File *file, Options *poptions);
 
-#define OPTSTRING "1aCDdFfGiKkLMOostrUx"
+#define OPTSTRING "1aCDdFfGgiKkLMOostrUx"
 
 int main(int argc, char **argv)
 {
@@ -193,7 +194,7 @@ int main(int argc, char **argv)
             options.color = 1;
             break;
         case 'g':
-            /* reserved for group field */
+            options.group = 1;
             break;
         case 'K':
             /* K = "kolor", somewhat mnemonic and unused in GNU ls */
@@ -523,6 +524,24 @@ FieldList *getfields(File *file, Options *poptions)
         }
     }
 
+    if (poptions->inode) {
+        int width;
+        if (isstat(file)) {
+            ino_t inode = getinode(file);
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", inode);
+        } else {
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "?");
+        }
+        Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
+        if (field == NULL) {
+            errorf(__func__, "field is NULL\n");
+            walklist(fieldlist, free);
+            free(fieldlist);
+            return NULL;
+        }
+        append(field, fieldlist);
+    }
+
     if (poptions->owner) {
         char *owner = getowner(file);
         int width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", owner);
@@ -536,17 +555,12 @@ FieldList *getfields(File *file, Options *poptions)
         append(field, fieldlist);
     }
 
-    if (poptions->inode) {
-        int width;
-        if (isstat(file)) {
-            ino_t inode = getinode(file);
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", inode);
-        } else {
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "?");
-        }
-        Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
+    if (poptions->group) {
+        char *group = getgroup(file);
+        int width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", group);
+        Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
         if (field == NULL) {
-            errorf(__func__, "field is NULL\n");
+            errorf(__func__, "field is NULL");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
