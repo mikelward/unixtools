@@ -1,10 +1,8 @@
 /*
- * simple reimplementation of ls
+ * cleaner reimplementation of ls
  *
  * TODO
  * - handling of symlink arguments (and -H and -L flags?)
- * - -l flag
- * - -q flag (on by default?) and -b flag
  * - -c flag
  * - -S flag
  * - fix handling of dangling symlinks / unstat'able files
@@ -31,6 +29,7 @@
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <assert.h>
+#include <ctype.h>
 #include <curses.h>
 #include <dirent.h>
 #include <errno.h>
@@ -65,6 +64,10 @@ typedef struct colors {
 } Colors;
 
 /* all the command line options */
+enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS, DISPLAY_IN_ROWS };
+enum escape { ESCAPE_NONE, ESCAPE_QUESTION, ESCAPE_C };
+enum flags { FLAGS_NONE, FLAGS_NORMAL, FLAGS_OLD };
+
 typedef struct options {
     int all : 1;                    /* 1 = also print hidden files */
     int bytes : 1;                  /* 1 = print file size in bytes */
@@ -76,7 +79,8 @@ typedef struct options {
     int showlink : 1;               /* 1 = show link -> target in name field (max. 1 link) */
     int showlinks : 1;              /* 1 = show link -> target in name field (resolve all links) */
     int targetinfo : 1;             /* 1 = field info is based on symlink target */
-    unsigned flags : 2;             /*     print file "flags" */
+    enum escape escape;             /*     how to handle non-printable characters */
+    enum flags flags;               /*     print file "flags" */
     int group : 1;                  /* display the groupname of the file's group */
     int modes : 1;                  /* displays file modes, e.g. -rwxr-xr-x */
     int owner : 1;                  /* display the username of the file's owner */
@@ -98,23 +102,20 @@ typedef List FieldList;             /* list of fields for a single file */
 typedef List FileFieldList;         /* list of fields for each file */
 typedef List StringList;            /* list of C strings */
 
-enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS, DISPLAY_IN_ROWS };
-enum flags { FLAGS_NONE, FLAGS_NORMAL, FLAGS_OLD };
-
 const int columnmargin = 1;
 
 int  listfile(File *file, Options *poptions);
 void listfilewithnewline(File *file, Options *poptions);
 void listfiles(List *files, Options *poptions);
 void listdir(File *dir, Options *poptions);
-int  printname(const char *name, Options *poptions, char *buf, size_t bufsize);
+size_t printname(const char *name, Options *poptions, char *buf, size_t bufsize);
 int  printsize(File *file, Options *poptions);
 int  setupcolors(Colors *pcolors);
 void sortfiles(List *files, Options *poptions);
 void usage(void);
 int  want(File *file, Options *poptions);
 
-#define OPTSTRING "1aBCDdFfGgiKkLlMNOopsTtrUx"
+#define OPTSTRING "1aBbCDdEeFfGgiKkLlMNOopqsTtrUx"
 
 int main(int argc, char **argv)
 {
@@ -131,6 +132,7 @@ int main(int argc, char **argv)
     options.dirsonly = 0;
     options.dirtotals = 0;
     options.displaymode = DISPLAY_ONE_PER_LINE;
+    options.escape = ESCAPE_NONE;
     options.color = 0;
     options.flags = FLAGS_NONE;
     options.inode = 0;
@@ -141,6 +143,7 @@ int main(int argc, char **argv)
     options.modes = 0;
     options.now = -1;
     options.owner = 0;
+    options.group = 0;
     options.perms = 0;
     options.size = 0;
     options.reverse = 0;
@@ -157,8 +160,7 @@ int main(int argc, char **argv)
         }
     }
 
-    /* if output is a terminal, get the terminal's width
-     * and turn on the -C flag */
+    /* if output is a terminal, turn on -C and -q */
     if (isatty(STDOUT_FILENO)) {
         struct winsize ws;
         if ((ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws)) == 0) {
@@ -168,6 +170,7 @@ int main(int argc, char **argv)
                 options.displaymode = DISPLAY_IN_COLUMNS;
             }
         }
+        options.escape = ESCAPE_QUESTION;
     }
     /* default width is 80 so we can do columns or rows
      * if the user explicitly specified the -C or -x option
@@ -189,7 +192,7 @@ int main(int argc, char **argv)
             options.bytes = 1;
             break;
         case 'b':
-            /* reserved for escaped control characters mode */
+            options.escape = ESCAPE_C;
             break;
         case 'C':
             options.displaymode = DISPLAY_IN_COLUMNS;
@@ -202,6 +205,12 @@ int main(int argc, char **argv)
             break;
         case 'd':
             options.directory = 1;
+            break;
+        case 'E':
+            options.escape = ESCAPE_NONE;
+            break;
+        case 'e':
+            options.escape = ESCAPE_C;
             break;
         case 'F':
             options.flags = FLAGS_NORMAL;
@@ -264,6 +273,9 @@ int main(int argc, char **argv)
             break;
         case 'p':
             options.perms = 1;
+            break;
+        case 'q':
+            options.escape = ESCAPE_QUESTION;
             break;
         case 'r':
             options.reverse = 1;
@@ -478,6 +490,8 @@ void getnamefieldhelper(File *file, Options *poptions, Buf *buf, int showpath)
             bufappend(buf, "*", 1, 1);
         else
             bufappend(buf, " ", 1, 1);
+        break;
+    case FLAGS_NONE:
         break;
     }
 }
@@ -1041,7 +1055,7 @@ void listdir(File *dir, Options *poptions)
     freelist(files, (free_func)freefile);
 }
 
-int printname(const char *name, Options *poptions, char *buf, size_t bufsize)
+size_t printname(const char *name, Options *poptions, char *buf, size_t bufsize)
 {
     if (buf == NULL) {
         errorf(__func__, "buf is NULL\n");
@@ -1052,9 +1066,39 @@ int printname(const char *name, Options *poptions, char *buf, size_t bufsize)
         *buf = '\0';
         return 0;
     }
+    if (bufsize <= 0) {
+        errorf(__func__, "buf is 0 bytes\n");
+        return 0;
+    }
 
-    int width = snprintf(buf, bufsize, "%s", name);
-    return width;
+    size_t pos = 0;
+    const char *p = name;
+    while (*p != '\0') {
+        if (pos == bufsize - 1) {
+            errorf(__func__, "name is too long for %d byte buf\n", bufsize);
+            buf[pos] = '\0';
+            return pos;
+        }
+        if (!isprint(*p)) {
+            switch (poptions->escape) {
+            case ESCAPE_QUESTION:
+                buf[pos++] = '?';
+                p++;
+                break;
+            default:
+                errorf(__func__, "Unknown escape mode\n");
+                /* fall through */
+            case ESCAPE_NONE:
+                buf[pos++] = *p++;
+                break;
+            }
+        } else {
+            buf[pos++] = *p++;
+        }
+    }
+    buf[pos] = '\0';
+
+    return pos;
 }
 
 /*
