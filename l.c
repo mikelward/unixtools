@@ -108,7 +108,7 @@ int  listfile(File *file, Options *poptions);
 void listfilewithnewline(File *file, Options *poptions);
 void listfiles(List *files, Options *poptions);
 void listdir(File *dir, Options *poptions);
-size_t printname(const char *name, Options *poptions, char *buf, size_t bufsize);
+void printnametobuf(const char *name, Options *poptions, Buf *buf);
 int  printsize(File *file, Options *poptions);
 int  setupcolors(Colors *pcolors);
 void sortfiles(List *files, Options *poptions);
@@ -401,8 +401,6 @@ int main(int argc, char **argv)
 
 void getnamefieldhelper(File *file, Options *poptions, Buf *buf, int showpath)
 {
-    char snprintfbuf[1024];
-
     assert(file != NULL);
     assert(poptions != NULL);
     assert(buf != NULL);
@@ -456,9 +454,7 @@ void getnamefieldhelper(File *file, Options *poptions, Buf *buf, int showpath)
     } else {
         name = getname(file);
     }
-    int width = printname(name, poptions, snprintfbuf, sizeof(snprintfbuf));
-    bufappend(buf, snprintfbuf, width, width);
-    free(name);
+    printnametobuf(name, poptions, buf);
 
     /* reset the color back to normal (-G and -K) */
     if (colorused) {
@@ -498,8 +494,6 @@ void getnamefieldhelper(File *file, Options *poptions, Buf *buf, int showpath)
 
 void getnameonlyhelper(File *file, Options *poptions, Buf *buf, int showpath)
 {
-    char snprintfbuf[1024];
-
     assert(file != NULL);
     assert(poptions != NULL);
     assert(buf != NULL);
@@ -510,8 +504,7 @@ void getnameonlyhelper(File *file, Options *poptions, Buf *buf, int showpath)
     } else {
         name = getname(file);
     }
-    int width = printname(name, poptions, snprintfbuf, sizeof(snprintfbuf));
-    bufappend(buf, snprintfbuf, width, width);
+    printnametobuf(name, poptions, buf);
     free(name);
 }
 
@@ -556,7 +549,7 @@ Field *getnamefield(File *file, Options *poptions)
         align = ALIGN_LEFT;
     }
 
-    Field *field = newfield(bufdata(buf), align, bufscreenpos(buf));
+    Field *field = newfield(bufstring(buf), align, bufscreenpos(buf));
     if (field == NULL) {
         errorf(__func__, "field is NULL\n");
         return NULL;
@@ -863,7 +856,7 @@ StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
                 }
             }
         }
-        append(bufdata(buf), filestrings);
+        append(bufstring(buf), filestrings);
         free(buf);      /* not freebuf because we want to keep the buf->data */
     }
 
@@ -1055,50 +1048,88 @@ void listdir(File *dir, Options *poptions)
     freelist(files, (free_func)freefile);
 }
 
-size_t printname(const char *name, Options *poptions, char *buf, size_t bufsize)
+/* XXX does C really not provide this? */
+char *cescape(char c)
+{
+    switch (c) {
+    case '\001': return "\\001";
+    case '\002': return "\\002";
+    case '\003': return "\\003";
+    case '\004': return "\\004";
+    case '\005': return "\\005";
+    case '\006': return "\\006";
+    case '\007': return "\\a";
+    case '\010': return "\\b";
+    case '\011': return "\\t";
+    case '\012': return "\\n";
+    case '\013': return "\\v";
+    case '\014': return "\\f";
+    case '\015': return "\\r";
+    case '\016': return "\\016";
+    case '\017': return "\\017";
+    case '\020': return "\\020";
+    case '\021': return "\\021";
+    case '\022': return "\\022";
+    case '\023': return "\\023";
+    case '\024': return "\\024";
+    case '\025': return "\\025";
+    case '\026': return "\\026";
+    case '\027': return "\\027";
+    case '\030': return "\\030";
+    case '\031': return "\\031";
+    case '\032': return "\\032";
+    case '\033': return "\\033";
+    case '\034': return "\\034";
+    case '\035': return "\\035";
+    case '\036': return "\\036";
+    case '\037': return "\\037";
+    default: return NULL;
+    }
+}
+
+void printnametobuf(const char *name, Options *poptions, Buf *buf)
 {
     if (buf == NULL) {
         errorf(__func__, "buf is NULL\n");
-        return 0;
+        return;
     }
     if (name == NULL) {
         errorf(__func__, "file is NULL\n");
-        *buf = '\0';
-        return 0;
-    }
-    if (bufsize <= 0) {
-        errorf(__func__, "buf is 0 bytes\n");
-        return 0;
+        return;
     }
 
-    size_t pos = 0;
     const char *p = name;
-    while (*p != '\0') {
-        if (pos == bufsize - 1) {
-            errorf(__func__, "name is too long for %d byte buf\n", bufsize);
-            buf[pos] = '\0';
-            return pos;
-        }
+    for (p = name; *p != '\0'; p++) {
         if (!isprint(*p)) {
             switch (poptions->escape) {
+            case ESCAPE_C:
+                {
+                    char *escaped = cescape(*p);
+                    if (escaped == NULL) {
+                        errorf(__func__, "No C escape for %c\n", *p);
+                        bufappendchar(buf, *p);
+                    } else {
+                        bufappend(buf, escaped, strlen(escaped), 1);
+                    }
+                    break;
+                }
             case ESCAPE_QUESTION:
-                buf[pos++] = '?';
-                p++;
+                bufappendchar(buf, '?');
                 break;
             default:
                 errorf(__func__, "Unknown escape mode\n");
                 /* fall through */
             case ESCAPE_NONE:
-                buf[pos++] = *p++;
+                bufappendchar(buf, *p);
                 break;
             }
+        } else if (*p == '\\' && poptions->escape == ESCAPE_C) {
+            bufappendchar(buf, '\\');
+            bufappendchar(buf, '\\');
         } else {
-            buf[pos++] = *p++;
+            bufappendchar(buf, *p);
         }
     }
-    buf[pos] = '\0';
-
-    return pos;
 }
 
 /*

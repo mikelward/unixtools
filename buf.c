@@ -37,7 +37,7 @@ void freebuf(Buf *buf)
     }
 }
 
-void bufappend(Buf *buf, char *string, int width, int screenwidth)
+void bufappend(Buf *buf, char *string, int width, bool printable)
 {
     if (buf == NULL) {
         errorf(__func__, "buf is NULL\n");
@@ -45,7 +45,8 @@ void bufappend(Buf *buf, char *string, int width, int screenwidth)
     }
     /* buf->data should never be null since newbuf checks for that */
     assert(buf->data != NULL);
-    if (width + buf->pos > buf->size) {
+    if (buf->pos + width >= buf->size) {
+        /* XXX should this put as much as will fit in the buffer anyway? */
         errorf(__func__, "string too long\n");
         return;
     }
@@ -53,15 +54,35 @@ void bufappend(Buf *buf, char *string, int width, int screenwidth)
     strncpy(buf->data+buf->pos, string, width);
     buf->data[buf->pos+width] = '\0';
     buf->pos += width;
-    buf->screenpos += screenwidth;
+    if (printable) {
+        buf->screenpos += width;
+    }
 }
 
-char *bufdata(Buf *buf)
+/* c is assumed to be printable */
+void bufappendchar(Buf *buf, char c)
+{
+    if (buf == NULL) {
+        errorf(__func__, "buf is NULL\n");
+        return;
+    }
+    if (buf->pos >= buf->size - 1) {
+        errorf(__func__, "buf is full\n");
+        return;
+    }
+
+    buf->data[buf->pos] = c;
+    buf->pos++; buf->screenpos++;
+}
+
+/* return the contents of buf as a NUL terminated string */
+char *bufstring(Buf *buf)
 {
     if (buf == NULL) {
         errorf(__func__, "buf is NULL\n");
         return NULL;
     }
+    buf->data[buf->pos] = '\0';
     return buf->data;
 }
 

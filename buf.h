@@ -1,6 +1,8 @@
 #ifndef BUF_H
 #define BUF_H
 
+#include <stdbool.h>
+
 typedef struct buf {
 	char *data;
 	int size;
@@ -10,8 +12,9 @@ typedef struct buf {
 
 Buf *newbuf(void);
 void freebuf(Buf *buf);	
-void bufappend(Buf *buf, char *string, int width, int screenwidth);
-char *bufdata(Buf *buf);
+void bufappend(Buf *buf, char *string, int width, bool printable);
+void bufappendchar(Buf *buf, char c);
+char *bufstring(Buf *buf);
 int bufpos(Buf *buf);
 int bufscreenpos(Buf *buf);
 
