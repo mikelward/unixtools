@@ -82,6 +82,7 @@ typedef struct options {
     int reverse : 1;                /* 0 = forwards, 1 = reverse1 */
     int color : 1;                  /* 1 = colorize file and directory names */
     int blocksize;                  /* units for -s option */
+    time_t now;                     /* current time - for determining date/time format */
     short displaymode;              /* one-per-line, columns, rows, etc. */ 
     short screenwidth;              /* how wide the screen is, 0 if unknown */
     Colors *pcolors;                /* the colors to use */
@@ -121,6 +122,7 @@ int main(int argc, char **argv)
     options.all = 0;
     options.blocksize = 1024;
     options.bytes = 0;
+    options.datetime = 0;
     options.directory = 0;
     options.dirsonly = 0;
     options.displaymode = DISPLAY_ONE_PER_LINE;
@@ -129,6 +131,7 @@ int main(int argc, char **argv)
     options.inode = 0;
     options.linktarget = 0;
     options.modes = 0;
+    options.now = -1;
     options.owner = 0;
     options.perms = 0;
     options.size = 0;
@@ -290,6 +293,13 @@ int main(int argc, char **argv)
     if (options.color) {
         options.color = setupcolors(&colors);
         options.pcolors = &colors;
+    }
+
+    if (options.datetime) {
+        options.now = time(NULL);
+        if (options.now == -1) {
+            error("Cannot determine current time\n");
+        }
     }
 
     /* skip program name and flags */ 
@@ -673,7 +683,13 @@ FieldList *getfields(File *file, Options *poptions)
                 free(fieldlist);
                 return NULL;
             }
-            width = strftime(snprintfbuf, sizeof(snprintfbuf), "%b %e %H:%M", lmtime);
+            /* month day hour and minute if file was modified in the last 6 months,
+               month day year otherwise */
+            if (poptions->now != -1 && mtime <= poptions->now && mtime > poptions->now - 180*86400) {
+                width = strftime(snprintfbuf, sizeof(snprintfbuf), "%b %e %H:%M", lmtime);
+            } else {
+                width = strftime(snprintfbuf, sizeof(snprintfbuf), "%b %e  %Y", lmtime);
+            }
         } else {
             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "?");
         }
