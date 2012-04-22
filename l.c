@@ -73,7 +73,9 @@ typedef struct options {
     int dirtotals : 1;              /* 1 = print directory size totals */
     int inode : 1;                  /* 1 = print the inode number */
     int linkcount : 1;              /* 1 = print number of hard links */
-    int linktarget : 1;             /* 1 = print symlink targets */
+    int showlink : 1;               /* 1 = show link -> target in name field (max. 1 link) */
+    int showlinks : 1;              /* 1 = show link -> target in name field (resolve all links) */
+    int targetinfo : 1;             /* 1 = field info is based on symlink target */
     unsigned flags : 2;             /*     print file "flags" */
     int group : 1;                  /* display the groupname of the file's group */
     int modes : 1;                  /* displays file modes, e.g. -rwxr-xr-x */
@@ -133,7 +135,9 @@ int main(int argc, char **argv)
     options.flags = FLAGS_NONE;
     options.inode = 0;
     options.linkcount = 0;
-    options.linktarget = 0;
+    options.showlink = 0;
+    options.showlinks = 0;
+    options.targetinfo = 0;
     options.modes = 0;
     options.now = -1;
     options.owner = 0;
@@ -223,7 +227,8 @@ int main(int argc, char **argv)
             options.inode = 1;
             break;
         case 'L':
-            options.linktarget = 1;
+            options.showlinks = 1;
+            options.targetinfo = 1;
             break;
         case 'l':
             options.modes = 1;
@@ -232,6 +237,7 @@ int main(int argc, char **argv)
             options.group = 1;
             options.bytes = 1;
             options.datetime = 1;
+            options.showlink = 1;
             options.displaymode = DISPLAY_ONE_PER_LINE;
             options.dirtotals = 1;
             break;
@@ -476,6 +482,25 @@ void getnamefieldhelper(File *file, Options *poptions, Buf *buf, int showpath)
     }
 }
 
+void getnameonlyhelper(File *file, Options *poptions, Buf *buf, int showpath)
+{
+    char snprintfbuf[1024];
+
+    assert(file != NULL);
+    assert(poptions != NULL);
+    assert(buf != NULL);
+
+    char *name;
+    if (showpath) {
+        name = getpath(file);
+    } else {
+        name = getname(file);
+    }
+    int width = printname(name, poptions, snprintfbuf, sizeof(snprintfbuf));
+    bufappend(buf, snprintfbuf, width, width);
+    free(name);
+}
+
 Field *getnamefield(File *file, Options *poptions)
 {
     if (file == NULL) {
@@ -493,9 +518,19 @@ Field *getnamefield(File *file, Options *poptions)
         return NULL;
     }
 
+    /* print the file itself... */
     getnamefieldhelper(file, poptions, buf, 0);
-    if (poptions->linktarget) {
+
+    if (poptions->showlinks) {
+        /* resolve and print symlink targets recursively */
         while (isstat(file) && islink(file)) {
+            file = gettarget(file);
+            bufappend(buf, " -> ", 4, 4);
+            getnamefieldhelper(file, poptions, buf, 1);
+        }
+    } else if (poptions->showlink) {
+        /* print only the first link target without stat'ing the target */
+        if (isstat(file) && islink(file)) {
             file = gettarget(file);
             bufappend(buf, " -> ", 4, 4);
             getnamefieldhelper(file, poptions, buf, 1);
@@ -541,7 +576,7 @@ FieldList *getfields(File *file, Options *poptions)
      * the originally named file is saved as "link" for displaying the name
      */
     File *link = file;
-    if (poptions->linktarget) {
+    if (poptions->targetinfo) {
         File *target = NULL;
         while (isstat(file) && islink(file)) {
             target = gettarget(file);
