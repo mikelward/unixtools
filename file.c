@@ -296,13 +296,13 @@ char *getmodes(File *file)
     /* e.g. -rwxr-xr-x\0 */
     char *modes = malloc(11);
     if (modes == NULL) {
-        errorf(__func__, "out of memory");
+        errorf(__func__, "out of memory\n");
         return NULL;
     }
 
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL");
+        errorf(__func__, "pstat is NULL\n");
         return NULL;
     }
 
@@ -458,7 +458,7 @@ long getsize(File *file)
 {
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL");
+        errorf(__func__, "pstat is NULL\n");
         return -1;
     }
 

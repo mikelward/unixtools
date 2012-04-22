@@ -608,7 +608,7 @@ FieldList *getfields(File *file, Options *poptions)
         }
         Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
         if (field == NULL) {
-            errorf(__func__, "field is NULL");
+            errorf(__func__, "field is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
@@ -626,7 +626,7 @@ FieldList *getfields(File *file, Options *poptions)
         }
         Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
         if (field == NULL) {
-            errorf(__func__, "field is NULL");
+            errorf(__func__, "field is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
