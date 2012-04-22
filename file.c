@@ -291,6 +291,17 @@ char *getgroup(File *file)
     return getgroupname(group);
 }
 
+nlink_t getlinkcount(File *file)
+{
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        errorf(__func__, "pstat is NULL\n");
+        return 0;
+    }
+
+    return pstat->st_nlink;
+}
+
 char *getmodes(File *file)
 {
     /* e.g. -rwxr-xr-x\0 */

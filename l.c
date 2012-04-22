@@ -70,7 +70,9 @@ typedef struct options {
     int bytes : 1;                  /* 1 = print file size in bytes */
     int directory : 1;              /* 1 = print directory name rather than contents */
     int dirsonly : 1;               /* 1 = don't print regular files */
+    int dirtotals : 1;              /* 1 = print directory size totals */
     int inode : 1;                  /* 1 = print the inode number */
+    int linkcount : 1;              /* 1 = print number of hard links */
     int linktarget : 1;             /* 1 = print symlink targets */
     unsigned flags : 2;             /*     print file "flags" */
     int group : 1;                  /* display the groupname of the file's group */
@@ -110,7 +112,7 @@ void sortfiles(List *files, Options *poptions);
 void usage(void);
 int  want(File *file, Options *poptions);
 
-#define OPTSTRING "1aBCDdFfGgiKkLMOopsTtrUx"
+#define OPTSTRING "1aBCDdFfGgiKkLlMNOopsTtrUx"
 
 int main(int argc, char **argv)
 {
@@ -125,10 +127,12 @@ int main(int argc, char **argv)
     options.datetime = 0;
     options.directory = 0;
     options.dirsonly = 0;
+    options.dirtotals = 0;
     options.displaymode = DISPLAY_ONE_PER_LINE;
     options.color = 0;
     options.flags = FLAGS_NONE;
     options.inode = 0;
+    options.linkcount = 0;
     options.linktarget = 0;
     options.modes = 0;
     options.now = -1;
@@ -222,7 +226,14 @@ int main(int argc, char **argv)
             options.linktarget = 1;
             break;
         case 'l':
-            /* reserved for long output mode */
+            options.modes = 1;
+            options.linkcount = 1;
+            options.owner = 1;
+            options.group = 1;
+            options.bytes = 1;
+            options.datetime = 1;
+            options.displaymode = DISPLAY_ONE_PER_LINE;
+            options.dirtotals = 1;
             break;
         case 'M':
             options.modes = 1;
@@ -231,7 +242,7 @@ int main(int argc, char **argv)
             /* reserved for modes field (or maybe blocksize=1048576 or stream mode) */
             break;
         case 'N':
-            /* possibly reserved for literal control character mode */
+            options.linkcount = 1;
             break;
         case 'n':
             /* possibly reserved for numeric owner and group option? */
@@ -256,6 +267,7 @@ int main(int argc, char **argv)
             break;
         case 's':
             options.size = 1;
+            options.dirtotals = 1;
             break;
         case 'T':
             options.datetime = 1;
@@ -589,6 +601,24 @@ FieldList *getfields(File *file, Options *poptions)
             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "??????????");
         }
         Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
+        if (field == NULL) {
+            errorf(__func__, "field is NULL\n");
+            walklist(fieldlist, free);
+            free(fieldlist);
+            return NULL;
+        }
+        append(field, fieldlist);
+    }
+
+    if (poptions->linkcount) {
+        int width;
+        if (isstat(file)) {
+            nlink_t nlinks = getlinkcount(file);
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", (unsigned long)nlinks);
+        } else {
+             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "?");
+        }
+        Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
         if (field == NULL) {
             errorf(__func__, "field is NULL\n");
             walklist(fieldlist, free);
@@ -963,13 +993,13 @@ void listdir(File *dir, Options *poptions)
             continue;
         }
         append(file, files);
-        if (poptions->size) {
+        if (poptions->dirtotals) {
             totalblocks += getblocks(file, poptions->blocksize);
         }
     }
     closedir(openeddir);
 
-    if (poptions->size) {
+    if (poptions->dirtotals) {
         printf("total %lu\n", totalblocks);
     }
     listfiles(files, poptions);
