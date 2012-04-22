@@ -30,6 +30,7 @@ int islink(File *file);
 char *makepath(const char *dirname, const char *filename);
 unsigned long getblocks(File *file, int blocksize);
 char *getgroup(File *file);
+time_t getmtime(File *file);
 ino_t getinode(File *file);
 char *getmodes(File *file);
 /* caller must free returned name if not NULL */

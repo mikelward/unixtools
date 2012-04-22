@@ -378,6 +378,20 @@ ino_t getinode(File *file)
     return pstat->st_ino;
 }
 
+time_t getmtime(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return 0;
+    }
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        errorf(__func__, "pstat is NULL\n");
+        return 0;
+    }
+    return pstat->st_mtime;
+}
+
 char *getperms(File *file)
 {
     if (file == NULL) {

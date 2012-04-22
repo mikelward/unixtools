@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <term.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "buf.h"
@@ -77,6 +78,7 @@ typedef struct options {
     int owner : 1;                  /* display the username of the file's owner */
     int perms : 1;                  /* display rwx modes for current user */
     int size : 1;                   /* 1 = print file size in blocks */
+    int datetime : 1;               /* 1 = print the file's modification date and time */
     int reverse : 1;                /* 0 = forwards, 1 = reverse1 */
     int color : 1;                  /* 1 = colorize file and directory names */
     int blocksize;                  /* units for -s option */
@@ -107,7 +109,7 @@ void sortfiles(List *files, Options *poptions);
 void usage(void);
 int  want(File *file, Options *poptions);
 
-#define OPTSTRING "1aBCDdFfGgiKkLMOopstrUx"
+#define OPTSTRING "1aBCDdFfGgiKkLMOopsTtrUx"
 
 int main(int argc, char **argv)
 {
@@ -253,7 +255,7 @@ int main(int argc, char **argv)
             options.size = 1;
             break;
         case 'T':
-            /* reserved for time field (display time without -l) */
+            options.datetime = 1;
             break;
         case 't':
             options.compare = &comparebymtime;
@@ -574,7 +576,7 @@ FieldList *getfields(File *file, Options *poptions)
             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", modes);
             free(modes);
         } else {
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "?");
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "??????????");
         }
         Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
         if (field == NULL) {
@@ -587,8 +589,13 @@ FieldList *getfields(File *file, Options *poptions)
     }
 
     if (poptions->owner) {
-        char *owner = getowner(file);
-        int width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", owner);
+        int width;
+        if (isstat(file)) {
+            char *owner = getowner(file);
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", owner);
+        } else {
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "?");
+        }
         Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
         if (field == NULL) {
             errorf(__func__, "field is NULL");
@@ -600,8 +607,13 @@ FieldList *getfields(File *file, Options *poptions)
     }
 
     if (poptions->group) {
-        char *group = getgroup(file);
-        int width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", group);
+        int width;
+        if (isstat(file)) {
+            char *group = getgroup(file);
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", group);
+        } else {
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "?");
+        }
         Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
         if (field == NULL) {
             errorf(__func__, "field is NULL");
@@ -633,8 +645,38 @@ FieldList *getfields(File *file, Options *poptions)
     }
 
     if (poptions->bytes) {
-        long bytes = getsize(file);
-        int width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%ld", bytes);
+        int width;
+        if (isstat(file)) {
+            long bytes = getsize(file);
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%ld", bytes);
+        } else {
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "?");
+        }
+        Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
+        if (field == NULL) {
+            errorf(__func__, "field is NULL\n");
+            walklist(fieldlist, free);
+            free(fieldlist);
+            return NULL;
+        }
+        append(field, fieldlist);
+    }
+
+    if (poptions->datetime) {
+        int width;
+        if (isstat(file)) {
+            time_t mtime = getmtime(file);
+            struct tm *lmtime = localtime(&mtime);
+            if (lmtime == NULL) {
+                errorf(__func__, "lmtime is NULL\n");
+                walklist(fieldlist, free);
+                free(fieldlist);
+                return NULL;
+            }
+            width = strftime(snprintfbuf, sizeof(snprintfbuf), "%b %e %H:%M", lmtime);
+        } else {
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "?");
+        }
         Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
         if (field == NULL) {
             errorf(__func__, "field is NULL\n");
