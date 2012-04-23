@@ -385,7 +385,7 @@ int main(int argc, char **argv)
     int nfiles = length(files);
     listfiles(files, &options);
     freelist(files, (free_func)freefile);
- 
+
     /*
      * XXX make this use walklist
      */
