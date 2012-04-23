@@ -41,7 +41,6 @@ asterisks, e.g.
 
 #### File properties
  * show inode number field (`-i`)
- * show symlink target information (`-L`)
  * show size in blocks (`-s`)
  * show file modes (`-M` or `-m`), e.g. `-rwxr-xr-x.`
  * show link count (`-N`)
@@ -51,7 +50,8 @@ asterisks, e.g.
  * show file modification time (`-T`)
  * append a flag showing the file's type (`-F`)
  * append a flag showing the file's type - old BSD style (`-O`)
- * long format (same as `-MNogBT1`)
+ * long format (`-l`, same as `-MNogBT1`)
+ * show information about symlink target rather than symlink (`-L`)
 
 #### Display format
  * columns (`-C`)
@@ -85,6 +85,7 @@ asterisks, e.g.
 
 #### To investigate
  * remove `-f` option (same as `-U`)
+ * make `-e` the default instead of `-q`?
  * `-F` symlink behavior
  * `-I <pattern>` to ignore files matching `<pattern>`
  * file ACLs and extended attributes
