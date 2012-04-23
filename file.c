@@ -258,6 +258,12 @@ char *makepath(const char *dirname, const char *filename)
     char *path = NULL;
     unsigned size;
 
+    if (dirname == NULL || strcmp(dirname, ".") == 0) {
+        return strdup(filename);
+    }
+    if (filename == NULL) {
+        return strdup(dirname);
+    }
     if (filename[0] == '/') {
         return strdup(filename);
     }
