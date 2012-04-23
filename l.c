@@ -84,6 +84,7 @@ typedef struct options {
     enum flags flags;               /*     print file "flags" */
     int group : 1;                  /* display the groupname of the file's group */
     int modes : 1;                  /* displays file modes, e.g. -rwxr-xr-x */
+    int numeric : 1;                /* 1 = display numeric uid and gid instead of names */
     int owner : 1;                  /* display the username of the file's owner */
     int perms : 1;                  /* display rwx modes for current user */
     int size : 1;                   /* 1 = print file size in blocks */
@@ -116,7 +117,7 @@ void sortfiles(List *files, Options *poptions);
 void usage(void);
 int  want(File *file, Options *poptions);
 
-#define OPTSTRING "1aBbCDdEeFfGgiKkLlMmNOopqsTtrUx"
+#define OPTSTRING "1aBbCDdEeFfGgiKkLlMmNnOopqsTtrUx"
 
 int main(int argc, char **argv)
 {
@@ -143,6 +144,7 @@ int main(int argc, char **argv)
     options.showlinks = 0;
     options.targetinfo = 0;
     options.modes = 0;
+    options.numeric = 0;
     options.now = -1;
     options.owner = 0;
     options.group = 0;
@@ -269,7 +271,7 @@ int main(int argc, char **argv)
             options.linkcount = 1;
             break;
         case 'n':
-            /* possibly reserved for numeric owner and group option? */
+            options.numeric = 1;
             break;
         case 'O':
             options.flags = FLAGS_OLD;
@@ -666,8 +668,14 @@ FieldList *getfields(File *file, Options *poptions)
     if (poptions->owner) {
         int width;
         if (isstat(file)) {
-            char *owner = getowner(file);
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", owner);
+            if (poptions->numeric) {
+                // TODO error handling
+                uid_t uid = getownernum(file);
+                width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", (unsigned long)uid);
+            } else {
+                char *owner = getowner(file);
+                width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", owner);
+            }
         } else {
             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "?");
         }
@@ -684,8 +692,14 @@ FieldList *getfields(File *file, Options *poptions)
     if (poptions->group) {
         int width;
         if (isstat(file)) {
-            char *group = getgroup(file);
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", group);
+            if (poptions->numeric) {
+                // TODO error handling
+                gid_t gid = getgroupnum(file);
+                width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", (unsigned long)gid);
+            } else {
+                char *group = getgroup(file);
+                width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", group);
+            }
         } else {
             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "?");
         }

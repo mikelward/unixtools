@@ -484,6 +484,23 @@ char *getgroup(File *file)
     return getgroupname(group);
 }
 
+// TODO return a string instead of gid_t?
+// return '?' instead of 0 on failure?
+gid_t getgroupnum(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return 0;
+    }
+    struct stat *stat = getstat(file);
+    if (stat == NULL) {
+        errorf(__func__, "stat is NULL\n");
+        return 0;
+    }
+
+    return stat->st_gid;
+}
+
 nlink_t getlinkcount(File *file)
 {
     struct stat *pstat = getstat(file);
@@ -689,6 +706,23 @@ char *getowner(File *file)
 
     // TODO free user
     return getusername(user);
+}
+
+// TODO return a string instead of uid_t?
+// return '?' instead of 0 on failure?
+uid_t getownernum(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return 0;
+    }
+    struct stat *stat = getstat(file);
+    if (stat == NULL) {
+        errorf(__func__, "stat is NULL\n");
+        return 0;
+    }
+
+    return stat->st_uid;
 }
 
 long getsize(File *file)
