@@ -12,10 +12,27 @@
 #include "group.h"
 #include "logging.h"
 
-File *newfile(const char *path)
+/*
+ * A File.
+ *
+ * We need to be able to print the file name as it was supplied, e.g.
+ * if the command line argument was /tmp/foo, that's what we print in
+ * the output.  Use getname(file) for that.
+ *
+ * We also need a file's full path so that we can pass the correct argument
+ * to lstat, etc when listing something other than the current directory.
+ * Use getpath(file) for that.
+ *
+ */
+
+File *newfile(const char *dir, const char *name)
 {
-    if (path == NULL) {
-        errorf(__func__, "path is NULL\n");
+    if (dir == NULL) {
+        errorf(__func__, "dir is NULL\n");
+        return NULL;
+    }
+    if (name == NULL) {
+        errorf(__func__, "name is NULL\n");
         return NULL;
     }
 
@@ -25,18 +42,34 @@ File *newfile(const char *path)
         return NULL;
     }
 
-    char *copy = strdup(path);
-    if (copy == NULL) {
-        errorf(__func__, "copy is NULL\n");
+    char *namecopy = strdup(name);
+    if (namecopy == NULL) {
+        errorf(__func__, "namecopy is NULL\n");
         return NULL;
     }
-    file->path = copy;
+    file->name = namecopy;
+
+    char *path = makepath(dir, name);
+    if (path == NULL) {
+        errorf(__func__, "path is NULL\n");
+        return NULL;
+    }
+    file->path = path;
 
     /* to be filled in as and when required */
     /* calling code must check if these are NULL */
     file->didstat = 0;
     file->pstat = NULL;
     file->target = NULL;
+
+    /*
+    char *d = getdir(file);
+    char *f = getfile(file);
+    errorf(__func__, "new file: name=%s, dir=%s, file=%s, path=%s\n",
+                      file->name, d, f, file->path);
+    free(d);
+    free(f);
+    */
 
     return file;
 }
@@ -48,11 +81,15 @@ void freefile(File *file)
         return;
     }
 
-    if (file->path) {
+    if (file->name != NULL) {
+        free(file->name);
+        file->name = NULL;
+    }
+    if (file->path != NULL) {
         free(file->path);
         file->path = NULL;
     }
-    if (file->pstat) {
+    if (file->pstat != NULL) {
         free(file->pstat);
         file->pstat = NULL;
     }
@@ -64,6 +101,29 @@ void freefile(File *file)
     }
 }
 
+const char *getname(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return NULL;
+    }
+    //char *namecopy = strdup(file->name);
+    //return namecopy;
+    return file->name;
+}
+
+const char *getpath(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return NULL;
+    }
+
+    //char *pathcopy = strdup(file->path);
+    //return pathcopy;
+    return file->path;
+}
+
 /*
  * uses icky basename() function
  * I'm following the POSIX version according to the Linux man pages
@@ -71,7 +131,7 @@ void freefile(File *file)
  *
  * caller should free the returned string
  */
-char *getname(File *file)
+char *getfile(File *file)
 {
     if (file == NULL) {
         errorf(__func__, "file is NULL\n");
@@ -85,15 +145,25 @@ char *getname(File *file)
     return namecopy;
 }
 
-char *getpath(File *file)
+/*
+ * caller should free the returned string
+ */
+char *getdir(File *file)
 {
     if (file == NULL) {
         errorf(__func__, "file is NULL\n");
         return NULL;
     }
 
+    if (file->path == NULL) {
+        errorf(__func__, "file->path is NULL\n");
+        return NULL;
+    }
     char *pathcopy = strdup(file->path);
-    return pathcopy;
+    char *dir = dirname(pathcopy);
+    char *dircopy = strdup(dir);
+    free(pathcopy);
+    return dircopy;
 }
 
 /*
@@ -124,7 +194,7 @@ struct stat *getstat(File *file)
     return file->pstat;
 }
 
-int isstat(File *file)
+bool isstat(File *file)
 {
     if (file == NULL) {
         errorf(__func__, "file is NULL\n");
@@ -134,7 +204,7 @@ int isstat(File *file)
     return getstat(file) != NULL;
 }
 
-int isdir(File *file)
+bool isdir(File *file)
 {
     if (file == NULL) {
         errorf(__func__, "file is NULL\n");
@@ -150,7 +220,7 @@ int isdir(File *file)
     return S_ISDIR(pstat->st_mode);
 }
 
-int isexec(File *file)
+bool isexec(File *file)
 {
     if (file == NULL) {
         errorf(__func__, "file is NULL\n");
@@ -166,7 +236,7 @@ int isexec(File *file)
     return pstat->st_mode & (S_IXUSR|S_IXGRP|S_IXOTH);
 }
 
-int islink(File *file)
+bool islink(File *file)
 {
     if (file == NULL) {
         errorf(__func__, "file is NULL\n");
@@ -186,6 +256,10 @@ char *makepath(const char *dirname, const char *filename)
 {
     char *path = NULL;
     unsigned size;
+
+    if (filename[0] == '/') {
+        return strdup(filename);
+    }
 
     size = snprintf(path, 0, "%s/%s", dirname, filename);
     if (size < 1) {
@@ -499,7 +573,13 @@ File *gettarget(File *file)
             return NULL;
         }
         targetpath[nchars] = '\0';
-        file->target = newfile(targetpath);
+        char *dir = getdir(file);
+        if (dir == NULL) {
+            errorf(__func__, "getdir returned NULL\n");
+            return NULL;
+        }
+        file->target = newfile(dir, targetpath);
+        free(dir);
         if (file->target == NULL) {
             errorf(__func__, "newfile returned NULL\n");
             return NULL;

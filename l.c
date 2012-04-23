@@ -5,7 +5,8 @@
  * - handling of symlink arguments (and -H and -L flags?)
  * - -c flag
  * - -S flag
- * - fix handling of dangling symlinks / unstat'able files
+ * - more mode flags, e.g. b = block special, c = character special
+ * - more mode flags, e.g. rws = setuid, etc.
  * - correctly calculate column width of extended ("wide") characters
  * - remove remaining statically-sized buffers (search for 1024)
  * - other?
@@ -357,7 +358,7 @@ int main(int argc, char **argv)
         exit(1);
     }
     for (int i = 0; i < argc; i++) {
-        File *file = newfile(argv[i]);
+        File *file = newfile(".", argv[i]);
         if (file == NULL) {
             error("file is NULL\n");
             exit(1);
@@ -448,13 +449,9 @@ void getnamefieldhelper(File *file, Options *poptions, Buf *buf, int showpath)
         }
     }
 
-    char *name;
-    if (showpath) {
-        name = getpath(file);
-    } else {
-        name = getname(file);
-    }
+    const char *name = getname(file);
     printnametobuf(name, poptions, buf);
+    /* don't free name */
 
     /* reset the color back to normal (-G and -K) */
     if (colorused) {
@@ -490,22 +487,6 @@ void getnamefieldhelper(File *file, Options *poptions, Buf *buf, int showpath)
     case FLAGS_NONE:
         break;
     }
-}
-
-void getnameonlyhelper(File *file, Options *poptions, Buf *buf, int showpath)
-{
-    assert(file != NULL);
-    assert(poptions != NULL);
-    assert(buf != NULL);
-
-    char *name;
-    if (showpath) {
-        name = getpath(file);
-    } else {
-        name = getname(file);
-    }
-    printnametobuf(name, poptions, buf);
-    free(name);
 }
 
 Field *getnamefield(File *file, Options *poptions)
@@ -1024,9 +1005,7 @@ void listdir(File *dir, Options *poptions)
         if (!poptions->all && dirent->d_name[0] == '.') {
             continue;
         }
-        char *path = makepath(dir->path, dirent->d_name);
-        File *file = newfile(path);
-        free(path);
+        File *file = newfile(dir->name, dirent->d_name);
         if (file == NULL) {
             errorf(__func__, "file is NULL\n");
             return;

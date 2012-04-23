@@ -1,7 +1,7 @@
 CC=cc
 CFLAGS=-std=c99 -Wall -Werror -g
 
-TESTS=listtest
+TESTS=filetest listtest
 PROGS=l
 DESTDIR=/usr/local
 
@@ -22,6 +22,13 @@ display.o: display.c
 
 field.o: field.c
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+filetest.o: filetest.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+filetest: filetest.o file.o user.o group.o logging.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	./$@
 
 group.o: group.c
 	$(CC) $(CFLAGS) -c -o $@ $<
