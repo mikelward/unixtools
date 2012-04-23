@@ -1,7 +1,7 @@
 #include "field.h"
 #include "logging.h"
 
-#define _POSIX_C_SOURCE 200809L
+#define _XOPEN_SOURCE 600       /* for strdup() */
 
 #include <stdio.h>
 #include <stdlib.h>
