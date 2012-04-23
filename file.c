@@ -301,6 +301,38 @@ bool islink(File *file)
     return S_ISLNK(pstat->st_mode);
 }
 
+bool issetgid(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return 0;
+    }
+
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        errorf(__func__, "pstat is NULL\n");
+        return 0;
+    }
+
+    return pstat->st_mode & S_ISGID;
+}
+
+bool issetuid(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return 0;
+    }
+
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        errorf(__func__, "pstat is NULL\n");
+        return 0;
+    }
+
+    return pstat->st_mode & S_ISUID;
+}
+
 bool issock(File *file)
 {
     if (file == NULL) {
@@ -315,6 +347,22 @@ bool issock(File *file)
     }
 
     return S_ISSOCK(pstat->st_mode);
+}
+
+bool issticky(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return 0;
+    }
+
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        errorf(__func__, "pstat is NULL\n");
+        return 0;
+    }
+
+    return pstat->st_mode & S_ISVTX;
 }
 
 char *makepath(const char *dirname, const char *filename)
@@ -463,21 +511,20 @@ char *getmodes(File *file)
     }
 
     char *p = modes;
-    if (islink(file)) {
+    if (islink(file))
         *p++ = 'l';
-    } else if (isdir(file)) {
+    else if (isdir(file))
         *p++ = 'd';
-    } else if (isblockdev(file)) {
+    else if (isblockdev(file))
         *p++ = 'b';
-    } else if (ischardev(file)) {
+    else if (ischardev(file))
         *p++ = 'c';
-    } else if (isfifo(file)) {
+    else if (isfifo(file))
         *p++ = 'p';
-    } else if (issock(file)) {
+    else if (issock(file))
         *p++ = 's';
-    } else {
+    else
         *p++ = '-';
-    }
 
     if (pstat->st_mode & S_IRUSR)
         *p++ = 'r';
@@ -489,10 +536,17 @@ char *getmodes(File *file)
     else
         *p++ = '-';
 
-    if (pstat->st_mode & S_IXUSR)
-        *p++ = 'x';
-    else
-        *p++ = '-';
+    if (issetuid(file)) {
+        if (pstat->st_mode & S_IXUSR)
+            *p++ = 's';
+        else
+            *p++ = 'S';
+    } else {
+        if (pstat->st_mode & S_IXUSR)
+            *p++ = 'x';
+        else
+            *p++ = '-';
+    }
 
     if (pstat->st_mode & S_IRGRP)
         *p++ = 'r';
@@ -504,10 +558,17 @@ char *getmodes(File *file)
     else
         *p++ = '-';
 
-    if (pstat->st_mode & S_IXGRP)
-        *p++ = 'x';
-    else
-        *p++ = '-';
+    if (issetgid(file)) {
+        if (pstat->st_mode & S_IXGRP)
+            *p++ = 's';
+        else
+            *p++ = 'S';
+    } else {
+        if (pstat->st_mode & S_IXGRP)
+            *p++ = 'x';
+        else
+            *p++ = '-';
+    }
 
     if (pstat->st_mode & S_IROTH)
         *p++ = 'r';
@@ -519,10 +580,17 @@ char *getmodes(File *file)
     else
         *p++ = '-';
 
-    if (pstat->st_mode & S_IXOTH)
-        *p++ = 'x';
-    else
-        *p++ = '-';
+    if (issticky(file)) {
+        if (pstat->st_mode & S_IXOTH)
+            *p++ = 't';
+        else
+            *p++ = 'T';
+    } else {
+        if (pstat->st_mode & S_IXOTH)
+            *p++ = 'x';
+        else
+            *p++ = '-';
+    }
 
     if (hasacls(file))
         *p++ = '+';

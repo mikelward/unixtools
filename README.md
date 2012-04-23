@@ -70,7 +70,6 @@ asterisks, e.g.
  * disable escaping (`-E`)
 
 #### Coming soon
- * setuid, setgid, and settext/sticky bit in modes
  * sort by ctime (change time, `-c`)
  * sort by btime (creation time, a.k.a. birth time, `-b`, or maybe `-U`)
  * show user and group ids instead of names (`-n`)

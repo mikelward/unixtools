@@ -48,7 +48,10 @@ bool isdir(File *file);
 bool isexec(File *file);
 bool isfifo(File *file);
 bool islink(File *file);
+bool issetgid(File *file);
+bool issetuid(File *file);
 bool issock(File *file);
+bool issticky(File *file);
 bool ishidden(File *file);
 
 bool hasacls(File *file);
