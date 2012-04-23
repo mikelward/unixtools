@@ -205,6 +205,38 @@ bool isstat(File *file)
     return getstat(file) != NULL;
 }
 
+bool isblockdev(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return 0;
+    }
+
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        errorf(__func__, "pstat is NULL\n");
+        return 0;
+    }
+
+    return S_ISBLK(pstat->st_mode);
+}
+
+bool ischardev(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return 0;
+    }
+
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        errorf(__func__, "pstat is NULL\n");
+        return 0;
+    }
+
+    return S_ISCHR(pstat->st_mode);
+}
+
 bool isdir(File *file)
 {
     if (file == NULL) {
@@ -237,6 +269,22 @@ bool isexec(File *file)
     return pstat->st_mode & (S_IXUSR|S_IXGRP|S_IXOTH);
 }
 
+bool isfifo(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return 0;
+    }
+
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        errorf(__func__, "pstat is NULL\n");
+        return 0;
+    }
+
+    return S_ISFIFO(pstat->st_mode);
+}
+
 bool islink(File *file)
 {
     if (file == NULL) {
@@ -251,6 +299,22 @@ bool islink(File *file)
     }
 
     return S_ISLNK(pstat->st_mode);
+}
+
+bool issock(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return 0;
+    }
+
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        errorf(__func__, "pstat is NULL\n");
+        return 0;
+    }
+
+    return S_ISSOCK(pstat->st_mode);
 }
 
 char *makepath(const char *dirname, const char *filename)

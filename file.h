@@ -42,10 +42,15 @@ char *getfile(File *file);
 char *makepath(const char *dirname, const char *filename);
 
 bool isstat(File *file);
+bool isblockdev(File *file);
+bool ischardev(File *file);
 bool isdir(File *file);
 bool isexec(File *file);
+bool isfifo(File *file);
 bool islink(File *file);
+bool issock(File *file);
 bool ishidden(File *file);
+
 bool hasacls(File *file);
 
 unsigned long getblocks(File *file, int blocksize);

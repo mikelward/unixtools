@@ -475,6 +475,10 @@ void getnamefieldhelper(File *file, Options *poptions, Buf *buf, int showpath)
             bufappend(buf, "/", 1, 1);
         else if (islink(file))
             bufappend(buf, "@", 1, 1);
+        else if (isfifo(file))
+            bufappend(buf, "|", 1, 1);
+        else if (issock(file))
+            bufappend(buf, "=", 1, 1);
         else if (isexec(file))
             bufappend(buf, "*", 1, 1);
         else
