@@ -72,10 +72,11 @@ asterisks, e.g.
 #### Coming soon
  * sort by ctime (change time, `-c`)
  * sort by btime (creation time, a.k.a. birth time, `-b`, or maybe `-U`)
- * show user and group ids instead of names (`-n`)
  * show file ACLs (`-A`?)
  * human-readable file sizes (`-h`?)
  * file sizes in megabytes and gigabytes (`-M`, `-G`?)
+ * show user and group ids instead of names (`-n`)
+ * cache username and groupname lookups
 
 #### Coming later
  * locale and Unicode support
