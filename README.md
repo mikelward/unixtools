@@ -43,7 +43,7 @@ asterisks, e.g.
  * show inode number field (`-i`)
  * show symlink target information (`-L`)
  * show size in blocks (`-s`)
- * show file modes (`-M` or `-m`), e.g. -rwxr-xr-x.
+ * show file modes (`-M` or `-m`), e.g. `-rwxr-xr-x.`
  * show link count (`-N`)
  * show file owner (`-o`)
  * show file group (`-g`)
@@ -70,6 +70,7 @@ asterisks, e.g.
  * disable escaping (`-E`)
 
 #### Coming soon
+ * specially handle sockets, block devices, character devices, etc. with `-F` and `-m`/`-l`
  * sort by ctime (change time, `-c`)
  * sort by btime (creation time, a.k.a. birth time, `-b`, or maybe `-U`)
  * show user and group ids instead of names (`-n`)
