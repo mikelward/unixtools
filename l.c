@@ -116,7 +116,7 @@ void sortfiles(List *files, Options *poptions);
 void usage(void);
 int  want(File *file, Options *poptions);
 
-#define OPTSTRING "1aBbCDdEeFfGgiKkLlMNOopqsTtrUx"
+#define OPTSTRING "1aBbCDdEeFfGgiKkLlMmNOopqsTtrUx"
 
 int main(int argc, char **argv)
 {
@@ -124,6 +124,7 @@ int main(int argc, char **argv)
     /* so that file names are sorted according to the user's locale */
     setlocale(LC_ALL, "");
 
+    /* TODO use memset? */
     Options options;
     options.all = 0;
     options.blocksize = 1024;
@@ -186,6 +187,9 @@ int main(int argc, char **argv)
         case '1':
             options.displaymode = DISPLAY_ONE_PER_LINE;
             break;
+        case 'A':
+            /* maybe print ACLs?  or -a without "." and ".."? */
+            break;
         case 'a':
             options.all = 1;
             break;
@@ -193,7 +197,8 @@ int main(int argc, char **argv)
             options.bytes = 1;
             break;
         case 'b':
-            options.escape = ESCAPE_C;
+            /* GNU ls uses this for ESCAPE_C, but we use -e = escape */
+            options.bytes = 1;
             break;
         case 'C':
             options.displaymode = DISPLAY_IN_COLUMNS;
@@ -224,6 +229,7 @@ int main(int argc, char **argv)
             options.color = 1;
             break;
         case 'g':
+            /* hopefully saner than legacy ls */
             options.group = 1;
             break;
         case 'K':
@@ -252,10 +258,12 @@ int main(int argc, char **argv)
             options.dirtotals = 1;
             break;
         case 'M':
+            /* might change this to blocksize=1048576 later */
             options.modes = 1;
             break;
         case 'm':
-            /* reserved for modes field (or maybe blocksize=1048576 or stream mode) */
+            /* conflicts with legacy ls "streams" mode */
+            options.modes = 1;
             break;
         case 'N':
             options.linkcount = 1;

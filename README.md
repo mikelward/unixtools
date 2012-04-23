@@ -20,19 +20,18 @@ where it makes sense, but add some options to make it more useful to me.
 
 with appropriate colors (`-G` or `-K`) or flags (`-F` or `-O`) if requested.
 
-`-M` displays "modes" (i.e. permissions) for the _current_ user, hopefully
+`-p` displays permissions for the _current_ user, hopefully
 making it more useful than the `-rwxr-xr-x user group` format of `ls -l`,
 e.g.
 
-    $ ls -M file_i_can_only_read
+    $ l -M file_i_can_only_read
     r-- file_i_can_only_read
 
-(this may be renamed to `-p` to mean "permissions".)
+`l -O` prints directory names inside square brackets and executables inside
+asterisks, e.g.
 
-The intent is to give each part of the `ls -l` output a separate flag letter,
-so you can pick and choose which fields you want to display, e.g. `ls -ogsT`
-should display the owner, group, size, modification time, and name of each file.
-After they are all implemented, adding `-l` will be easy.
+    $ l -M
+    [dir1]  [dir2]  *exe*   file
 
 ###Supported options
 
@@ -41,11 +40,18 @@ After they are all implemented, adding `-l` will be easy.
  * show all (including hidden files) (`-a`)
 
 #### File properties
+ * show inode number field (`-i`)
+ * show symlink target information (`-L`)
+ * show size in blocks (`-s`)
+ * show file modes (`-M` or `-m`), e.g. -rwxr-xr-x.
+ * show link count (`-N`)
+ * show file owner (`-o`)
+ * show file group (`-g`)
+ * show size in bytes (`-B` or `-b`)
+ * show file modification time (`-T`)
  * append a flag showing the file's type (`-F`)
  * append a flag showing the file's type - old BSD style (`-O`)
- * show symlink target information (`-L`)
- * show size field (`-s`)
- * show inode number field (`-i`)
+ * long format (same as `-MNogBT1`)
 
 #### Display format
  * columns (`-C`)
@@ -58,39 +64,40 @@ After they are all implemented, adding `-l` will be easy.
  * reverse sort (`-r`)
  * don't sort (`-f` or `-U`)
 
+#### Escaping
+ * print control characters as question marks (`-q`)
+ * print control characters using C-style escapes (`-e`)
+ * disable escaping (`-E`)
+
 #### Coming soon
- * show date and time (maybe `-T`?)
- * show file modes field (maybe `-m`?)
  * sort by ctime (change time, `-c`)
  * sort by btime (creation time, a.k.a. birth time, `-b`, or maybe `-U`)
- * print question marks instead of control characters (`-q`)
- * escape control characters (maybe `-e`?)
+ * show user and group ids instead of names (`-n`)
+ * show file ACLs (`-A`?)
+ * human-readable file sizes (`-h`?)
+ * file sizes in megabytes and gigabytes (`-M`, `-G`?)
 
 #### Coming later
- * show/toggle file owner field (`-o` or `-O`)
- * show/toggle file group field (`-g` or maybe `-G`)
- * long listing (`-l` = modes+owner+group+size+date+time+name)
-   (not sure whether to do block count, major/minor numbers, etc.)
- * show user and group ids instead of names (`-n`)
+ * locale and Unicode support
+ * symlink options, including `-H`, `-L`, `-P`, and interaction with `-f`, `-F`, etc.
  * other stuff
 
 #### To investigate
  * remove `-f` option (same as `-U`)
+ * `-F` symlink behavior
  * `-I <pattern>` to ignore files matching `<pattern>`
  * file ACLs and extended attributes
  * list major/minor numbers for block/character devices
  * customizable colors
- * symlink options, including `-H`, `-L`, `-P`, and interaction with `-f`, `-F`, etc.
  * sort by atime (access time, `-u`), not sure how useful this is?
 
 #### Incompatibilities
- * GNU Emacs Dired mode (`-D`)
- * `-L` shows more information than classic `ls -L`
- * escape mode (`-b`), assuming birth time option is implemented as `-b`
- * legacy `-g` (long without owner) option, depending on how `-g` is implemented
- * stream mode (`-m`), assuming file modes `-m` option is implemented
- * legacy `-o` (long without group) option, depending on how `-o` is implemented
- * append slash to directories (`-p`), assuming `-M` becomes `-p`
-   need to double check `-F` symlink behavior before doing this
+ * `-D` - lists only directories, rather than GNU Emacs Dired mode
+ * `-L` - shows more information than classic `ls -L`
+ * `-b` - adds a file size in bytes column (use `-e` to escape file names)
+ * `-g` - adds a group column, rather than useless long-without-owner
+ * `-m` - adds a modes column, rather than stream mode
+ * `-o` - adds an owner column, rather than long-without-group (could rename to `-O` if `-o` is really needed)
+ * `-p` - adds a permissions column, rather than appending slash to directories (use `-F` or `-O`)
 
 Patches are welcome.
