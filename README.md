@@ -91,6 +91,7 @@ asterisks, e.g.
  * list major/minor numbers for block/character devices
  * customizable colors
  * sort by atime (access time, `-u`), not sure how useful this is?
+ * display setuid, setgid, and sticky files, and files with capabilities specially somehow?
 
 #### Incompatibilities
  * `-D` - lists only directories, rather than GNU Emacs Dired mode
@@ -101,4 +102,4 @@ asterisks, e.g.
  * `-o` - adds an owner column, rather than long-without-group (could rename to `-O` if `-o` is really needed)
  * `-p` - adds a permissions column, rather than appending slash to directories (use `-F` or `-O`)
 
-Patches are welcome.
+Patches and pull requests are welcome.
