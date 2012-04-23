@@ -2,6 +2,7 @@
 
 #include <sys/stat.h>
 #include <sys/param.h>      /* for DEV_BSIZE */
+#include <sys/acl.h>
 #include <errno.h>
 #include <libgen.h>
 #include <stdio.h>
@@ -445,6 +446,11 @@ char *getmodes(File *file)
     else
         *p++ = '-';
 
+    if (hasacls(file))
+        *p++ = '+';
+    else
+        *p++ = '.';
+
     *p++ = '\0';
     return modes;
 }
@@ -586,6 +592,56 @@ File *gettarget(File *file)
         }
     }
     return file->target;
+}
+
+/*
+ * return true if file has ACLs beyond the traditional Unix owner/group/other ACLs
+ */
+bool hasacls(File *file)
+{
+    acl_type_t acl_types[] = { ACL_TYPE_ACCESS, ACL_TYPE_DEFAULT };
+    for (int i = 0; i < sizeof(acl_types)/sizeof(acl_types[0]); i++) {
+        if (!isdir(file) && acl_types[i] == ACL_TYPE_DEFAULT) continue;
+
+        errno = 0;
+        acl_t acl = acl_get_file(file->path, acl_types[i]);
+        if (acl == (acl_t)NULL) {
+            errorf(__func__, "Error getting %d ACLs for %s: %s\n", acl_types[i], file->name, strerror(errno));
+            // error = 1;
+            break;
+        }
+        bool extended_found = 0;
+        //bool error = 0;
+        for (int entry_id = ACL_FIRST_ENTRY; ; entry_id = ACL_NEXT_ENTRY) {
+            acl_entry_t entry;
+            errno = 0;
+            int status = acl_get_entry(acl, entry_id, &entry);
+            if (status == -1) {
+                errorf(__func__, "Error getting ACLs for %s: %s\n", file->name, strerror(errno));
+                // XXX return -1 or '?' or something
+                //error = 1;
+                break;
+            } else if (status == 0) {
+                /* no more ACL entries */
+                break;
+            }
+            acl_tag_t tag_type;
+            status = acl_get_tag_type(entry, &tag_type);
+            switch (tag_type) {
+            case ACL_USER_OBJ: case ACL_GROUP_OBJ: case ACL_OTHER:
+                break;
+            default:
+                extended_found = 1;
+                break;
+            }
+            /* no acl_free_entry? */
+            if (extended_found) break;
+        }
+        acl_free(acl);
+        if (extended_found) return 1;
+    }
+
+    return 0;
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/

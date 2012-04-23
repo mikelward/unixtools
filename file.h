@@ -46,6 +46,7 @@ bool isdir(File *file);
 bool isexec(File *file);
 bool islink(File *file);
 bool ishidden(File *file);
+bool hasacls(File *file);
 
 unsigned long getblocks(File *file, int blocksize);
 char *getgroup(File *file);

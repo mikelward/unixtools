@@ -27,7 +27,7 @@ filetest.o: filetest.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 filetest: filetest.o file.o user.o group.o logging.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ -lacl
 	./$@
 
 group.o: group.c
@@ -50,7 +50,7 @@ listtest: listtest.o list.o logging.o
 	./$@
 
 l: l.o display.o list.o file.o field.o user.o group.o buf.o logging.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ -ltermcap
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ -ltermcap -lacl
 
 install: $(PROGS)
 	@for prog in $(PROGS); do \

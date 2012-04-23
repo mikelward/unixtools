@@ -621,7 +621,7 @@ FieldList *getfields(File *file, Options *poptions)
             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", modes);
             free(modes);
         } else {
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "??????????");
+            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "???????????");
         }
         Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
         if (field == NULL) {
