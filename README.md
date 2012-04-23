@@ -52,6 +52,7 @@ asterisks, e.g.
  * append a flag showing the file's type - old BSD style (`-O`)
  * long format (`-l`, same as `-MNogBT1`)
  * show information about symlink target rather than symlink (`-L`)
+ * show numeric owner and group instead of looking up their names (`-n`)
 
 #### Display format
  * columns (`-C`)
