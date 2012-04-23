@@ -684,7 +684,7 @@ bool hasacls(File *file)
         errno = 0;
         acl_t acl = acl_get_file(file->path, acl_types[i]);
         if (acl == (acl_t)NULL) {
-            errorf(__func__, "Error getting ACLs for %s: %s\n", acl_types[i], file->name, strerror(errno));
+            errorf(__func__, "Error getting ACLs for %s: %s\n", file->name, strerror(errno));
             // error = 1;
             break;
         }
