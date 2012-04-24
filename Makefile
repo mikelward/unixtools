@@ -3,9 +3,15 @@ CFLAGS=-std=c99 -Wall -Werror -g
 
 TESTS=filetest listtest
 PROGS=l
+DOCS=README.html
 DESTDIR=/usr/local
+MD2HTML=pandoc -f markdown -t html
 
-all: tags $(TESTS) $(PROGS)
+build: $(PROGS)
+
+doc: $(DOCS)
+
+all: tags $(TESTS) $(PROGS) $(DOCS)
 
 tags: *.c
 	$(RM) $@
@@ -13,6 +19,9 @@ tags: *.c
 
 clean:
 	$(RM) *.o
+
+README.html: README.md
+	$(MD2HTML) -o $@ $<
 
 buf.o: buf.c
 	$(CC) $(CFLAGS) -c -o $@ $<
