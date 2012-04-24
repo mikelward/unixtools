@@ -22,12 +22,12 @@ int test_bare_file(void)
 	File *file = newfile(".", "buf.c");
 	assert(strcmp(getname(file), "buf.c") == 0);
 	assert(strcmp(getpath(file), "buf.c") == 0);
-	char *dir = getdir(file);
+	char *dir = getdirname(file);
 	assert(strcmp(dir, ".") == 0);
 	free(dir);
-	char *filename = getfile(file);
-	assert(strcmp(filename, "buf.c") == 0);
-	free(filename);
+	char *base = getbasename(file);
+	assert(strcmp(base, "buf.c") == 0);
+	free(base);
 	free(file);
 	return 0;
 }
@@ -37,12 +37,12 @@ int test_absolute_file(void)
 	File *file = newfile(".", "/tmp/foo");
 	assert(strcmp(getname(file), "/tmp/foo") == 0);
 	assert(strcmp(getpath(file), "/tmp/foo") == 0);
-	char *dir = getdir(file);
+	char *dir = getdirname(file);
 	assert(strcmp(dir, "/tmp") == 0);
 	free(dir);
-	char *filename = getfile(file);
-	assert(strcmp(filename, "foo") == 0);
-	free(filename);
+	char *base = getbasename(file);
+	assert(strcmp(base, "foo") == 0);
+	free(base);
 	free(file);
 	return 0;
 }
@@ -52,12 +52,12 @@ int test_relative_file(void)
 	File *file = newfile(".", "../tmp/foo");
 	assert(strcmp(getname(file), "../tmp/foo") == 0);
 	assert(strcmp(getpath(file), "../tmp/foo") == 0);
-	char *dir = getdir(file);
+	char *dir = getdirname(file);
 	assert(strcmp(dir, "../tmp") == 0);
 	free(dir);
-	char *filename = getfile(file);
-	assert(strcmp(filename, "foo") == 0);
-	free(filename);
+	char *base = getbasename(file);
+	assert(strcmp(base, "foo") == 0);
+	free(base);
 	free(file);
 	return 0;
 }

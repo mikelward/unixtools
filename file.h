@@ -31,12 +31,12 @@ const char *getname(File *file);
 /* get the full path to file */
 const char *getpath(File *file);
 
-/* get the path to file without the last part
-   caller should free the returned string if it's not NULL */
-char *getdir(File *file);
 /* get the last part of the path to file
    caller should free the returned string if it's not NULL */
-char *getfile(File *file);
+char *getbasename(File *file);
+/* get the path to file without the last part
+   caller should free the returned string if it's not NULL */
+char *getdirname(File *file);
 
 /* caller must free returned path if not NULL */
 char *makepath(const char *dirname, const char *filename);

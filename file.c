@@ -24,6 +24,8 @@
  * to lstat, etc when listing something other than the current directory.
  * Use getpath(file) for that.
  *
+ * There are also getdirname(file) and getbasename(file), which
+ * work like POSIX basename() and dirname().
  */
 
 File *newfile(const char *dir, const char *name)
@@ -125,20 +127,28 @@ const char *getpath(File *file)
     return file->path;
 }
 
-/*
- * uses icky basename() function
- * I'm following the POSIX version according to the Linux man pages
- * thus I have to take a copy of the path
+/**
+ * Returns the filename part of file's path.
  *
- * caller should free the returned string
+ * This should behave the same as basename(), and will generally be the part
+ * of the file's path after the last slash.
+ *
+ * Caller should free the returned string.
+ *
+ * @see basename()
  */
-char *getfile(File *file)
+char *getbasename(File *file)
 {
     if (file == NULL) {
         errorf(__func__, "file is NULL\n");
         return NULL;
     }
 
+   /*
+    * uses icky basename() function
+    * I'm following the POSIX version according to the Linux man pages
+    * thus I have to take a copy of the path
+    */
     char *pathcopy = strdup(file->path);
     char *base = basename(pathcopy);
     char *namecopy = strdup(base);
@@ -146,10 +156,17 @@ char *getfile(File *file)
     return namecopy;
 }
 
-/*
- * caller should free the returned string
+/**
+ * Returns the dirname part of file's path.
+ *
+ * This should behave the same as dirname(), and will generally be everything
+ * before the last slash.
+ *
+ * Caller should free the returned string.
+ *
+ * @see dirname()
  */
-char *getdir(File *file)
+char *getdirname(File *file)
 {
     if (file == NULL) {
         errorf(__func__, "file is NULL\n");
@@ -855,9 +872,9 @@ File *gettarget(File *file)
             return NULL;
         }
         targetpath[nchars] = '\0';
-        char *dir = getdir(file);
+        char *dir = getdirname(file);
         if (dir == NULL) {
-            errorf(__func__, "getdir returned NULL\n");
+            errorf(__func__, "getdirname returned NULL\n");
             return NULL;
         }
         file->target = newfile(dir, targetpath);
