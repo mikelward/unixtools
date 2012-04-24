@@ -1,5 +1,7 @@
 CC=cc
-CFLAGS=-std=c99 -Wall -Werror -g
+DEBUG=-g
+CFLAGS=-std=c99 -Wall -Werror $(DEBUG)
+LDFLAGS=$(DEBUG)
 
 SOURCES=*.c *.h
 TESTS=filetest listtest
@@ -10,28 +12,23 @@ MD2HTML=pandoc -f markdown -t html
 
 build: $(PROGS)
 
+clean:
+	$(RM) *.o
+
+tags: $(SOURCES)
+	$(RM) $@
+	ctags -f $@ *.c *.h
+
 doc: $(DOCS)
+
+%.html: %.md
+	$(MD2HTML) -o $@ $<
 
 test: $(TESTS)
 	@for test in $(TESTS); do \
 		echo $$test; \
 		./$$test; \
 	done
-
-all: tags $(TESTS) $(PROGS) $(DOCS)
-
-tags: $(SOURCES)
-	$(RM) $@
-	ctags -f $@ *.c *.h
-
-clean:
-	$(RM) *.o
-
-filetest: filetest.o file.o user.o group.o logging.o -lacl
-
-listtest: listtest.o list.o logging.o
-
-l: l.o display.o list.o file.o field.o user.o group.o buf.o logging.o -ltermcap -lacl
 
 install: $(PROGS)
 	@echo install -d $(DESTDIR)/bin; \
@@ -47,13 +44,12 @@ uninstall: $(PROGS)
 		rm $(DESTDIR)/bin/$$prog; \
 	done
 
-%.html: %.md
-	$(MD2HTML) -o $@ $<
+all: tags $(TESTS) $(PROGS) $(DOCS)
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+l: l.o display.o list.o file.o field.o user.o group.o buf.o logging.o -ltermcap -lacl
 
-%: %.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+filetest: filetest.o file.o user.o group.o logging.o -lacl
+
+listtest: listtest.o list.o logging.o
 
 #  vim: set ts=4 sw=4 tw=0 noet:
