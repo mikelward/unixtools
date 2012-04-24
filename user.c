@@ -1,4 +1,4 @@
-#define _POSIX_C_SOURCE 200809L	/* for strdup() */
+#define _XOPEN_SOURCE 600       /* for strdup() */
 
 #include "user.h"
 

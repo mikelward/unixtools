@@ -102,7 +102,6 @@ typedef struct options {
 typedef List FileList;              /* list of files */
 typedef List FieldList;             /* list of fields for a single file */
 typedef List FileFieldList;         /* list of fields for each file */
-typedef List StringList;            /* list of C strings */
 
 const int columnmargin = 1;
 

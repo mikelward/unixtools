@@ -609,6 +609,8 @@ char *getmodes(File *file)
             *p++ = '-';
     }
 
+    /* TODO - GNU ls prints a '.' if the file has no ACLs,
+       but prints nothing if the file system doesn't support ACLs */
     if (hasacls(file))
         *p++ = '+';
     else
@@ -786,6 +788,10 @@ bool hasacls(File *file)
         errno = 0;
         acl_t acl = acl_get_file(file->path, acl_types[i]);
         if (acl == (acl_t)NULL) {
+            if (errno == EOPNOTSUPP) {
+                /* file system does not support ACLs */
+                return false;
+            }
             errorf(__func__, "Error getting ACLs for %s: %s\n", file->name, strerror(errno));
             // error = 1;
             break;
