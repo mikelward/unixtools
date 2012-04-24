@@ -53,6 +53,7 @@ asterisks, e.g.
  * long format (`-l`, same as `-MNogBT1`)
  * show information about symlink target rather than symlink (`-L`)
  * show numeric owner and group instead of looking up their names (`-n`)
+ * show time in ISO 8601 format (`yyyy-mm-dd HH:MM:SS`, `-I`)
 
 #### Display format
  * columns (`-C`)

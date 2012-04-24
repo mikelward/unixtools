@@ -96,6 +96,7 @@ typedef struct options {
     short screenwidth;              /* how wide the screen is, 0 if unknown */
     Colors *pcolors;                /* the colors to use */
     file_compare_function compare;  /* determines sort order */
+    const char *timeformat;         /* custom time format for -T */
 } Options;
 
 typedef List FileList;              /* list of files */
@@ -115,7 +116,7 @@ void sortfiles(List *files, Options *poptions);
 void usage(void);
 int  want(File *file, Options *poptions);
 
-#define OPTSTRING "1aBbCDdEeFfGgiKkLlMmNnOopqsTtrUx"
+#define OPTSTRING "1aBbCDdEeFfGgIiKkLlMmNnOopqsTtrUx"
 
 int main(int argc, char **argv)
 {
@@ -152,6 +153,7 @@ int main(int argc, char **argv)
     options.screenwidth = 0;
     options.compare = &comparebyname;
     options.pcolors = NULL;
+    options.timeformat = NULL;
 
     /* use BLOCKSIZE as default blocksize if set */
     char *blocksizeenv = getenv("BLOCKSIZE");
@@ -238,6 +240,9 @@ int main(int argc, char **argv)
             break;
         case 'k':
             options.blocksize = 1024;
+            break;
+        case 'I':
+            options.timeformat = "%Y-%m-%d %H:%M:%S";
             break;
         case 'i':
             options.inode = 1;
@@ -334,7 +339,7 @@ int main(int argc, char **argv)
         options.pcolors = &colors;
     }
 
-    if (options.datetime) {
+    if (options.datetime && options.timeformat == NULL) {
         options.now = time(NULL);
         if (options.now == -1) {
             error("Cannot determine current time\n");
@@ -760,12 +765,16 @@ FieldList *getfields(File *file, Options *poptions)
                 free(fieldlist);
                 return NULL;
             }
-            /* month day hour and minute if file was modified in the last 6 months,
-               month day year otherwise */
-            if (poptions->now != -1 && mtime <= poptions->now && mtime > poptions->now - 180*86400) {
-                width = strftime(snprintfbuf, sizeof(snprintfbuf), "%b %e %H:%M", lmtime);
+            if (poptions->timeformat != NULL) {
+                width = strftime(snprintfbuf, sizeof(snprintfbuf), poptions->timeformat, lmtime);
             } else {
-                width = strftime(snprintfbuf, sizeof(snprintfbuf), "%b %e  %Y", lmtime);
+                /* month day hour and minute if file was modified in the last 6 months,
+                   month day year otherwise */
+                if (poptions->now != -1 && mtime <= poptions->now && mtime > poptions->now - 180*86400) {
+                    width = strftime(snprintfbuf, sizeof(snprintfbuf), "%b %e %H:%M", lmtime);
+                } else {
+                    width = strftime(snprintfbuf, sizeof(snprintfbuf), "%b %e  %Y", lmtime);
+                }
             }
         } else {
             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "?");
