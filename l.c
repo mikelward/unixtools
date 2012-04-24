@@ -74,6 +74,7 @@ enum sorttype { SORT_BY_NAME, SORT_BY_TIME, SORT_UNSORTED };
 typedef struct options {
     int all : 1;                    /* 1 = also print hidden files */
     int bytes : 1;                  /* 1 = print file size in bytes */
+    int compatible : 1;             /* 1 = legacy ls behavior even when it's crazy */
     int directory : 1;              /* 1 = print directory name rather than contents */
     int dirsonly : 1;               /* 1 = don't print regular files */
     int dirtotals : 1;              /* 1 = print directory size totals */
@@ -134,6 +135,7 @@ int main(int argc, char **argv)
     options.all = 0;
     options.blocksize = 1024;
     options.bytes = 0;
+    options.compatible = 0;
     options.datetime = 0;
     options.directory = 0;
     options.dirsonly = 0;

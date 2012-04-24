@@ -65,8 +65,8 @@ asterisks, e.g.
 #### Sorting
  * sort by name (default)
  * sort by mtime (modification time, `-t`)
- * sort by ctime (change time, `-c`, unless `-T` or `-l`, then `-t` is also required)
- * sort by atime (access time, `-u`, unless `-T` or `-l`, then `-t` is also required)
+ * sort by ctime (change time, `-tc`) _just `-c` is sufficient if neither `-T` nor `-l` were given_
+ * sort by atime (access time, `-tu`) _just `-u` is sufficient if neither `-T` nor `-l` were given_
  * reverse sort (`-r`)
  * don't sort (`-f` or `-U`)
 
@@ -106,6 +106,7 @@ asterisks, e.g.
  * `-m` - adds a modes column, rather than stream mode
  * `-o` - adds an owner column, rather than long-without-group (could rename to `-O` if `-o` is really needed)
  * `-p` - adds a permissions column, rather than appending slash to directories (use `-F` or `-O`)
+ * `-c` and `-u` are less complex by default, see `options.compatible` in the source to get legacy behavior
 
 ### Installation
 
