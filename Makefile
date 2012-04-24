@@ -23,36 +23,12 @@ clean:
 README.html: README.md
 	$(MD2HTML) -o $@ $<
 
-buf.o: buf.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-display.o: display.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-field.o: field.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-filetest.o: filetest.c
+%.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 filetest: filetest.o file.o user.o group.o logging.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ -lacl
 	./$@
-
-group.o: group.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-listtest.o: listtest.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-list.o: list.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-logging.o: logging.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-user.o: user.c
-	$(CC) $(CFLAGS) -c -o $@ $<
 
 listtest: listtest.o list.o logging.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
