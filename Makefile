@@ -1,6 +1,7 @@
 CC=cc
 CFLAGS=-std=c99 -Wall -Werror -g
 
+SOURCES=*.c *.h
 TESTS=filetest listtest
 PROGS=l
 DOCS=README.html
@@ -19,27 +20,18 @@ test: $(TESTS)
 
 all: tags $(TESTS) $(PROGS) $(DOCS)
 
-tags: *.c
+tags: $(SOURCES)
 	$(RM) $@
 	ctags -f $@ *.c *.h
 
 clean:
 	$(RM) *.o
 
-README.html: README.md
-	$(MD2HTML) -o $@ $<
-
-%.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-filetest: filetest.o file.o user.o group.o logging.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ -lacl
+filetest: filetest.o file.o user.o group.o logging.o -lacl
 
 listtest: listtest.o list.o logging.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
-l: l.o display.o list.o file.o field.o user.o group.o buf.o logging.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ -ltermcap -lacl
+l: l.o display.o list.o file.o field.o user.o group.o buf.o logging.o -ltermcap -lacl
 
 install: $(PROGS)
 	@echo install -d $(DESTDIR)/bin; \
@@ -54,5 +46,14 @@ uninstall: $(PROGS)
 		echo rm $(DESTDIR)/bin/$$prog; \
 		rm $(DESTDIR)/bin/$$prog; \
 	done
+
+%.html: %.md
+	$(MD2HTML) -o $@ $<
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+%: %.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 #  vim: set ts=4 sw=4 tw=0 noet:
