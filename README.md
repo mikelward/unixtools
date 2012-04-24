@@ -48,11 +48,14 @@ asterisks, e.g.
  * show file group (`-g`)
  * show size in bytes (`-B` or `-b`)
  * show file modification time (`-T`)
+ * show file change time (`-Tc`)
+ * show file access time (`-Tu`)
  * append a flag showing the file's type (`-F`)
  * append a flag showing the file's type - old BSD style (`-O`)
  * long format (`-l`, same as `-MNogBT1`)
  * show information about symlink target rather than symlink (`-L`)
  * show numeric owner and group instead of looking up their names (`-n`)
+ * show time in ISO 8601 format (`yyyy-mm-dd HH:MM:SS`, `-I`)
 
 #### Display format
  * columns (`-C`)
@@ -62,6 +65,8 @@ asterisks, e.g.
 #### Sorting
  * sort by name (default)
  * sort by mtime (modification time, `-t`)
+ * sort by ctime (change time, `-tc`) _just `-c` is sufficient if neither `-T` nor `-l` were given_
+ * sort by atime (access time, `-tu`) _just `-u` is sufficient if neither `-T` nor `-l` were given_
  * reverse sort (`-r`)
  * don't sort (`-f` or `-U`)
 
@@ -71,7 +76,6 @@ asterisks, e.g.
  * disable escaping (`-E`)
 
 #### Coming soon
- * sort by ctime (change time, `-c`)
  * sort by btime (creation time, a.k.a. birth time, `-b`, or maybe `-U`)
  * show file ACLs (`-A`?)
  * human-readable file sizes (`-h`?)
@@ -91,8 +95,8 @@ asterisks, e.g.
  * file ACLs and extended attributes
  * list major/minor numbers for block/character devices
  * customizable colors
- * sort by atime (access time, `-u`), not sure how useful this is?
- * display setuid, setgid, and sticky files, and files with capabilities specially somehow?
+ * colors and flags for files with setuid/setgid/sticky bits or capabilities
+ * sub-second times for sorting and display
 
 #### Incompatibilities
  * `-D` - lists only directories, rather than GNU Emacs Dired mode
@@ -102,6 +106,7 @@ asterisks, e.g.
  * `-m` - adds a modes column, rather than stream mode
  * `-o` - adds an owner column, rather than long-without-group (could rename to `-O` if `-o` is really needed)
  * `-p` - adds a permissions column, rather than appending slash to directories (use `-F` or `-O`)
+ * `-c` and `-u` are less complex by default, see `options.compatible` in the source to get legacy behavior
 
 ### Installation
 

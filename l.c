@@ -3,10 +3,8 @@
  *
  * TODO
  * - handling of symlink arguments (and -H and -L flags?)
- * - -c flag
+ * - symlink related behavior (e.g. -F, trailing slash argument, etc.)
  * - -S flag
- * - more mode flags, e.g. b = block special, c = character special
- * - more mode flags, e.g. rws = setuid, etc.
  * - correctly calculate column width of extended ("wide") characters
  * - remove remaining statically-sized buffers (search for 1024)
  * - other?
@@ -64,11 +62,15 @@ typedef struct colors {
     char *none;                     /* escape sequence to go back to default color */
 } Colors;
 
-/* all the command line options */
+/* defaults should be the first element */
 enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS, DISPLAY_IN_ROWS };
 enum escape { ESCAPE_NONE, ESCAPE_QUESTION, ESCAPE_C };
 enum flags { FLAGS_NONE, FLAGS_NORMAL, FLAGS_OLD };
+enum timetype { TIME_MTIME, TIME_CTIME, TIME_ATIME, TIME_BTIME };
+enum sorttype { SORT_BY_NAME, SORT_BY_TIME, SORT_UNSORTED };
 
+/* all the command line options */
+/* defaults should usually be 0 */
 typedef struct options {
     int all : 1;                    /* 1 = also print hidden files */
     int bytes : 1;                  /* 1 = print file size in bytes */
@@ -97,6 +99,9 @@ typedef struct options {
     short screenwidth;              /* how wide the screen is, 0 if unknown */
     Colors *pcolors;                /* the colors to use */
     file_compare_function compare;  /* determines sort order */
+    const char *timeformat;         /* custom time format for -T */
+    enum timetype timetype;         /* which time to show (mtime, ctime, etc.) */
+    enum sorttype sorttype;         /* how to sort */
 } Options;
 
 typedef List FileList;              /* list of files */
@@ -116,7 +121,7 @@ void sortfiles(List *files, Options *poptions);
 void usage(void);
 int  want(File *file, Options *poptions);
 
-#define OPTSTRING "1aBbCDdEeFfGgiKkLlMmNnOopqsTtrUx"
+#define OPTSTRING "1aBbCcDdEeFfGgIiKkLlMmNnOopqsTtrUux"
 
 int main(int argc, char **argv)
 {
@@ -151,8 +156,11 @@ int main(int argc, char **argv)
     options.size = 0;
     options.reverse = 0;
     options.screenwidth = 0;
-    options.compare = &comparebyname;
+    options.compare = NULL;
     options.pcolors = NULL;
+    options.timeformat = NULL;
+    options.timetype = TIME_MTIME;
+    options.sorttype = SORT_BY_NAME;
 
     /* use BLOCKSIZE as default blocksize if set */
     char *blocksizeenv = getenv("BLOCKSIZE");
@@ -205,7 +213,8 @@ int main(int argc, char **argv)
             options.displaymode = DISPLAY_IN_COLUMNS;
             break;
         case 'c':
-            /* reserved for ctime display */
+            options.timetype = TIME_CTIME;
+            /* this interacts with other options, see below */
             break;
         case 'D':
             options.dirsonly = 1;
@@ -239,6 +248,9 @@ int main(int argc, char **argv)
             break;
         case 'k':
             options.blocksize = 1024;
+            break;
+        case 'I':
+            options.timeformat = "%Y-%m-%d %H:%M:%S";
             break;
         case 'i':
             options.inode = 1;
@@ -301,10 +313,14 @@ int main(int argc, char **argv)
             options.datetime = 1;
             break;
         case 't':
-            options.compare = &comparebymtime;
+            options.sorttype = SORT_BY_TIME;
             break;
         case 'U':
-            options.compare = NULL;
+            options.sorttype = SORT_UNSORTED;
+            break;
+        case 'u':
+            options.timetype = TIME_ATIME;
+            /* this interacts with other options, see below */
             break;
         case 'x':
             options.displaymode = DISPLAY_IN_ROWS;
@@ -323,10 +339,41 @@ int main(int argc, char **argv)
         }
     }
 
-    /* don't reverse output if it's unsorted
-     * (as per BSD and GNU) */
-    if (options.compare == NULL) {
-        options.reverse = 0;
+    /* -c = -ct, -u = -ut (unless -T or -l) */
+    if (!options.datetime && options.timetype != TIME_MTIME) {
+        options.sorttype = SORT_BY_TIME;
+    }
+
+    switch (options.sorttype) {
+    case SORT_BY_NAME:
+        options.compare = &comparebyname;
+        break;
+    case SORT_BY_TIME:
+        /* XXX make this cleaner */
+        switch (options.timetype) {
+        case TIME_MTIME:
+            options.compare = &comparebymtime;
+            break;
+        case TIME_ATIME:
+            options.compare = &comparebyatime;
+            break;
+        case TIME_CTIME:
+            options.compare = &comparebyctime;
+            break;
+        default:
+            error("Unknown time type\n");
+            options.compare = &comparebyname;
+            break;
+        }
+        break;
+    case SORT_UNSORTED:
+        options.compare = NULL;
+        /* don't reverse output if it's unsorted
+         * (as per BSD and GNU) */
+        if (options.compare == NULL) {
+            options.reverse = 0;
+        }
+        break;
     }
 
     Colors colors;
@@ -335,7 +382,7 @@ int main(int argc, char **argv)
         options.pcolors = &colors;
     }
 
-    if (options.datetime) {
+    if (options.datetime && options.timeformat == NULL) {
         options.now = time(NULL);
         if (options.now == -1) {
             error("Cannot determine current time\n");
@@ -753,20 +800,43 @@ FieldList *getfields(File *file, Options *poptions)
     if (poptions->datetime) {
         int width;
         if (isstat(file)) {
-            time_t mtime = getmtime(file);
-            struct tm *lmtime = localtime(&mtime);
-            if (lmtime == NULL) {
-                errorf(__func__, "lmtime is NULL\n");
+            time_t timestamp;
+            switch (poptions->timetype) {
+            case TIME_ATIME:
+                timestamp = getatime(file);
+                break;
+            case TIME_CTIME:
+                timestamp = getctime(file);
+                break;
+            /*
+            case TIME_BTIME:
+                timestamp = getbtime(file);
+                break;
+            */
+            default:
+                error("Unknown time attribute\n");
+                /* fall through */
+            case TIME_MTIME:
+                timestamp = getmtime(file);
+                break;
+            }
+            struct tm *timestruct = localtime(&timestamp);
+            if (timestruct == NULL) {
+                errorf(__func__, "timestruct is NULL\n");
                 walklist(fieldlist, free);
                 free(fieldlist);
                 return NULL;
             }
-            /* month day hour and minute if file was modified in the last 6 months,
-               month day year otherwise */
-            if (poptions->now != -1 && mtime <= poptions->now && mtime > poptions->now - 180*86400) {
-                width = strftime(snprintfbuf, sizeof(snprintfbuf), "%b %e %H:%M", lmtime);
+            if (poptions->timeformat != NULL) {
+                width = strftime(snprintfbuf, sizeof(snprintfbuf), poptions->timeformat, timestruct);
             } else {
-                width = strftime(snprintfbuf, sizeof(snprintfbuf), "%b %e  %Y", lmtime);
+                /* month day hour and minute if file was modified in the last 6 months,
+                   month day year otherwise */
+                if (poptions->now != -1 && timestamp <= poptions->now && timestamp > poptions->now - 180*86400) {
+                    width = strftime(snprintfbuf, sizeof(snprintfbuf), "%b %e %H:%M", timestruct);
+                } else {
+                    width = strftime(snprintfbuf, sizeof(snprintfbuf), "%b %e  %Y", timestruct);
+                }
             }
         } else {
             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "?");

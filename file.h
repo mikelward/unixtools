@@ -59,6 +59,9 @@ bool hasacls(File *file);
 unsigned long getblocks(File *file, int blocksize);
 char *getgroup(File *file);
 gid_t getgroupnum(File *file);
+time_t getatime(File *file);
+//time_t getbtime(File *file);
+time_t getctime(File *file);
 time_t getmtime(File *file);
 ino_t getinode(File *file);
 nlink_t getlinkcount(File *file);
@@ -71,6 +74,8 @@ long getsize(File *file);
 File *gettarget(File *file);
 
 int comparebyname(const File **a, const File **b);
+int comparebyatime(const File **a, const File **b);
+int comparebyctime(const File **a, const File **b);
 int comparebymtime(const File **a, const File **b);
 
 struct stat *getstat(File *file);
