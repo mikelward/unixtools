@@ -1,14 +1,16 @@
 CC=cc
 DEBUG=-g
-CFLAGS=-std=c99 -Wall -Werror $(DEBUG)
-LDFLAGS=$(DEBUG)
+WARNINGS=-Wall -Werror
+CFLAGS=-std=c99 $(WARNINGS) $(DEBUG)
+LDFLAGS=$(WARNINGS) $(DEBUG)
 
-SOURCES=*.c *.h
-TESTS=filetest listtest
-PROGS=l
-DOCS=README.html
 DESTDIR=/usr/local
 MD2HTML=pandoc -f markdown -t html
+
+SOURCES=*.c *.h
+DOCS=README.html
+TESTS=filetest listtest
+PROGS=l
 
 build: $(PROGS)
 
