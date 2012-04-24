@@ -419,6 +419,56 @@ int comparebyname(const File **a, const File **b)
  *  but by default ls shows newest files first,
  *  so it's what we want here
  */
+int comparebyatime(const File **a, const File **b)
+{
+    File *fa = *(File **)a;
+    File *fb = *(File **)b;
+
+    struct stat *psa = getstat(fa);
+    struct stat *psb = getstat(fb);
+
+    if (psa->st_atime == psb->st_atime) {
+        return strcoll(fa->path, fb->path);
+    } else {
+        return psa->st_atime < psb->st_atime;
+    }
+}
+
+/*
+ * returns:
+ * -1 if a should come before b (a is newer than b)
+ *  0 if a is the same age as b
+ *  1 if a should come after b (a is older than b)
+ *
+ *  this is backwards from normal,
+ *  but by default ls shows newest files first,
+ *  so it's what we want here
+ */
+int comparebyctime(const File **a, const File **b)
+{
+    File *fa = *(File **)a;
+    File *fb = *(File **)b;
+
+    struct stat *psa = getstat(fa);
+    struct stat *psb = getstat(fb);
+
+    if (psa->st_ctime == psb->st_ctime) {
+        return strcoll(fa->path, fb->path);
+    } else {
+        return psa->st_ctime < psb->st_ctime;
+    }
+}
+
+/*
+ * returns:
+ * -1 if a should come before b (a is newer than b)
+ *  0 if a is the same age as b
+ *  1 if a should come after b (a is older than b)
+ *
+ *  this is backwards from normal,
+ *  but by default ls shows newest files first,
+ *  so it's what we want here
+ */
 int comparebymtime(const File **a, const File **b)
 {
     File *fa = *(File **)a;
@@ -462,6 +512,50 @@ unsigned long getblocks(File *file, int blocksize)
         int factor = DEV_BSIZE / blocksize;
         return blocks * factor;
     }
+}
+
+time_t getatime(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return 0;
+    }
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        errorf(__func__, "pstat is NULL\n");
+        return 0;
+    }
+    return pstat->st_atime;
+}
+
+/*
+time_t getbtime(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return 0;
+    }
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        errorf(__func__, "pstat is NULL\n");
+        return 0;
+    }
+    return pstat->st_birthtime;
+}
+*/
+
+time_t getctime(File *file)
+{
+    if (file == NULL) {
+        errorf(__func__, "file is NULL\n");
+        return 0;
+    }
+    struct stat *pstat = getstat(file);
+    if (pstat == NULL) {
+        errorf(__func__, "pstat is NULL\n");
+        return 0;
+    }
+    return pstat->st_ctime;
 }
 
 char *getgroup(File *file)

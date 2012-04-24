@@ -48,6 +48,8 @@ asterisks, e.g.
  * show file group (`-g`)
  * show size in bytes (`-B` or `-b`)
  * show file modification time (`-T`)
+ * show file change time (`-Tc`)
+ * show file access time (`-Tu`)
  * append a flag showing the file's type (`-F`)
  * append a flag showing the file's type - old BSD style (`-O`)
  * long format (`-l`, same as `-MNogBT1`)
@@ -63,6 +65,8 @@ asterisks, e.g.
 #### Sorting
  * sort by name (default)
  * sort by mtime (modification time, `-t`)
+ * sort by ctime (change time, `-c`, unless `-T` or `-l`, then `-t` is also required)
+ * sort by atime (access time, `-u`, unless `-T` or `-l`, then `-t` is also required)
  * reverse sort (`-r`)
  * don't sort (`-f` or `-U`)
 
@@ -72,7 +76,6 @@ asterisks, e.g.
  * disable escaping (`-E`)
 
 #### Coming soon
- * sort by ctime (change time, `-c`)
  * sort by btime (creation time, a.k.a. birth time, `-b`, or maybe `-U`)
  * show file ACLs (`-A`?)
  * human-readable file sizes (`-h`?)
@@ -92,8 +95,8 @@ asterisks, e.g.
  * file ACLs and extended attributes
  * list major/minor numbers for block/character devices
  * customizable colors
- * sort by atime (access time, `-u`), not sure how useful this is?
  * colors and flags for files with setuid/setgid/sticky bits or capabilities
+ * sub-second times for sorting and display
 
 #### Incompatibilities
  * `-D` - lists only directories, rather than GNU Emacs Dired mode
