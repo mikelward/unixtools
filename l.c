@@ -3,10 +3,9 @@
  *
  * TODO
  * - handling of symlink arguments (and -H and -L flags?)
+ * - symlink related behavior (e.g. -F, trailing slash argument, etc.)
  * - -c flag
  * - -S flag
- * - more mode flags, e.g. b = block special, c = character special
- * - more mode flags, e.g. rws = setuid, etc.
  * - correctly calculate column width of extended ("wide") characters
  * - remove remaining statically-sized buffers (search for 1024)
  * - other?

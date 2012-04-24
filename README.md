@@ -92,7 +92,7 @@ asterisks, e.g.
  * list major/minor numbers for block/character devices
  * customizable colors
  * sort by atime (access time, `-u`), not sure how useful this is?
- * display setuid, setgid, and sticky files, and files with capabilities specially somehow?
+ * colors and flags for files with setuid/setgid/sticky bits or capabilities
 
 #### Incompatibilities
  * `-D` - lists only directories, rather than GNU Emacs Dired mode
