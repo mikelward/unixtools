@@ -11,6 +11,12 @@ build: $(PROGS)
 
 doc: $(DOCS)
 
+test: $(TESTS)
+	@for test in $(TESTS); do \
+		echo $$test; \
+		./$$test; \
+	done
+
 all: tags $(TESTS) $(PROGS) $(DOCS)
 
 tags: *.c
@@ -28,11 +34,9 @@ README.html: README.md
 
 filetest: filetest.o file.o user.o group.o logging.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ -lacl
-	./$@
 
 listtest: listtest.o list.o logging.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
-	./$@
 
 l: l.o display.o list.o file.o field.o user.o group.o buf.o logging.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ -ltermcap -lacl
