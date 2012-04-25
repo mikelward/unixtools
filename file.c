@@ -559,9 +559,12 @@ char *getmodes(File *file)
             *p++ = '-';
     }
 
-    /* TODO - GNU ls prints a '.' if the file has no ACLs,
-       but prints nothing if the file system doesn't support ACLs */
-    if (hasacls(file))
+    /* XXX
+       GNU ls prints a '.' if the file has no ACLs,
+       but POSIX says it should print ' '
+       also, if the file system doesn't support ACLs, GNU ls
+       prints nothing, making the field one character smaller */
+    if (!islink(file) && hasacls(file))
         *p++ = '+';
     else
         *p++ = '.';
