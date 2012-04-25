@@ -31,30 +31,30 @@
 File *newfile(const char *dir, const char *name)
 {
     if (dir == NULL) {
-        errorf(__func__, "dir is NULL\n");
+        errorf("dir is NULL\n");
         return NULL;
     }
     if (name == NULL) {
-        errorf(__func__, "name is NULL\n");
+        errorf("name is NULL\n");
         return NULL;
     }
 
     File *file = malloc(sizeof *file);
     if (file == NULL) {
-        errorf(__func__, "Out of memory\n");
+        errorf("Out of memory\n");
         return NULL;
     }
 
     char *namecopy = strdup(name);
     if (namecopy == NULL) {
-        errorf(__func__, "namecopy is NULL\n");
+        errorf("namecopy is NULL\n");
         return NULL;
     }
     file->name = namecopy;
 
     char *path = makepath(dir, name);
     if (path == NULL) {
-        errorf(__func__, "path is NULL\n");
+        errorf("path is NULL\n");
         return NULL;
     }
     file->path = path;
@@ -68,7 +68,7 @@ File *newfile(const char *dir, const char *name)
     /*
     char *d = getdir(file);
     char *f = getfile(file);
-    errorf(__func__, "new file: name=%s, dir=%s, file=%s, path=%s\n",
+    errorf("new file: name=%s, dir=%s, file=%s, path=%s\n",
                       file->name, d, f, file->path);
     free(d);
     free(f);
@@ -80,7 +80,7 @@ File *newfile(const char *dir, const char *name)
 void freefile(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return;
     }
 
@@ -107,7 +107,7 @@ void freefile(File *file)
 const char *getname(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return NULL;
     }
     //char *namecopy = strdup(file->name);
@@ -118,7 +118,7 @@ const char *getname(File *file)
 const char *getpath(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return NULL;
     }
 
@@ -140,7 +140,7 @@ const char *getpath(File *file)
 char *getbasename(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return NULL;
     }
 
@@ -169,12 +169,12 @@ char *getbasename(File *file)
 char *getdirname(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return NULL;
     }
 
     if (file->path == NULL) {
-        errorf(__func__, "file->path is NULL\n");
+        errorf("file->path is NULL\n");
         return NULL;
     }
     char *pathcopy = strdup(file->path);
@@ -190,20 +190,20 @@ char *getdirname(File *file)
 struct stat *getstat(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return NULL;
     }
 
     if (!file->didstat) {
         struct stat *pstat = malloc(sizeof(*pstat));
         if (pstat == NULL) {
-            errorf(__func__, "Out of memory\n");
+            errorf("Out of memory\n");
             return NULL;
         }
         errno = 0;
         file->didstat = 1;
         if (lstat(file->path, pstat) != 0) {
-            errorf(__func__, "Cannot lstat %s: %s\n", file->path, strerror(errno));
+            errorf("Cannot lstat %s: %s\n", file->path, strerror(errno));
             return NULL;
         }
         file->pstat = pstat;
@@ -215,7 +215,7 @@ struct stat *getstat(File *file)
 bool isstat(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
 
@@ -225,13 +225,13 @@ bool isstat(File *file)
 bool isblockdev(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
 
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
 
@@ -241,13 +241,13 @@ bool isblockdev(File *file)
 bool ischardev(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
 
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
 
@@ -257,13 +257,13 @@ bool ischardev(File *file)
 bool isdir(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
 
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
 
@@ -273,13 +273,13 @@ bool isdir(File *file)
 bool isexec(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
 
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
 
@@ -289,13 +289,13 @@ bool isexec(File *file)
 bool isfifo(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
 
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
 
@@ -305,13 +305,13 @@ bool isfifo(File *file)
 bool islink(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
 
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
 
@@ -321,13 +321,13 @@ bool islink(File *file)
 bool issetgid(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
 
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
 
@@ -337,13 +337,13 @@ bool issetgid(File *file)
 bool issetuid(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
 
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
 
@@ -353,13 +353,13 @@ bool issetuid(File *file)
 bool issock(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
 
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
 
@@ -369,13 +369,13 @@ bool issock(File *file)
 bool issticky(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
 
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
 
@@ -399,13 +399,13 @@ char *makepath(const char *dirname, const char *filename)
 
     size = snprintf(path, 0, "%s/%s", dirname, filename);
     if (size < 1) {
-        errorf(__func__, "snprintf is not C99 compliant?\n");
+        errorf("snprintf is not C99 compliant?\n");
         return NULL;
     }
     size += 1;                  /* allow for the null byte */
     path = malloc(size);
     if (path == NULL) {
-        errorf(__func__, "Out of memory\n");
+        errorf("Out of memory\n");
         return NULL;
     }
     size = snprintf(path, size, "%s/%s", dirname, filename);
@@ -504,12 +504,12 @@ int comparebymtime(const File **a, const File **b)
 unsigned long getblocks(File *file, int blocksize)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
     unsigned long blocks = pstat->st_blocks;
@@ -534,12 +534,12 @@ unsigned long getblocks(File *file, int blocksize)
 time_t getatime(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
     return pstat->st_atime;
@@ -549,12 +549,12 @@ time_t getatime(File *file)
 time_t getbtime(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
     return pstat->st_birthtime;
@@ -564,12 +564,12 @@ time_t getbtime(File *file)
 time_t getctime(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
     return pstat->st_ctime;
@@ -578,12 +578,12 @@ time_t getctime(File *file)
 char *getgroup(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return NULL;
     }
     struct stat *stat = getstat(file);
     if (stat == NULL) {
-        errorf(__func__, "stat is NULL\n");
+        errorf("stat is NULL\n");
         return NULL;
     }
 
@@ -600,12 +600,12 @@ char *getgroup(File *file)
 gid_t getgroupnum(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
     struct stat *stat = getstat(file);
     if (stat == NULL) {
-        errorf(__func__, "stat is NULL\n");
+        errorf("stat is NULL\n");
         return 0;
     }
 
@@ -616,7 +616,7 @@ nlink_t getlinkcount(File *file)
 {
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
 
@@ -628,13 +628,13 @@ char *getmodes(File *file)
     /* e.g. -rwxr-xr-x\0 */
     char *modes = malloc(11);
     if (modes == NULL) {
-        errorf(__func__, "out of memory\n");
+        errorf("out of memory\n");
         return NULL;
     }
 
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return NULL;
     }
 
@@ -734,12 +734,12 @@ char *getmodes(File *file)
 ino_t getinode(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
     return pstat->st_ino;
@@ -748,12 +748,12 @@ ino_t getinode(File *file)
 time_t getmtime(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return 0;
     }
     return pstat->st_mtime;
@@ -762,7 +762,7 @@ time_t getmtime(File *file)
 char *getperms(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
     char *path = file->path;
@@ -770,7 +770,7 @@ char *getperms(File *file)
 
     pbuf = malloc(4 * sizeof(*pbuf));
     if (pbuf == NULL) {
-        errorf(__func__, "pbuf is NULL\n");
+        errorf("pbuf is NULL\n");
         return NULL;
     }
     p = pbuf;
@@ -803,12 +803,12 @@ char *getperms(File *file)
 char *getowner(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return NULL;
     }
     struct stat *stat = getstat(file);
     if (stat == NULL) {
-        errorf(__func__, "stat is NULL\n");
+        errorf("stat is NULL\n");
         return NULL;
     }
 
@@ -826,12 +826,12 @@ char *getowner(File *file)
 uid_t getownernum(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     }
     struct stat *stat = getstat(file);
     if (stat == NULL) {
-        errorf(__func__, "stat is NULL\n");
+        errorf("stat is NULL\n");
         return 0;
     }
 
@@ -842,7 +842,7 @@ long getsize(File *file)
 {
     struct stat *pstat = getstat(file);
     if (pstat == NULL) {
-        errorf(__func__, "pstat is NULL\n");
+        errorf("pstat is NULL\n");
         return -1;
     }
 
@@ -852,11 +852,11 @@ long getsize(File *file)
 File *gettarget(File *file)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return NULL;
     }
     if (!islink(file)) {
-        errorf(__func__, "%s is not a symlink\n", file->path);
+        errorf("%s is not a symlink\n", file->path);
         return NULL;
     }
     if (file->target == NULL) {
@@ -865,22 +865,22 @@ File *gettarget(File *file)
         errno = 0;
         int nchars = readlink(file->path, targetpath, sizeof(targetpath)-1);
         if (nchars == -1) {
-            errorf(__func__, "Error getting symlink target: %s\n", strerror(errno));
+            errorf("Error getting symlink target: %s\n", strerror(errno));
             return NULL;
         } else if (nchars == sizeof(targetpath)-1) {
-            errorf(__func__, "Symlink target too long for buffer\n");
+            errorf("Symlink target too long for buffer\n");
             return NULL;
         }
         targetpath[nchars] = '\0';
         char *dir = getdirname(file);
         if (dir == NULL) {
-            errorf(__func__, "getdirname returned NULL\n");
+            errorf("getdirname returned NULL\n");
             return NULL;
         }
         file->target = newfile(dir, targetpath);
         free(dir);
         if (file->target == NULL) {
-            errorf(__func__, "newfile returned NULL\n");
+            errorf("newfile returned NULL\n");
             return NULL;
         }
     }
@@ -903,7 +903,7 @@ bool hasacls(File *file)
                 /* file system does not support ACLs */
                 return false;
             }
-            errorf(__func__, "Error getting ACLs for %s: %s\n", file->name, strerror(errno));
+            errorf("Error getting ACLs for %s: %s\n", file->name, strerror(errno));
             // error = 1;
             break;
         }
@@ -914,7 +914,7 @@ bool hasacls(File *file)
             errno = 0;
             int status = acl_get_entry(acl, entry_id, &entry);
             if (status == -1) {
-                errorf(__func__, "Error getting ACLs for %s: %s\n", file->name, strerror(errno));
+                errorf("Error getting ACLs for %s: %s\n", file->name, strerror(errno));
                 // XXX return -1 or '?' or something
                 //error = 1;
                 break;

@@ -13,12 +13,12 @@ Buf *newbuf(void)
 {
     Buf *buf = malloc(sizeof(*buf));
     if (buf == NULL) {
-        errorf(__func__, "buf is NULL\n");
+        errorf("buf is NULL\n");
         return NULL;
     }
     buf->size = 1024, buf->data = malloc(1024);
     if (buf->data == NULL) {
-        errorf(__func__, "buf->data is NULL\n");
+        errorf("buf->data is NULL\n");
         return NULL;
     }
     buf->data[0] = '\0';
@@ -40,14 +40,14 @@ void freebuf(Buf *buf)
 void bufappend(Buf *buf, char *string, int width, bool printable)
 {
     if (buf == NULL) {
-        errorf(__func__, "buf is NULL\n");
+        errorf("buf is NULL\n");
         return;
     }
     /* buf->data should never be null since newbuf checks for that */
     assert(buf->data != NULL);
     if (buf->pos + width >= buf->size) {
         /* XXX should this put as much as will fit in the buffer anyway? */
-        errorf(__func__, "string too long\n");
+        errorf("string too long\n");
         return;
     }
 
@@ -63,11 +63,11 @@ void bufappend(Buf *buf, char *string, int width, bool printable)
 void bufappendchar(Buf *buf, char c)
 {
     if (buf == NULL) {
-        errorf(__func__, "buf is NULL\n");
+        errorf("buf is NULL\n");
         return;
     }
     if (buf->pos >= buf->size - 1) {
-        errorf(__func__, "buf is full\n");
+        errorf("buf is full\n");
         return;
     }
 
@@ -79,7 +79,7 @@ void bufappendchar(Buf *buf, char c)
 char *bufstring(Buf *buf)
 {
     if (buf == NULL) {
-        errorf(__func__, "buf is NULL\n");
+        errorf("buf is NULL\n");
         return NULL;
     }
     buf->data[buf->pos] = '\0';
@@ -89,7 +89,7 @@ char *bufstring(Buf *buf)
 int bufpos(Buf *buf)
 {
     if (buf == NULL) {
-        errorf(__func__, "buf is NULL\n");
+        errorf("buf is NULL\n");
         return 0;
     }
     return buf->pos;
@@ -98,7 +98,7 @@ int bufpos(Buf *buf)
 int bufscreenpos(Buf *buf)
 {
     if (buf == NULL) {
-        errorf(__func__, "buf is NULL\n");
+        errorf("buf is NULL\n");
         return 0;
     }
     return buf->screenpos;

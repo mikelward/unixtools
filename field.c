@@ -10,7 +10,7 @@
 void freefield(Field *field)
 {
     if (field == NULL) {
-        errorf(__func__, "field is NULL\n");
+        errorf("field is NULL\n");
         return;
     }
     if (field->string != NULL) {
@@ -24,12 +24,12 @@ Field *newfield(const char *string, enum align align, int width)
 {
     Field *fp = malloc(sizeof *fp);
     if (fp == NULL) {
-        errorf(__func__, "fp is NULL: out of memory\n");
+        errorf("fp is NULL: out of memory\n");
         return NULL;
     }
     fp->string = strdup(string);
     if (fp->string == NULL) {
-        errorf(__func__, "fp->string is NULL: out of memory\n");
+        errorf("fp->string is NULL: out of memory\n");
         return NULL;
     }
     fp->align = align;
@@ -40,7 +40,7 @@ Field *newfield(const char *string, enum align align, int width)
 int fieldwidth(Field *field)
 {
     if (field == NULL) {
-        errorf(__func__, "field is NULL\n");
+        errorf("field is NULL\n");
         return 0;
     }
     return field->width;
@@ -49,7 +49,7 @@ int fieldwidth(Field *field)
 enum align fieldalign(Field *field)
 {
     if (field == NULL) {
-        errorf(__func__, "field is NULL\n");
+        errorf("field is NULL\n");
         return 0;
     }
     return field->align;
@@ -58,7 +58,7 @@ enum align fieldalign(Field *field)
 const char *fieldstring(Field *field)
 {
     if (field == NULL) {
-        errorf(__func__, "field is NULL\n");
+        errorf("field is NULL\n");
         return 0;
     }
     return field->string;

@@ -552,17 +552,17 @@ void getnamefieldhelper(File *file, Options *poptions, Buf *buf, int showpath)
 Field *getnamefield(File *file, Options *poptions)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return NULL;
     }
     if (poptions == NULL) {
-        errorf(__func__, "options is NULL\n");
+        errorf("options is NULL\n");
         return NULL;
     }
 
     Buf *buf = newbuf();
     if (buf == NULL) {
-        errorf(__func__, "buf is NULL\n");
+        errorf("buf is NULL\n");
         return NULL;
     }
 
@@ -592,7 +592,7 @@ Field *getnamefield(File *file, Options *poptions)
 
     Field *field = newfield(bufstring(buf), align, bufscreenpos(buf));
     if (field == NULL) {
-        errorf(__func__, "field is NULL\n");
+        errorf("field is NULL\n");
         return NULL;
     }
     freebuf(buf);
@@ -608,14 +608,14 @@ Field *getnamefield(File *file, Options *poptions)
 FieldList *getfields(File *file, Options *poptions)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return NULL;
     }
 
     char snprintfbuf[1024];
     List *fieldlist = newlist();
     if (fieldlist == NULL) {
-        errorf(__func__, "fieldlist is NULL\n");
+        errorf("fieldlist is NULL\n");
         return NULL;
     }
 
@@ -629,7 +629,7 @@ FieldList *getfields(File *file, Options *poptions)
         while (isstat(file) && islink(file)) {
             target = gettarget(file);
             if (target == NULL) {
-                errorf(__func__, "target is NULL\n");
+                errorf("target is NULL\n");
                 walklist(fieldlist, free);
                 free(fieldlist);
                 return NULL;
@@ -648,7 +648,7 @@ FieldList *getfields(File *file, Options *poptions)
         }
         Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
         if (field == NULL) {
-            errorf(__func__, "field is NULL\n");
+            errorf("field is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
@@ -666,7 +666,7 @@ FieldList *getfields(File *file, Options *poptions)
         }
         Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
         if (field == NULL) {
-            errorf(__func__, "field is NULL\n");
+            errorf("field is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
@@ -685,7 +685,7 @@ FieldList *getfields(File *file, Options *poptions)
         }
         Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
         if (field == NULL) {
-            errorf(__func__, "field is NULL\n");
+            errorf("field is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
@@ -703,7 +703,7 @@ FieldList *getfields(File *file, Options *poptions)
         }
         Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
         if (field == NULL) {
-            errorf(__func__, "field is NULL\n");
+            errorf("field is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
@@ -727,7 +727,7 @@ FieldList *getfields(File *file, Options *poptions)
         }
         Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
         if (field == NULL) {
-            errorf(__func__, "field is NULL\n");
+            errorf("field is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
@@ -751,7 +751,7 @@ FieldList *getfields(File *file, Options *poptions)
         }
         Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
         if (field == NULL) {
-            errorf(__func__, "field is NULL\n");
+            errorf("field is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
@@ -762,7 +762,7 @@ FieldList *getfields(File *file, Options *poptions)
     if (poptions->perms) {
         char *perms = getperms(file);
         if (perms == NULL) {
-            errorf(__func__, "perms is NULL\n");
+            errorf("perms is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
@@ -770,7 +770,7 @@ FieldList *getfields(File *file, Options *poptions)
         int width = strlen(perms);
         Field *field = newfield(perms, ALIGN_RIGHT, width);
         if (field == NULL) {
-            errorf(__func__, "field is NULL\n");
+            errorf("field is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
@@ -789,7 +789,7 @@ FieldList *getfields(File *file, Options *poptions)
         }
         Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
         if (field == NULL) {
-            errorf(__func__, "field is NULL\n");
+            errorf("field is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
@@ -822,7 +822,7 @@ FieldList *getfields(File *file, Options *poptions)
             }
             struct tm *timestruct = localtime(&timestamp);
             if (timestruct == NULL) {
-                errorf(__func__, "timestruct is NULL\n");
+                errorf("timestruct is NULL\n");
                 walklist(fieldlist, free);
                 free(fieldlist);
                 return NULL;
@@ -843,7 +843,7 @@ FieldList *getfields(File *file, Options *poptions)
         }
         Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
         if (field == NULL) {
-            errorf(__func__, "field is NULL\n");
+            errorf("field is NULL\n");
             walklist(fieldlist, free);
             free(fieldlist);
             return NULL;
@@ -874,18 +874,18 @@ void printwithnewline(void *string)
 StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
 {
     if (filefields == NULL) {
-        errorf(__func__, "filefields is NULL\n");
+        errorf("filefields is NULL\n");
         return NULL;
     }
     if (fieldwidths == NULL) {
-        errorf(__func__, "fieldwidths is NULL\n");
+        errorf("fieldwidths is NULL\n");
         return NULL;
     }
 
     char snprintfbuf[1024];
     StringList *filestrings = newlist();
     if (filestrings == NULL) {
-        errorf(__func__, "filestrings is NULL\n");
+        errorf("filestrings is NULL\n");
         return NULL;
     }
 
@@ -893,7 +893,7 @@ StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
     for (int i = 0; i < nfiles; i++) {
         Buf *buf = newbuf();
         if (buf == NULL) {
-            errorf(__func__, "buf is NULL\n");
+            errorf("buf is NULL\n");
             freelist(filestrings, (free_func)free);
             return NULL;
         }
@@ -903,7 +903,7 @@ StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
         for (int j = 0; j < nfields; j++) {
             Field *field = getitem(fields, j);
             if (field == NULL) {
-                errorf(__func__, "field is NULL\n");
+                errorf("field is NULL\n");
                 freelist(filestrings, (free_func)free);
                 freebuf(buf);
                 return NULL;
@@ -945,7 +945,7 @@ StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
 int *getmaxfilefieldwidths(FileFieldList *filefields)
 {
     if (filefields == NULL) {
-        errorf(__func__, "filefields is NULL\n");
+        errorf("filefields is NULL\n");
         return NULL;
     }
     int nfiles = length(filefields);
@@ -955,7 +955,7 @@ int *getmaxfilefieldwidths(FileFieldList *filefields)
 
     FieldList *firstfilefields = getitem(filefields, 0);
     if (firstfilefields == NULL) {
-        errorf(__func__, "firstfilefields is NULL\n");
+        errorf("firstfilefields is NULL\n");
         return NULL;
     }
     int nfields = length(firstfilefields);
@@ -963,7 +963,7 @@ int *getmaxfilefieldwidths(FileFieldList *filefields)
     for (int i = 0; i < nfiles; i++) {
         FieldList *fields = getitem(filefields, i);
         if (fields == NULL) {
-            errorf(__func__, "fields is NULL\n");
+            errorf("fields is NULL\n");
             continue;
         }
         for (int j = 0; j < nfields; j++) {
@@ -1014,10 +1014,10 @@ int getfilewidth(int *fieldwidths)
 void listfiles(List *files, Options *poptions)
 {
     if (files == NULL) {
-        errorf(__func__, "files is NULL\n");
+        errorf("files is NULL\n");
         return;
     } else if (poptions == NULL) {
-        errorf(__func__, "poptions is NULL\n");
+        errorf("poptions is NULL\n");
         return;
     }
 
@@ -1085,12 +1085,12 @@ void listdir(File *dir, Options *poptions)
 {
     List *files = newlist();
     if (files == NULL) {
-        errorf(__func__, "files in NULL\n");
+        errorf("files in NULL\n");
         return;
     }
     DIR *openeddir = opendir(dir->path);
     if (openeddir == NULL) {
-        errorf(__func__, "Cannot open %s\n", dir->path);
+        errorf("Cannot open %s\n", dir->path);
         return;
     }
     unsigned long totalblocks = 0;
@@ -1102,7 +1102,7 @@ void listdir(File *dir, Options *poptions)
         }
         File *file = newfile(dir->name, dirent->d_name);
         if (file == NULL) {
-            errorf(__func__, "file is NULL\n");
+            errorf("file is NULL\n");
             return;
         }
         if (!want(file, poptions)) {
@@ -1164,11 +1164,11 @@ char *cescape(char c)
 void printnametobuf(const char *name, Options *poptions, Buf *buf)
 {
     if (buf == NULL) {
-        errorf(__func__, "buf is NULL\n");
+        errorf("buf is NULL\n");
         return;
     }
     if (name == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return;
     }
 
@@ -1180,7 +1180,7 @@ void printnametobuf(const char *name, Options *poptions, Buf *buf)
                 {
                     char *escaped = cescape(*p);
                     if (escaped == NULL) {
-                        errorf(__func__, "No C escape for %c\n", *p);
+                        errorf("No C escape for %c\n", *p);
                         bufappendchar(buf, *p);
                     } else {
                         bufappend(buf, escaped, strlen(escaped), 1);
@@ -1191,7 +1191,7 @@ void printnametobuf(const char *name, Options *poptions, Buf *buf)
                 bufappendchar(buf, '?');
                 break;
             default:
-                errorf(__func__, "Unknown escape mode\n");
+                errorf("Unknown escape mode\n");
                 /* fall through */
             case ESCAPE_NONE:
                 bufappendchar(buf, *p);
@@ -1219,11 +1219,11 @@ int printsize(File *file, Options *poptions,
 void sortfiles(List *files, Options *poptions)
 {
     if (files == NULL) {
-        errorf(__func__, "files is NULL\n");
+        errorf("files is NULL\n");
         return;
     }
     if (poptions == NULL) {
-        errorf(__func__, "poptions is NULL\n");
+        errorf("poptions is NULL\n");
         return;
     }
 
@@ -1253,7 +1253,7 @@ void sortfiles(List *files, Options *poptions)
 int setupcolors(Colors *pcolors)
 {
     if (pcolors == NULL) {
-        errorf(__func__, "pcolors is NULL\n");
+        errorf("pcolors is NULL\n");
         return 0;
     }
 
@@ -1264,7 +1264,7 @@ int setupcolors(Colors *pcolors)
 
     int errret;
     if ((setupterm(term, 1, &errret)) == ERR) {
-        errorf(__func__, "setupterm returned %d\n", errret);
+        errorf("setupterm returned %d\n", errret);
         return 0;
     }
 
@@ -1304,13 +1304,13 @@ void usage(void)
 int want(File *file, Options *poptions)
 {
     if (file == NULL) {
-        errorf(__func__, "file is NULL\n");
+        errorf("file is NULL\n");
         return 0;
     } else if (file->path == NULL) {
-        errorf(__func__, "path is NULL\n");
+        errorf("path is NULL\n");
         return 0;
     } else if (poptions == NULL) {
-        errorf(__func__, "poptions is NULL\n");
+        errorf("poptions is NULL\n");
         return 0;
     }
     /* XXX what to do if we can't lstat the file? */

@@ -9,7 +9,7 @@ List *newlist(void)
 {
     List *lp = malloc(sizeof *lp);
     if (!lp) {
-        errorf(__func__, "Out of memory\n");
+        errorf("Out of memory\n");
         return NULL;
     }
     lp->capacity = 1024;
@@ -41,7 +41,7 @@ void append(void *element, List *list)
         void **newdata = realloc(list->data, (list->capacity+=1024)*sizeof(*newdata));
         if (!newdata) {
             free(list->data);
-            errorf(__func__, "Out of memory\n");
+            errorf("Out of memory\n");
             /* exit? */
         }
         list->data = newdata;
@@ -52,7 +52,7 @@ void append(void *element, List *list)
 unsigned length(List *list)
 {
     if (list == NULL) {
-        errorf(__func__, "list is NULL\n");
+        errorf("list is NULL\n");
         return 0;
     }
 
@@ -78,12 +78,12 @@ void setitem(List *list, unsigned index, void *elem)
 List *map(List *list, map_func func, void *context)
 {
     if (list == NULL) {
-        errorf(__func__, "list is NULL\n");
+        errorf("list is NULL\n");
         return NULL;
     }
     List *resultlist = newlist();
     if (resultlist == NULL) {
-        errorf(__func__, "result is NULL\n");
+        errorf("result is NULL\n");
         return NULL;
     }
 
@@ -122,7 +122,7 @@ void reverselist(List *list)
 void walklistcontext(List *list, walker_context_func func, void *context)
 {
     if (list == NULL) {
-        errorf(__func__, "list is NULL\n");
+        errorf("list is NULL\n");
         return;
     }
 
@@ -135,7 +135,7 @@ void walklistcontext(List *list, walker_context_func func, void *context)
 void walklist(List *list, walker_func func)
 {
     if (list == NULL) {
-        errorf(__func__, "list is NULL\n");
+        errorf("list is NULL\n");
         return;
     }
 
@@ -231,7 +231,7 @@ void printlistacross(List *list,
 int ceildiv(int num, int mult)
 {
     if (mult == 0) {
-        errorf(__func__, "division by zero (%d, %d)\n", num, mult);
+        errorf("division by zero (%d, %d)\n", num, mult);
         assert(mult != 0);
     }
     int res = (num + mult - 1) / mult;
@@ -265,7 +265,7 @@ void printlistdown(List *list,
                    int (*printer)(void *elem, void *pvoptions), void *pvoptions)
 {
     if (list == NULL) {
-        errorf(__func__, "list is NULL\n");
+        errorf("list is NULL\n");
         return;
     }
 

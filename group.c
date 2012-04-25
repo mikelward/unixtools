@@ -9,13 +9,13 @@ Group *newgroup(gid_t gid)
 {
 	Group *group = malloc(sizeof *group);
 	if (group == NULL) {
-		errorf(__func__, "out of memory\n");
+		errorf("out of memory\n");
 		return NULL;
 	}
 
 	struct group *pgrp = getgrgid(gid);
 	if (pgrp == NULL) {
-		errorf(__func__, "Group %u not found\n", (unsigned)gid);
+		errorf("Group %u not found\n", (unsigned)gid);
 		return NULL;
 	}
 
@@ -23,7 +23,7 @@ Group *newgroup(gid_t gid)
 
 	group->groupname = strdup(pgrp->gr_name);
 	if (group->groupname == NULL) {
-		errorf(__func__, "strdup returned NULL\n");
+		errorf("strdup returned NULL\n");
 		return NULL;
 	}
 
@@ -33,7 +33,7 @@ Group *newgroup(gid_t gid)
 char *getgroupname(Group *group)
 {
 	if (group == NULL) {
-		errorf(__func__, "user is NULL\n");
+		errorf("user is NULL\n");
 		return NULL;
 	}
 

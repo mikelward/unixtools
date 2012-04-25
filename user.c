@@ -9,13 +9,13 @@ User *newuser(uid_t uid)
 {
 	User *user = malloc(sizeof *user);
 	if (user == NULL) {
-		errorf(__func__, "out of memory\n");
+		errorf("out of memory\n");
 		return NULL;
 	}
 
 	struct passwd *ppwd = getpwuid(uid);
 	if (ppwd == NULL) {
-		errorf(__func__, "User %u not found\n", (unsigned)uid);
+		errorf("User %u not found\n", (unsigned)uid);
 		return NULL;
 	}
 
@@ -23,7 +23,7 @@ User *newuser(uid_t uid)
 
 	user->username = strdup(ppwd->pw_name);
 	if (user->username == NULL) {
-		errorf(__func__, "strdup returned NULL\n");
+		errorf("strdup returned NULL\n");
 		return NULL;
 	}
 
@@ -33,7 +33,7 @@ User *newuser(uid_t uid)
 char *getusername(User *user)
 {
 	if (user == NULL) {
-		errorf(__func__, "user is NULL\n");
+		errorf("user is NULL\n");
 		return NULL;
 	}
 
