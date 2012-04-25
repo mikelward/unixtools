@@ -4,13 +4,14 @@
 #include <sys/param.h>      /* for DEV_BSIZE */
 #include <sys/acl.h>
 #include <errno.h>
+#include <grp.h>
 #include <libgen.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "file.h"
-#include "group.h"
 #include "logging.h"
 
 /*
@@ -30,31 +31,34 @@
 
 File *newfile(const char *dir, const char *name)
 {
-    if (dir == NULL) {
+    if (!dir) {
         errorf("dir is NULL\n");
         return NULL;
     }
-    if (name == NULL) {
+    if (!name) {
         errorf("name is NULL\n");
         return NULL;
     }
 
     File *file = malloc(sizeof *file);
-    if (file == NULL) {
+    if (!file) {
         errorf("Out of memory\n");
         return NULL;
     }
 
     char *namecopy = strdup(name);
-    if (namecopy == NULL) {
+    if (!namecopy) {
         errorf("namecopy is NULL\n");
+        free(file);
         return NULL;
     }
     file->name = namecopy;
 
     char *path = makepath(dir, name);
-    if (path == NULL) {
+    if (!path) {
         errorf("path is NULL\n");
+        free(namecopy);
+        free(file);
         return NULL;
     }
     file->path = path;
@@ -65,39 +69,30 @@ File *newfile(const char *dir, const char *name)
     file->pstat = NULL;
     file->target = NULL;
 
-    /*
-    char *d = getdir(file);
-    char *f = getfile(file);
-    errorf("new file: name=%s, dir=%s, file=%s, path=%s\n",
-                      file->name, d, f, file->path);
-    free(d);
-    free(f);
-    */
-
     return file;
 }
 
 void freefile(File *file)
 {
-    if (file == NULL) {
+    if (!file) {
         errorf("file is NULL\n");
         return;
     }
 
-    if (file->name != NULL) {
+    if (file->name) {
         free(file->name);
         file->name = NULL;
     }
-    if (file->path != NULL) {
+    if (file->path) {
         free(file->path);
         file->path = NULL;
     }
-    if (file->pstat != NULL) {
+    if (file->pstat) {
         free(file->pstat);
         file->pstat = NULL;
     }
     File *target = file->target;
-    while (target != NULL) {
+    while (target) {
         File *nexttarget = target->target;
         freefile(target);
         target = nexttarget;
@@ -106,7 +101,7 @@ void freefile(File *file)
 
 const char *getname(File *file)
 {
-    if (file == NULL) {
+    if (!file) {
         errorf("file is NULL\n");
         return NULL;
     }
@@ -117,7 +112,7 @@ const char *getname(File *file)
 
 const char *getpath(File *file)
 {
-    if (file == NULL) {
+    if (!file) {
         errorf("file is NULL\n");
         return NULL;
     }
@@ -139,7 +134,7 @@ const char *getpath(File *file)
  */
 char *getbasename(File *file)
 {
-    if (file == NULL) {
+    if (!file) {
         errorf("file is NULL\n");
         return NULL;
     }
@@ -168,12 +163,12 @@ char *getbasename(File *file)
  */
 char *getdirname(File *file)
 {
-    if (file == NULL) {
+    if (!file) {
         errorf("file is NULL\n");
         return NULL;
     }
 
-    if (file->path == NULL) {
+    if (!file->path) {
         errorf("file->path is NULL\n");
         return NULL;
     }
@@ -189,14 +184,14 @@ char *getdirname(File *file)
  */
 struct stat *getstat(File *file)
 {
-    if (file == NULL) {
+    if (!file) {
         errorf("file is NULL\n");
         return NULL;
     }
 
     if (!file->didstat) {
         struct stat *pstat = malloc(sizeof(*pstat));
-        if (pstat == NULL) {
+        if (!pstat) {
             errorf("Out of memory\n");
             return NULL;
         }
@@ -204,6 +199,7 @@ struct stat *getstat(File *file)
         file->didstat = 1;
         if (lstat(file->path, pstat) != 0) {
             errorf("Cannot lstat %s: %s\n", file->path, strerror(errno));
+            free(pstat);
             return NULL;
         }
         file->pstat = pstat;
@@ -214,172 +210,72 @@ struct stat *getstat(File *file)
 
 bool isstat(File *file)
 {
-    if (file == NULL) {
+    if (!file) {
         errorf("file is NULL\n");
         return 0;
     }
 
-    return getstat(file) != NULL;
+    return getstat(file);
 }
 
 bool isblockdev(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
-
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
-
-    return S_ISBLK(pstat->st_mode);
+    return pstat && S_ISBLK(pstat->st_mode);
 }
 
 bool ischardev(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
-
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
-
-    return S_ISCHR(pstat->st_mode);
+    return pstat && S_ISCHR(pstat->st_mode);
 }
 
 bool isdir(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
-
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
-
-    return S_ISDIR(pstat->st_mode);
+    return pstat && S_ISDIR(pstat->st_mode);
 }
 
 bool isexec(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
-
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
-
-    return pstat->st_mode & (S_IXUSR|S_IXGRP|S_IXOTH);
+    return pstat && pstat->st_mode & (S_IXUSR|S_IXGRP|S_IXOTH);
 }
 
 bool isfifo(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
-
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
-
-    return S_ISFIFO(pstat->st_mode);
+    return pstat && S_ISFIFO(pstat->st_mode);
 }
 
 bool islink(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
-
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
-
-    return S_ISLNK(pstat->st_mode);
+    return pstat && S_ISLNK(pstat->st_mode);
 }
 
 bool issetgid(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
-
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
-
-    return pstat->st_mode & S_ISGID;
+    return pstat && pstat->st_mode & S_ISGID;
 }
 
 bool issetuid(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
-
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
-
-    return pstat->st_mode & S_ISUID;
+    return pstat && pstat->st_mode & S_ISUID;
 }
 
 bool issock(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
-
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
-
-    return S_ISSOCK(pstat->st_mode);
+    return pstat && S_ISSOCK(pstat->st_mode);
 }
 
 bool issticky(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
-
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
-
-    return pstat->st_mode & S_ISVTX;
+    return pstat && pstat->st_mode & S_ISVTX;
 }
 
 char *makepath(const char *dirname, const char *filename)
@@ -387,10 +283,10 @@ char *makepath(const char *dirname, const char *filename)
     char *path = NULL;
     unsigned size;
 
-    if (dirname == NULL || strcmp(dirname, ".") == 0) {
+    if (!dirname || strcmp(dirname, ".") == 0) {
         return strdup(filename);
     }
-    if (filename == NULL) {
+    if (!filename) {
         return strdup(dirname);
     }
     if (filename[0] == '/') {
@@ -404,7 +300,7 @@ char *makepath(const char *dirname, const char *filename)
     }
     size += 1;                  /* allow for the null byte */
     path = malloc(size);
-    if (path == NULL) {
+    if (!path) {
         errorf("Out of memory\n");
         return NULL;
     }
@@ -503,15 +399,8 @@ int comparebymtime(const File **a, const File **b)
 
 unsigned long getblocks(File *file, int blocksize)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
+    if (!pstat) return 0;
     unsigned long blocks = pstat->st_blocks;
     /* blocks are stored as an unsigned long on i686
      * when dealing with integral types, we have to do
@@ -533,110 +422,60 @@ unsigned long getblocks(File *file, int blocksize)
 
 time_t getatime(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
-    return pstat->st_atime;
+    return pstat && pstat->st_atime;
 }
 
 /*
 time_t getbtime(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
-    return pstat->st_birthtime;
+    return pstat && pstat->st_birthtime;
 }
 */
 
 time_t getctime(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
-    return pstat->st_ctime;
+    return pstat && pstat->st_ctime;
 }
 
-char *getgroup(File *file)
+char *getgroupname(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return NULL;
+    struct stat *pstat = getstat(file);
+    if (!pstat) return "?";
+    struct group *pgrp = getgrgid(pstat->st_gid);
+    if (!pgrp) {
+        errorf("Group %lu not found\n", (unsigned long)pstat->st_gid);
+        // TODO return the gid as a string
+        return "?";
     }
-    struct stat *stat = getstat(file);
-    if (stat == NULL) {
-        errorf("stat is NULL\n");
-        return NULL;
-    }
-
-    Group *group = newgroup(stat->st_gid);
-    if (group == NULL) {
-        // TODO snprintf("%u", stat->st_gid);
-    }
-
-    return getgroupname(group);
+    return pgrp->gr_name;
 }
 
-// TODO return a string instead of gid_t?
-// return '?' instead of 0 on failure?
+/* TODO return the number as a string or "?" if the group could not be determined */
 gid_t getgroupnum(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
-    struct stat *stat = getstat(file);
-    if (stat == NULL) {
-        errorf("stat is NULL\n");
-        return 0;
-    }
-
-    return stat->st_gid;
+    struct stat *pstat = getstat(file);
+    if (!pstat) return 0;
+    return pstat->st_gid;
 }
 
+/* TODO return a string, "?" if stat fails */
 nlink_t getlinkcount(File *file)
 {
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
-
+    if (!pstat) return 0;
     return pstat->st_nlink;
 }
 
 char *getmodes(File *file)
 {
-    /* e.g. -rwxr-xr-x\0 */
-    char *modes = malloc(11);
-    if (modes == NULL) {
-        errorf("out of memory\n");
-        return NULL;
-    }
-
+    char *unknownmodes = "???????????";
+    char *modes = malloc((strlen(unknownmodes) + 1) * sizeof(*modes));
+    if (!modes) return strdup(unknownmodes);
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return NULL;
-    }
+    if (!pstat) return strdup(unknownmodes);
 
     char *p = modes;
     if (islink(file))
@@ -731,49 +570,35 @@ char *getmodes(File *file)
     return modes;
 }
 
+/* TODO return a string, "?" on error */
 ino_t getinode(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
+    if (!pstat) return 0;
     return pstat->st_ino;
 }
 
+/* TODO return a string, "?" on error */
 time_t getmtime(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return 0;
-    }
+    if (!pstat) return 0;
     return pstat->st_mtime;
 }
 
 char *getperms(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
-    char *path = file->path;
-    char *pbuf, *p;
+    char *unknownperms = "???";
+    if (!file) return strdup(unknownperms);
 
-    pbuf = malloc(4 * sizeof(*pbuf));
-    if (pbuf == NULL) {
-        errorf("pbuf is NULL\n");
+    char *path = file->path;
+    char *perms, *p;
+    perms = malloc((strlen(unknownperms) + 1) * sizeof(*perms));
+    if (!perms) {
+        errorf("Out of memory\n");
         return NULL;
     }
-    p = pbuf;
+    p = perms;
 
     if (access(path, R_OK) == 0)
         (*p++) = 'r';
@@ -797,61 +622,41 @@ char *getperms(File *file)
         (*p++) = '?';
 
     *p = '\0';
-    return pbuf;
+    return perms;
 }
 
-char *getowner(File *file)
+char *getownername(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return NULL;
-    }
-    struct stat *stat = getstat(file);
-    if (stat == NULL) {
-        errorf("stat is NULL\n");
-        return NULL;
-    }
-
-    User *user = newuser(stat->st_uid);
-    if (user == NULL) {
+    struct stat *pstat = getstat(file);
+    if (!pstat) return "?";
+    struct passwd *ppwd = getpwuid(pstat->st_uid);
+    if (!ppwd) {
+        errorf("User %lu not found\n", (unsigned long)pstat->st_uid);
         // TODO snprintf("%u", stat->st_uid);
+        return "?";
     }
-
-    // TODO free user
-    return getusername(user);
+    return ppwd->pw_name;
 }
 
-// TODO return a string instead of uid_t?
-// return '?' instead of 0 on failure?
+/* TODO return a string instead of uid_t, "?" on failure */
 uid_t getownernum(File *file)
 {
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return 0;
-    }
     struct stat *stat = getstat(file);
-    if (stat == NULL) {
-        errorf("stat is NULL\n");
-        return 0;
-    }
-
+    if (!stat) return 0;
     return stat->st_uid;
 }
 
+/* TODO return a string instead of long, "?" on failure */
 long getsize(File *file)
 {
     struct stat *pstat = getstat(file);
-    if (pstat == NULL) {
-        errorf("pstat is NULL\n");
-        return -1;
-    }
-
+    if (!pstat) return -1;
     return (long)pstat->st_size;
 }
 
 File *gettarget(File *file)
 {
-    if (file == NULL) {
+    if (!file) {
         errorf("file is NULL\n");
         return NULL;
     }
@@ -859,7 +664,7 @@ File *gettarget(File *file)
         errorf("%s is not a symlink\n", file->path);
         return NULL;
     }
-    if (file->target == NULL) {
+    if (!file->target) {
         char targetpath[PATH_MAX];
         /* note: readlink(3p) not readlink(2) */
         errno = 0;
@@ -898,7 +703,8 @@ bool hasacls(File *file)
 
         errno = 0;
         acl_t acl = acl_get_file(file->path, acl_types[i]);
-        if (acl == (acl_t)NULL) {
+        // XXX is this valid?
+        if (!acl) {
             if (errno == EOPNOTSUPP) {
                 /* file system does not support ACLs */
                 return false;

@@ -7,8 +7,6 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "user.h"
-
 typedef struct file {
     char *name;
     char *path;
@@ -57,7 +55,12 @@ bool ishidden(File *file);
 bool hasacls(File *file);
 
 unsigned long getblocks(File *file, int blocksize);
-char *getgroup(File *file);
+/**
+ * Return the name of the group of the file.
+ *
+ * Caller must NOT free returned string.
+ */
+char *getgroupname(File *file);
 gid_t getgroupnum(File *file);
 time_t getatime(File *file);
 //time_t getbtime(File *file);
@@ -65,9 +68,19 @@ time_t getctime(File *file);
 time_t getmtime(File *file);
 ino_t getinode(File *file);
 nlink_t getlinkcount(File *file);
+/**
+ * Return modes as a string, e.g. "-rwxr-xr-x"
+ *
+ * Caller must free returned string.
+ */
 char *getmodes(File *file);
-char *getowner(File *file);
+char *getownername(File *file);
 uid_t getownernum(File *file);
+/**
+ * Return access permissions for current user, e.g. "rwx".
+ *
+ * Caller must free returned string.
+ */
 char *getperms(File *file);
 long getsize(File *file);
 

@@ -3,10 +3,11 @@
  *
  * TODO
  * - handling of symlink arguments (and -H and -L flags?)
- * - symlink related behavior (e.g. -F, trailing slash argument, etc.)
+ * - handling of symlink arguments (-F, link ending in slash, etc.)
  * - -S flag
  * - correctly calculate column width of extended ("wide") characters
  * - remove remaining statically-sized buffers (search for 1024)
+ * - fix user and group lookups, cache them in a hash
  * - other?
  *
  * NOTES
@@ -679,7 +680,6 @@ FieldList *getfields(File *file, Options *poptions)
         if (isstat(file)) {
             char *modes = getmodes(file);
             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", modes);
-            free(modes);
         } else {
             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "???????????");
         }
@@ -719,7 +719,7 @@ FieldList *getfields(File *file, Options *poptions)
                 uid_t uid = getownernum(file);
                 width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", (unsigned long)uid);
             } else {
-                char *owner = getowner(file);
+                char *owner = getownername(file);
                 width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", owner);
             }
         } else {
@@ -743,7 +743,7 @@ FieldList *getfields(File *file, Options *poptions)
                 gid_t gid = getgroupnum(file);
                 width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", (unsigned long)gid);
             } else {
-                char *group = getgroup(file);
+                char *group = getgroupname(file);
                 width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", group);
             }
         } else {
