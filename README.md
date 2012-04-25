@@ -106,7 +106,6 @@ asterisks, e.g.
  * `-m` - adds a modes column, rather than stream mode
  * `-o` - adds an owner column, rather than long-without-group (could rename to `-O` if `-o` is really needed)
  * `-p` - adds a permissions column, rather than appending slash to directories (use `-F` or `-O`)
- * `-c` and `-u` are less complex by default, see `options.compatible` in the source to get legacy behavior
 
 ### Installation
 
