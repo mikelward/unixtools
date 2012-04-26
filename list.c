@@ -27,7 +27,7 @@ void freelist(List *list, walker_func freeelem)
     int i = 0;
     for (; i < list->next; i++) {
         void *elem = (list->data)[i];
-        if (elem != NULL) {
+        if (elem) {
             freeelem(elem);
             elem = NULL;
         }
@@ -38,7 +38,7 @@ void freelist(List *list, walker_func freeelem)
 
 void append(void *element, List *list)
 {
-    if (list == NULL) return;
+    if (!list) return;
     if (list->next == list->capacity) {
         void **newdata = realloc(list->data, (list->capacity+=1024)*sizeof(*newdata));
         if (!newdata) {

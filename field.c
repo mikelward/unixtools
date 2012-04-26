@@ -14,27 +14,26 @@ void freefield(Field *field)
         return;
     }
     if (field->string != NULL) {
-        /* XXX is const qualifier correct? */
-        free((char *)field->string);
+        free(field->string);
     }
     free(field);
 }
 
 Field *newfield(const char *string, enum align align, int width)
 {
-    Field *fp = malloc(sizeof *fp);
-    if (fp == NULL) {
-        errorf("fp is NULL: out of memory\n");
+    Field *field = malloc(sizeof *field);
+    if (!field) {
+        errorf("field is NULL: out of memory?\n");
         return NULL;
     }
-    fp->string = strdup(string);
-    if (fp->string == NULL) {
-        errorf("fp->string is NULL: out of memory\n");
+    field->string = strdup(string);
+    if (!field->string) {
+        errorf("field->string is NULL: out of memory?\n");
         return NULL;
     }
-    fp->align = align;
-    fp->width = width;
-    return fp;
+    field->align = align;
+    field->width = width;
+    return field;
 }
 
 int fieldwidth(Field *field)

@@ -4,7 +4,7 @@
 enum align { ALIGN_NONE, ALIGN_LEFT, ALIGN_RIGHT };
 
 typedef struct field {
-    const char *string;
+    char *string;
     enum align align;
     int width : 8;
 } Field;
