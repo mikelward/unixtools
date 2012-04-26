@@ -1,9 +1,15 @@
+#define _XOPEN_SOURCE 600       /* for strdup(), snprintf() */
+
+#include <assert.h>
+#include <curses.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <term.h>
+
 #include "display.h"
 #include "list.h"
 #include "logging.h"
-
-#include <assert.h>
-#include <stdio.h>
 
 /*
  * 2 space margin between columns
@@ -105,6 +111,55 @@ void printdown(StringList *list, int stringwidth, int screenwidth)
         }
         printf("\n");
     }
+}
+
+/**
+ * Try to set up color output.
+ *
+ * Returns 1 on success, 0 on failure.
+ *
+ * TODO This could be cleaned up a bit,
+ * perhaps use an array for the colors, etc.
+ * And maybe there's a way to get this
+ * more simply.
+ */
+int setupcolors(Colors *pcolors)
+{
+    if (pcolors == NULL) {
+        errorf("pcolors is NULL\n");
+        return 0;
+    }
+
+    char *term = getenv("TERM");
+    if (term == NULL) {
+        return 0;
+    }
+
+    int errret;
+    if ((setupterm(term, 1, &errret)) == ERR) {
+        errorf("setupterm returned %d\n", errret);
+        return 0;
+    }
+
+    char *setaf = tigetstr("setaf");
+    if (setaf == NULL) {
+        return 0;
+    }
+    pcolors->black = strdup(tparm(setaf, COLOR_BLACK, NULL));
+    pcolors->red = strdup(tparm(setaf, COLOR_RED, NULL));
+    pcolors->green = strdup(tparm(setaf, COLOR_GREEN, NULL));
+    pcolors->yellow = strdup(tparm(setaf, COLOR_YELLOW, NULL));
+    pcolors->blue = strdup(tparm(setaf, COLOR_BLUE, NULL));
+    pcolors->magenta = strdup(tparm(setaf, COLOR_MAGENTA, NULL));
+    pcolors->cyan = strdup(tparm(setaf, COLOR_CYAN, NULL));
+    pcolors->white = strdup(tparm(setaf, COLOR_WHITE, NULL));
+    char *sgr0 = tigetstr("sgr0");
+    if (sgr0 == NULL) {
+        return 0;
+    }
+    pcolors->none = strdup(sgr0);
+
+    return 1;
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/

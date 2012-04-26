@@ -54,9 +54,23 @@ typedef struct options {
 } Options;
 
 /**
+ * Cleans up anything allocated by setdefaults and setoptions.
+ *
+ * @todo Change setoptions to newoptions, and free the whole thing here.
+ */
+void freeoptions(Options *options);
+
+/**
  * Initialize options.
  */
 void setdefaults(Options *options);
+
+/**
+ * Set options based on supplied command line arguments.
+ *
+ * Returns number of arguments processed on success, or -1 on error.
+ */
+int setoptions(Options *options, int argc, char **argv);
 
 /**
  * Print a brief description of how to run the program to stderr.
