@@ -14,7 +14,7 @@
 #include "file.h"
 #include "logging.h"
 
-/*
+/**
  * A File.
  *
  * We need to be able to print the file name as it was supplied, e.g.
@@ -29,6 +29,9 @@
  * work like POSIX basename() and dirname().
  */
 
+/**
+ * Return a File object for the given filename.
+ */
 File *newfile(const char *dir, const char *name)
 {
     if (!dir) {
@@ -72,6 +75,9 @@ File *newfile(const char *dir, const char *name)
     return file;
 }
 
+/**
+ * Free all memory allocated by newfile.
+ */
 void freefile(File *file)
 {
     if (!file) {
@@ -97,6 +103,7 @@ void freefile(File *file)
         freefile(target);
         target = nexttarget;
     }
+    free(file);
 }
 
 const char *getname(File *file)
@@ -122,16 +129,6 @@ const char *getpath(File *file)
     return file->path;
 }
 
-/**
- * Returns the filename part of file's path.
- *
- * This should behave the same as basename(), and will generally be the part
- * of the file's path after the last slash.
- *
- * Caller should free the returned string.
- *
- * @see basename()
- */
 char *getbasename(File *file)
 {
     if (!file) {
@@ -151,16 +148,6 @@ char *getbasename(File *file)
     return namecopy;
 }
 
-/**
- * Returns the dirname part of file's path.
- *
- * This should behave the same as dirname(), and will generally be everything
- * before the last slash.
- *
- * Caller should free the returned string.
- *
- * @see dirname()
- */
 char *getdirname(File *file)
 {
     if (!file) {
@@ -179,10 +166,10 @@ char *getdirname(File *file)
     return dircopy;
 }
 
-/*
- * fill the pstat field if it's not already populated
+/**
+ * Fill the pstat field if it's not already populated and return it.
  */
-struct stat *getstat(File *file)
+static struct stat *getstat(File *file)
 {
     if (!file) {
         errorf("file is NULL\n");
