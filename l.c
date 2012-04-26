@@ -69,6 +69,9 @@ int main(int argc, char **argv)
     }
 
     int nargs = setoptions(options, argc, argv);
+    if (nargs == -1) {
+        exit(2);
+    }
 
     /* skip program name and flags */ 
     argc -= nargs, argv += nargs;
