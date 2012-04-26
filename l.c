@@ -88,19 +88,19 @@ int main(int argc, char **argv)
      * regular files are listed first, then all directories follow
      */
     List *files = newlist();
-    if (files == NULL) {
-        error("files is NULL\n");
+    if (!files) {
+        error("Out of memory?\n");
         exit(1);
     }
     List *dirs = newlist();
-    if (dirs == NULL) {
-        error("dirs is NULL\n");
+    if (!dirs) {
+        error("Out of memory?\n");
         exit(1);
     }
     for (int i = 0; i < argc; i++) {
         File *file = newfile(".", argv[i]);
-        if (file == NULL) {
-            error("file is NULL\n");
+        if (!file) {
+            error("Error creating file for %s\n", argv[i]);
             exit(1);
         }
         if (isstat(file)) {
@@ -116,19 +116,15 @@ int main(int argc, char **argv)
     listfiles(files, options);
     freelist(files, (free_func)freefile);
 
-    /*
-     * XXX make this use walklist
-     */
     int ndirs = length(dirs);
     int needlabel = nfiles > 0 || ndirs > 1;
     for (int i = 0; i < ndirs; i++) {
         File *dir = getitem(dirs, i);
-        if (dir == NULL) {
+        if (!dir) {
             error("dir is NULL\n");
             continue;
         }
-        int neednewline = nfiles > 0 || i > 0;
-        if (neednewline) {
+        if (nfiles > 0 || i > 0) {
             printf("\n");
         }
         if (needlabel) {
@@ -138,7 +134,6 @@ int main(int argc, char **argv)
     }
 
     freelist(dirs, (free_func)freefile);
-
     free(options);
 }
 
