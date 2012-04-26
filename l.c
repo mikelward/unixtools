@@ -686,6 +686,11 @@ int getfilewidth(int *fieldwidths)
     return total;
 }
 
+void freefields(List *list)
+{
+    freelist(list, (free_func)freefield);
+}
+
 /**
  * Print the given file list using the specified options->
  *
@@ -738,7 +743,7 @@ void listfiles(List *files, Options *options)
     int filewidth = getfilewidth(fieldwidths);
     free(fieldwidths);
     fieldwidths = NULL;
-    freelist(filefields, (free_func)freefield);
+    freelist(filefields, (free_func)freefields);
 
     /*
      * ...and finally print the output
@@ -787,6 +792,7 @@ void listdir(File *dir, Options *options)
             return;
         }
         if (!want(file, options)) {
+            free(file);
             continue;
         }
         append(file, files);
