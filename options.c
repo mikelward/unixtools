@@ -21,6 +21,7 @@ void freeoptions(Options *options)
 
 void setdefaults(Options *options)
 {
+    /* TODO use memset? */
     options->all = 0;
     options->blocksize = 1024;
     options->bytes = 0;

@@ -62,7 +62,6 @@ int main(int argc, char **argv)
     /* so that file names are sorted according to the user's locale */
     setlocale(LC_ALL, "");
 
-    /* TODO use memset? */
     Options *options = malloc(sizeof(*options));
     if (!options) {
         error("Out of memory?\n");
@@ -138,7 +137,7 @@ int main(int argc, char **argv)
 
     freelist(dirs, (free_func)freefile);
 
-    //free(options);
+    free(options);
 }
 
 void getnamefieldhelper(File *file, Options *options, Buf *buf, int showpath)
