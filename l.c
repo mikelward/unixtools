@@ -360,6 +360,7 @@ FieldList *getfields(File *file, Options *options)
         if (isstat(file)) {
             char *modes = getmodes(file);
             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", modes);
+            free(modes);
         } else {
             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "???????????");
         }

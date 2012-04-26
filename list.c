@@ -24,13 +24,15 @@ List *newlist(void)
 
 void freelist(List *list, walker_func freeelem)
 {
-    for (int i = 0; i < list->next; i++) {
+    int i = 0;
+    for (; i < list->next; i++) {
         void *elem = (list->data)[i];
         if (elem != NULL) {
             freeelem(elem);
             elem = NULL;
         }
     }
+    free(list->data);
     free(list);
 }
 

@@ -460,9 +460,14 @@ char *getmodes(File *file)
 {
     char *unknownmodes = "???????????";
     char *modes = malloc((strlen(unknownmodes) + 1) * sizeof(*modes));
-    if (!modes) return strdup(unknownmodes);
+    if (!modes) {
+        return strdup(unknownmodes);
+    }
     struct stat *pstat = getstat(file);
-    if (!pstat) return strdup(unknownmodes);
+    if (!pstat) {
+        free(modes);
+        return strdup(unknownmodes);
+    }
 
     char *p = modes;
     if (islink(file))
