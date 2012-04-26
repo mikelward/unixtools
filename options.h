@@ -3,7 +3,11 @@
 
 #include <sys/types.h>
 
+#include "display.h"
 #include "file.h"
+#include "logging.h"
+
+#define OPTSTRING "1aBbCcDdEeFfGgIiKkLlMmNnOopqsTtrUux"
 
 /* defaults should be the first element */
 enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS, DISPLAY_IN_ROWS };
@@ -48,5 +52,15 @@ typedef struct options {
     short screenwidth;              /* how wide the screen is, 0 if unknown */
     const char *timeformat;         /* custom time format for -T */
 } Options;
+
+/**
+ * Initialize options.
+ */
+void setdefaults(Options *options);
+
+/**
+ * Print a brief description of how to run the program to stderr.
+ */
+void usage(void);
 
 #endif
