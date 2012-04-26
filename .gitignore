@@ -3,6 +3,8 @@
 *.out
 *.log
 *.core
-ls2
-tags
+l
+filetest
 listtest
+loggingtest
+tags
