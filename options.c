@@ -19,6 +19,17 @@ void freeoptions(Options *options)
 	free(options->pcolors);
 }
 
+Options *newoptions(void)
+{
+    Options *options = malloc(sizeof(*options));
+    if (!options) {
+        errorf("Out of memory?\n");
+        return NULL;
+    }
+    setdefaults(options);
+    return options;
+}
+
 void setdefaults(Options *options)
 {
     /* TODO use memset? */

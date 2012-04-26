@@ -54,11 +54,16 @@ typedef struct options {
 } Options;
 
 /**
- * Cleans up anything allocated by setdefaults and setoptions.
- *
- * @todo Change setoptions to newoptions, and free the whole thing here.
+ * Frees options and any memory it allocated.
  */
 void freeoptions(Options *options);
+
+/**
+ * Create a new options object, initialized to defaults.
+ *
+ * @todo: Move terminal handling into its own thing?
+ */
+Options *newoptions(void);
 
 /**
  * Initialize options.

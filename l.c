@@ -62,12 +62,11 @@ int main(int argc, char **argv)
     /* so that file names are sorted according to the user's locale */
     setlocale(LC_ALL, "");
 
-    Options *options = malloc(sizeof(*options));
+    Options *options = newoptions();
     if (!options) {
         error("Out of memory?\n");
         exit(1);
     }
-    setdefaults(options);
 
     int nargs = setoptions(options, argc, argv);
 
