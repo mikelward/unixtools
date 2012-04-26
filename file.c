@@ -559,15 +559,12 @@ char *getmodes(File *file)
             *p++ = '-';
     }
 
-    /* XXX
-       GNU ls prints a '.' if the file has no ACLs,
-       but POSIX says it should print ' '
-       also, if the file system doesn't support ACLs, GNU ls
-       prints nothing, making the field one character smaller */
+    /* POSIX says we should print a space if there are no extended ACLs,
+       GNU ls prints nothing */
     if (!islink(file) && hasacls(file))
         *p++ = '+';
     else
-        *p++ = '.';
+        *p++ = ' ';
 
     *p++ = '\0';
     return modes;

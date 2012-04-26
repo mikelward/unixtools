@@ -97,6 +97,7 @@ asterisks, e.g.
  * customizable colors
  * colors and flags for files with setuid/setgid/sticky bits or capabilities
  * sub-second times for sorting and display
+ * SELinux (and other security systems) support (e.g. `.` in modes, `-Z` flag)
 
 #### Incompatibilities
  * `-D` - lists only directories, rather than GNU Emacs Dired mode

@@ -8,6 +8,7 @@
  * - correctly calculate column width of extended ("wide") characters
  * - remove remaining statically-sized buffers (search for 1024)
  * - fix user and group lookups, cache them in a hash
+ * - SELinux (and other security systems) support (e.g. "." in modes, -Z flag)
  * - other?
  *
  * NOTES
