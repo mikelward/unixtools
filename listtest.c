@@ -16,6 +16,7 @@ void test7(void);
 void test8(void);
 void test9(void);
 void test10(void);
+void test11(void);
 
 int main(int argc, const char *argv[])
 {
@@ -29,6 +30,7 @@ int main(int argc, const char *argv[])
     //test8();
     test9();
     test10();
+    test11();
 
     return 0;
 }
@@ -272,6 +274,7 @@ void test9(void)
     int screenwidth = 10;
     printf("print across (screenwidth=%d)\n", screenwidth);
     printlistacross(pl, screenwidth, &getintwidth, &printint, NULL);
+    freelist(pl, free);
 }
 
 void test10(void)
@@ -290,7 +293,40 @@ void test10(void)
     int screenwidth = 10;
     printf("print down (screenwidth=%d)\n", screenwidth);
     printlistdown(pl, screenwidth, &getintwidth, &printint, NULL);
+    freelist(pl, free);
 }
 
+bool intptrsequal(int *pi1, int *pi2)
+{
+    if (!pi1 || !pi2) return false;
+    return *pi1 == *pi2;
+}
+
+void test11(void)
+{
+    List *list = newlist();
+    int i;
+
+    error("%s\n", __func__);
+
+    for (i = 0; i <= 9; i++) {
+        int *pi = malloc(sizeof *pi);
+        *pi = i;
+        append(pi, list);
+    }
+
+    int *pi, *pifound;
+    pi = malloc(sizeof *pi);
+    *pi = 5;
+    pifound = finditem(list, pi, (equal_func)intptrsequal);
+    assert(*pifound == 5);
+
+    *pi = 11;
+    pifound = finditem(list, pi, (equal_func)intptrsequal);
+    assert(!pifound);
+
+    free(pi);
+    freelist(list, free);
+}
 
 /* vim: set ts=4 sw=4 tw=0 et:*/

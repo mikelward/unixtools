@@ -61,6 +61,20 @@ unsigned length(List *list)
     return list->next;
 }
 
+void *finditem(List *list, void *item1, equal_func isequal)
+{
+    if (!list) return NULL;
+    if (!item1) return NULL;
+
+    for (int i = 0; i < list->next; i++) {
+        void *item2 = (list->data)[i];
+        if (isequal(item1, item2)) {
+            return item2;
+        }
+    }
+    return NULL;
+}
+
 void *getitem(List *list, unsigned index)
 {
     if (list == NULL || list->next < index)
