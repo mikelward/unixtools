@@ -80,7 +80,6 @@ asterisks, e.g.
  * show file ACLs (`-A`?)
  * human-readable file sizes (`-h`?)
  * file sizes in megabytes and gigabytes (`-M`, `-G`?)
- * cache username and groupname lookups
 
 #### Coming later
  * locale and Unicode support
