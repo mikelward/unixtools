@@ -48,6 +48,15 @@ typedef List FileFieldList;         /* list of fields for each file */
 
 const int columnmargin = 1;
 
+Field *getbytesfield(File *file, Options *options, char *buf, int bufsize);
+Field *getdatetimefield(File *file, Options *options, char *buf, int bufsize);
+Field *getgroupfield(File *file, Options *options, char *buf, int bufsize);
+Field *getinodefield(File *file, Options *options, char *buf, int bufsize);
+Field *getlinkfield(File *file, Options *options, char *buf, int bufsize);
+Field *getmodesfield(File *file, Options *options, char *buf, int bufsize);
+Field *getownerfield(File *file, Options *options, char *buf, int bufsize);
+Field *getpermsfield(File *file, Options *options, char *buf, int bufsize);
+Field *getsizefield(File *file, Options *options, char *buf, int bufsize);
 int  listfile(File *file, Options *options);
 void listfilewithnewline(File *file, Options *options);
 void listfiles(List *files, Options *options);
@@ -232,6 +241,15 @@ void getnamefieldhelper(File *file, Options *options, Buf *buf, int showpath)
     }
 }
 
+/**
+ * Print the file name with flags and colors if requested
+ * flags, color start, filename, color end, and flags are made into a single field
+ * since we don't want spaces in between
+ * if -L is given and the file is a symlink, the returned fields include the name
+ * of the link's target (multiple times if there are multiple links)
+ * i.e. link -> file
+ * or even link -> link -> link -> file
+ */
 Field *getnamefield(File *file, Options *options)
 {
     if (file == NULL) {
@@ -286,7 +304,7 @@ Field *getnamefield(File *file, Options *options)
 /**
  * Returns a list of Fields for the given file.
  *
- * Which fields are returned is controlled by options->
+ * Which fields are returned is controlled by options.
  */
 FieldList *getfields(File *file, Options *options)
 {
@@ -322,238 +340,50 @@ FieldList *getfields(File *file, Options *options)
     }
 
     if (options->size) {
-        int width;
-        if (isstat(file)) {
-            unsigned long blocks = getblocks(file, options->blocksize);
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", blocks);
-        } else {
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "?");
-        }
-        Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
-        if (field == NULL) {
-            errorf("field is NULL\n");
-            walklist(fieldlist, free);
-            free(fieldlist);
-            return NULL;
-        }
-        append(field, fieldlist);
+        Field *sizefield = getsizefield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(sizefield, fieldlist);
     }
 
     if (options->inode) {
-        int width;
-        if (isstat(file)) {
-            ino_t inode = getinode(file);
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", inode);
-        } else {
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "?");
-        }
-        Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
-        if (field == NULL) {
-            errorf("field is NULL\n");
-            walklist(fieldlist, free);
-            free(fieldlist);
-            return NULL;
-        }
-        append(field, fieldlist);
+        Field *inodefield = getinodefield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(inodefield, fieldlist);
     }
 
     if (options->modes) {
-        int width;
-        if (isstat(file)) {
-            char *modes = getmodes(file);
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", modes);
-            free(modes);
-        } else {
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "???????????");
-        }
-        Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
-        if (field == NULL) {
-            errorf("field is NULL\n");
-            walklist(fieldlist, free);
-            free(fieldlist);
-            return NULL;
-        }
-        append(field, fieldlist);
+        Field *modesfield = getmodesfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(modesfield, fieldlist);
     }
 
     if (options->linkcount) {
-        int width;
-        if (isstat(file)) {
-            nlink_t nlinks = getlinkcount(file);
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", (unsigned long)nlinks);
-        } else {
-             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", "?");
-        }
-        Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
-        if (field == NULL) {
-            errorf("field is NULL\n");
-            walklist(fieldlist, free);
-            free(fieldlist);
-            return NULL;
-        }
-        append(field, fieldlist);
+        Field *linkfield = getlinkfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(linkfield, fieldlist);
     }
 
     if (options->owner) {
-        int width;
-        if (isstat(file)) {
-            uid_t uid = getownernum(file);
-            if (options->numeric) {
-                width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", (unsigned long)uid);
-            } else {
-                char *username = get(options->usernames, uid);
-                if (!username) {
-                    username = getusername(uid);
-                    if (!username) {
-                        snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", (unsigned long)uid);
-                        username = snprintfbuf;
-                    }
-                    set(options->usernames, uid, username);
-                }
-                width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", username);
-            }
-        } else {
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "?");
-        }
-        Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
-        if (field == NULL) {
-            errorf("field is NULL\n");
-            walklist(fieldlist, free);
-            free(fieldlist);
-            return NULL;
-        }
-        append(field, fieldlist);
+        Field *ownerfield = getownerfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(ownerfield, fieldlist);
     }
 
     if (options->group) {
-        int width;
-        if (isstat(file)) {
-            // TODO error handling
-            gid_t gid = getgroupnum(file);
-            if (options->numeric) {
-                width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", (unsigned long)gid);
-            } else {
-                char *groupname = get(options->groupnames, gid);
-                if (!groupname) {
-                    groupname = getgroupname(gid);
-                    set(options->groupnames, gid, groupname);
-                }
-                width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", groupname);
-            }
-        } else {
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "?");
-        }
-        Field *field = newfield(snprintfbuf, ALIGN_LEFT, width);
-        if (field == NULL) {
-            errorf("field is NULL\n");
-            walklist(fieldlist, free);
-            free(fieldlist);
-            return NULL;
-        }
-        append(field, fieldlist);
+        Field *groupfield = getgroupfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(groupfield, fieldlist);
     }
 
     if (options->perms) {
-        char *perms = getperms(file);
-        if (perms == NULL) {
-            errorf("perms is NULL\n");
-            walklist(fieldlist, free);
-            free(fieldlist);
-            return NULL;
-        }
-        int width = strlen(perms);
-        Field *field = newfield(perms, ALIGN_RIGHT, width);
-        if (field == NULL) {
-            errorf("field is NULL\n");
-            walklist(fieldlist, free);
-            free(fieldlist);
-            return NULL;
-        }
-        append(field, fieldlist);
-        free(perms);
+        Field *permsfield = getpermsfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(permsfield, fieldlist);
     }
 
     if (options->bytes) {
-        int width;
-        if (isstat(file)) {
-            long bytes = getsize(file);
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%ld", bytes);
-        } else {
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "?");
-        }
-        Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
-        if (field == NULL) {
-            errorf("field is NULL\n");
-            walklist(fieldlist, free);
-            free(fieldlist);
-            return NULL;
-        }
-        append(field, fieldlist);
+        Field *bytesfield = getbytesfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(bytesfield, fieldlist);
     }
 
     if (options->datetime) {
-        int width;
-        if (isstat(file)) {
-            time_t timestamp;
-            switch (options->timetype) {
-            case TIME_ATIME:
-                timestamp = getatime(file);
-                break;
-            case TIME_CTIME:
-                timestamp = getctime(file);
-                break;
-            /*
-            case TIME_BTIME:
-                timestamp = getbtime(file);
-                break;
-            */
-            default:
-                error("Unknown time attribute\n");
-                /* fall through */
-            case TIME_MTIME:
-                timestamp = getmtime(file);
-                break;
-            }
-            struct tm *timestruct = localtime(&timestamp);
-            if (timestruct == NULL) {
-                errorf("timestruct is NULL\n");
-                walklist(fieldlist, free);
-                free(fieldlist);
-                return NULL;
-            }
-            if (options->timeformat != NULL) {
-                width = strftime(snprintfbuf, sizeof(snprintfbuf), options->timeformat, timestruct);
-            } else {
-                /* month day hour and minute if file was modified in the last 6 months,
-                   month day year otherwise */
-                if (options->now != -1 && timestamp <= options->now && timestamp > options->now - 180*86400) {
-                    width = strftime(snprintfbuf, sizeof(snprintfbuf), "%b %e %H:%M", timestruct);
-                } else {
-                    width = strftime(snprintfbuf, sizeof(snprintfbuf), "%b %e  %Y", timestruct);
-                }
-            }
-        } else {
-            width = snprintf(snprintfbuf, sizeof(snprintfbuf), "?");
-        }
-        Field *field = newfield(snprintfbuf, ALIGN_RIGHT, width);
-        if (field == NULL) {
-            errorf("field is NULL\n");
-            walklist(fieldlist, free);
-            free(fieldlist);
-            return NULL;
-        }
-        append(field, fieldlist);
+        Field *datetimefield = getdatetimefield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(datetimefield, fieldlist);
     }
 
-    /*
-     * print the file name with flags and colors if requested
-     * flags, color start, filename, color end, and flags are made into a single field
-     * since we don't want spaces in between
-     * if -L is given and the file is a symlink, the returned fields include the name
-     * of the link's target (multiple times if there are multiple links)
-     * i.e. link -> file
-     * or even link -> link -> link -> file
-     */
     Field *field = getnamefield(link, options);
     append(field, fieldlist);
     
@@ -906,13 +736,6 @@ void printnametobuf(const char *name, Options *options, Buf *buf)
     }
 }
 
-/*
-int printsize(File *file, Options *options,
-              char *buf, size_t bufsize)
-{
-}
-*/
-
 /**
  * Sort "files" based on the specified options->
  */
@@ -958,6 +781,181 @@ int want(File *file, Options *options)
     }
     /* XXX what to do if we can't lstat the file? */
     return !options->dirsonly || isdir(file);
+}
+
+Field *getbytesfield(File *file, Options *options, char *buf, int bufsize)
+{
+    int width;
+    if (isstat(file)) {
+        long bytes = getsize(file);
+        width = snprintf(buf, bufsize, "%ld", bytes);
+    } else {
+        width = snprintf(buf, bufsize, "?");
+    }
+    return newfield(buf, ALIGN_RIGHT, width);
+}
+
+Field *getdatetimefield(File *file, Options *options, char *buf, int bufsize)
+{
+    int width;
+    if (isstat(file)) {
+        time_t timestamp;
+        switch (options->timetype) {
+        case TIME_ATIME:
+            timestamp = getatime(file);
+            break;
+        case TIME_CTIME:
+            timestamp = getctime(file);
+            break;
+        /*
+        case TIME_BTIME:
+            timestamp = getbtime(file);
+            break;
+        */
+        default:
+            errorf("Unknown time attribute\n");
+            /* fall through */
+        case TIME_MTIME:
+            timestamp = getmtime(file);
+            break;
+        }
+        struct tm *timestruct = localtime(&timestamp);
+        if (!timestruct) {
+            errorf("timestruct is NULL\n");
+            return NULL;
+        }
+        if (options->timeformat != NULL) {
+            width = strftime(buf, bufsize, options->timeformat, timestruct);
+        } else {
+            /* month day hour and minute if file was modified in the last 6 months,
+               month day year otherwise */
+            if (options->now != -1 && timestamp <= options->now && timestamp > options->now - 180*86400) {
+                width = strftime(buf, bufsize, "%b %e %H:%M", timestruct);
+            } else {
+                width = strftime(buf, bufsize, "%b %e  %Y", timestruct);
+            }
+        }
+    } else {
+        width = snprintf(buf, bufsize, "?");
+    }
+    return newfield(buf, ALIGN_RIGHT, width);
+}
+
+Field *getgroupfield(File *file, Options *options, char *buf, int bufsize)
+{
+    int width;
+    if (isstat(file)) {
+        gid_t gid = getgroupnum(file);
+        if (options->numeric) {
+            width = snprintf(buf, bufsize, "%lu", (unsigned long)gid);
+        } else {
+            char *groupname = get(options->groupnames, gid);
+            if (!groupname) {
+                groupname = getgroupname(gid);
+                if (!groupname) {
+                    width = snprintf(buf, bufsize, "%lu", (unsigned long)gid);
+                    groupname = buf;
+                }
+                set(options->groupnames, gid, groupname);
+            }
+            if (groupname != buf) {
+                /* only do this if we didn't already print into the buf */
+                width = snprintf(buf, bufsize, "%s", groupname);
+            }
+        }
+    } else {
+        width = snprintf(buf, bufsize, "?");
+    }
+    return newfield(buf, ALIGN_LEFT, width);
+}
+
+Field *getinodefield(File *file, Options *options, char *buf, int bufsize)
+{
+    int width;
+    if (isstat(file)) {
+        ino_t inode = getinode(file);
+        width = snprintf(buf, bufsize, "%lu", inode);
+    } else {
+        width = snprintf(buf, bufsize, "%s", "?");
+    }
+    return newfield(buf, ALIGN_RIGHT, width);
+}
+
+Field *getlinkfield(File *file, Options *options, char *buf, int bufsize)
+{
+    int width;
+    if (isstat(file)) {
+        nlink_t nlinks = getlinkcount(file);
+        width = snprintf(buf, bufsize, "%lu", (unsigned long)nlinks);
+    } else {
+         width = snprintf(buf, bufsize, "%s", "?");
+    }
+    return newfield(buf, ALIGN_RIGHT, width);
+}
+
+Field *getmodesfield(File *file, Options *options, char *buf, int bufsize)
+{
+    int width;
+    if (isstat(file)) {
+        char *modes = getmodes(file);
+        width = snprintf(buf, bufsize, "%s", modes);
+        free(modes);
+    } else {
+        width = snprintf(buf, bufsize, "%s", "???????????");
+    }
+    return newfield(buf, ALIGN_LEFT, width);
+}
+
+Field *getownerfield(File *file, Options *options, char *buf, int bufsize)
+{
+    int width;
+    if (isstat(file)) {
+        uid_t uid = getownernum(file);
+        if (options->numeric) {
+            width = snprintf(buf, bufsize, "%lu", (unsigned long)uid);
+        } else {
+            char *username = get(options->usernames, uid);
+            if (!username) {
+                username = getusername(uid);
+                if (!username) {
+                    width = snprintf(buf, bufsize, "%lu", (unsigned long)uid);
+                    username = buf;
+                }
+                set(options->usernames, uid, username);
+            }
+            if (username != buf) {
+                width = snprintf(buf, bufsize, "%s", username);
+            }
+        }
+    } else {
+        width = snprintf(buf, bufsize, "?");
+    }
+    return newfield(buf, ALIGN_LEFT, width);
+}
+
+Field *getpermsfield(File *file, Options *options, char *buf, int bufsize)
+{
+    char *perms = getperms(file);
+    if (perms == NULL) {
+        errorf("perms is NULL\n");
+        return NULL;
+    }
+    int width = strlen(perms);
+    Field *field = newfield(perms, ALIGN_RIGHT, width);
+    free(perms);
+    return field;
+}
+
+Field *getsizefield(File *file, Options *options, char *buf, int bufsize)
+{
+    int width;
+    if (isstat(file)) {
+        unsigned long blocks = getblocks(file, options->blocksize);
+        width = snprintf(buf, bufsize, "%lu", blocks);
+    } else {
+        width = snprintf(buf, bufsize, "%s", "?");
+    }
+    return newfield(buf, ALIGN_RIGHT, width);
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/
