@@ -97,6 +97,8 @@ asterisks, e.g.
  * colors and flags for files with setuid/setgid/sticky bits or capabilities
  * sub-second times for sorting and display
  * SELinux (and other security systems) support (e.g. `.` in modes, `-Z` flag)
+ * escape all fields, e.g. usernames, etc.
+ * tabular output format, e.g. `<field>[\t<field>]*\n` (no need for null separation given -e flag)
 
 #### Incompatibilities
  * `-D` - lists only directories, rather than GNU Emacs Dired mode
