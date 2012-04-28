@@ -172,16 +172,16 @@ void getnamefieldhelper(File *file, Options *options, Buf *buf, int showpath)
     int colorused = 0;
     if (options->color) {
         if (!isstat(file)) {
-            bufappend(buf, options->pcolors->red, strlen(options->pcolors->red), 0);
+            bufappend(buf, options->colors->red, strlen(options->colors->red), 0);
             colorused = 1;
         } else if (isdir(file)) {
-            bufappend(buf, options->pcolors->blue, strlen(options->pcolors->blue), 0);
+            bufappend(buf, options->colors->blue, strlen(options->colors->blue), 0);
             colorused = 1;
         } else if (islink(file)) {
-            bufappend(buf, options->pcolors->cyan, strlen(options->pcolors->cyan), 0);
+            bufappend(buf, options->colors->cyan, strlen(options->colors->cyan), 0);
             colorused = 1;
         } else if (isexec(file)) {
-            bufappend(buf, options->pcolors->green, strlen(options->pcolors->green), 0);
+            bufappend(buf, options->colors->green, strlen(options->colors->green), 0);
             colorused = 1;
         }
     }
@@ -192,7 +192,7 @@ void getnamefieldhelper(File *file, Options *options, Buf *buf, int showpath)
 
     /* reset the color back to normal (-G and -K) */
     if (colorused) {
-        bufappend(buf, options->pcolors->none, strlen(options->pcolors->none), 0);
+        bufappend(buf, options->colors->none, strlen(options->colors->none), 0);
     }
 
     /* print a character after the file showing its type (-F and -O) */

@@ -123,10 +123,10 @@ void printdown(StringList *list, int stringwidth, int screenwidth)
  * And maybe there's a way to get this
  * more simply.
  */
-int setupcolors(Colors *pcolors)
+int setupcolors(Colors *colors)
 {
-    if (pcolors == NULL) {
-        errorf("pcolors is NULL\n");
+    if (colors == NULL) {
+        errorf("colors is NULL\n");
         return 0;
     }
 
@@ -145,21 +145,34 @@ int setupcolors(Colors *pcolors)
     if (setaf == NULL) {
         return 0;
     }
-    pcolors->black = strdup(tparm(setaf, COLOR_BLACK, NULL));
-    pcolors->red = strdup(tparm(setaf, COLOR_RED, NULL));
-    pcolors->green = strdup(tparm(setaf, COLOR_GREEN, NULL));
-    pcolors->yellow = strdup(tparm(setaf, COLOR_YELLOW, NULL));
-    pcolors->blue = strdup(tparm(setaf, COLOR_BLUE, NULL));
-    pcolors->magenta = strdup(tparm(setaf, COLOR_MAGENTA, NULL));
-    pcolors->cyan = strdup(tparm(setaf, COLOR_CYAN, NULL));
-    pcolors->white = strdup(tparm(setaf, COLOR_WHITE, NULL));
+    colors->black = strdup(tparm(setaf, COLOR_BLACK, NULL));
+    colors->red = strdup(tparm(setaf, COLOR_RED, NULL));
+    colors->green = strdup(tparm(setaf, COLOR_GREEN, NULL));
+    colors->yellow = strdup(tparm(setaf, COLOR_YELLOW, NULL));
+    colors->blue = strdup(tparm(setaf, COLOR_BLUE, NULL));
+    colors->magenta = strdup(tparm(setaf, COLOR_MAGENTA, NULL));
+    colors->cyan = strdup(tparm(setaf, COLOR_CYAN, NULL));
+    colors->white = strdup(tparm(setaf, COLOR_WHITE, NULL));
     char *sgr0 = tigetstr("sgr0");
     if (sgr0 == NULL) {
         return 0;
     }
-    pcolors->none = strdup(sgr0);
+    colors->none = strdup(sgr0);
 
     return 1;
+}
+
+void freecolors(Colors *colors)
+{
+    if (!colors) return;
+    free(colors->black);
+    free(colors->red);
+    free(colors->green);
+    free(colors->yellow);
+    free(colors->blue);
+    free(colors->magenta);
+    free(colors->cyan);
+    free(colors->white);
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/

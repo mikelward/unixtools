@@ -11,12 +11,13 @@
 #include <time.h>
 
 #include "display.h"
+#include "logging.h"
 #include "options.h"
 
 void freeoptions(Options *options)
 {
 	if (!options) return;
-	free(options->pcolors);
+	freecolors(options->colors);
 }
 
 Options *newoptions(void)
@@ -61,7 +62,7 @@ void setdefaults(Options *options)
 
     options->compare = NULL;
     options->now = -1;
-    options->pcolors = NULL;
+    options->colors = NULL;
     options->screenwidth = 0;
     options->timeformat = NULL;
 
@@ -267,7 +268,7 @@ int setoptions(Options *options, int argc, char **argv)
             options->compare = &comparebyctime;
             break;
         default:
-            error("Unknown time type\n");
+            errorf("Unknown time type\n");
             options->compare = &comparebyname;
             break;
         }
@@ -283,24 +284,29 @@ int setoptions(Options *options, int argc, char **argv)
     }
 
     if (options->color) {
-	    Colors *pcolors = malloc(sizeof(*pcolors));
-		if (!pcolors) {
+	    Colors *colors = malloc(sizeof(*colors));
+		if (!colors) {
 			errorf("Out of memory?\n");
-			return -1;
+			goto error;
 		}
 
-        options->color = setupcolors(pcolors);
-        options->pcolors = pcolors;
+        options->color = setupcolors(colors);
+        options->colors = colors;
     }
 
     if (options->datetime && options->timeformat == NULL) {
         options->now = time(NULL);
         if (options->now == -1) {
-            error("Cannot determine current time\n");
+            errorf("Cannot determine current time\n");
+            /* non-fatal */
         }
     }
 
     return optind;
+
+error:
+    freeoptions(options);
+    return -1;
 }
 
 /**

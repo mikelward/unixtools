@@ -48,7 +48,7 @@ typedef struct options {
     /* these are more like global state variables than options */
     file_compare_function compare;  /* determines sort order */
     time_t now;                     /* current time - for determining date/time format */
-    Colors *pcolors;                /* the colors to use */
+    Colors *colors;                 /* the colors to use */
     short screenwidth;              /* how wide the screen is, 0 if unknown */
     const char *timeformat;         /* custom time format for -T */
 } Options;

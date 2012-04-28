@@ -23,7 +23,8 @@ typedef List StringList;
 void printacross(StringList *list, int stringwidth, int screenwidth);
 void printdown(StringList *list, int stringwidth, int screenwidth);
 
-int setupcolors(Colors *pcolors);
+int setupcolors(Colors *colors);
+void freecolors(Colors *colors);
 
 #endif
 /* vim: set ts=4 sw=4 tw=0 et:*/
