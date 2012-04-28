@@ -21,7 +21,6 @@
 #include <sys/types.h>
 #include <sys/param.h>
 #include <assert.h>
-#include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
 #include <locale.h>
@@ -35,6 +34,7 @@
 #include "display.h"
 #include "field.h"
 #include "file.h"
+#include "filefields.h"
 #include "group.h"
 #include "list.h"
 #include "logging.h"
@@ -48,24 +48,14 @@ typedef List FileFieldList;         /* list of fields for each file */
 
 const int columnmargin = 1;
 
-Field *getbytesfield(File *file, Options *options, char *buf, int bufsize);
-Field *getdatetimefield(File *file, Options *options, char *buf, int bufsize);
-Field *getgroupfield(File *file, Options *options, char *buf, int bufsize);
-Field *getinodefield(File *file, Options *options, char *buf, int bufsize);
-Field *getlinkfield(File *file, Options *options, char *buf, int bufsize);
-Field *getmodesfield(File *file, Options *options, char *buf, int bufsize);
-Field *getownerfield(File *file, Options *options, char *buf, int bufsize);
-Field *getpermsfield(File *file, Options *options, char *buf, int bufsize);
-Field *getsizefield(File *file, Options *options, char *buf, int bufsize);
 int  listfile(File *file, Options *options);
 void listfilewithnewline(File *file, Options *options);
 void listfiles(List *files, Options *options);
 void listdir(File *dir, Options *options);
 void printtobuf(const char *text, enum escape escape, Buf *buf);
-void printnametobuf(File *file, Options *options, Buf *buf);
 int  printsize(File *file, Options *options);
+void printwithnewline(void *string);
 void sortfiles(List *files, Options *options);
-void usage(void);
 int  want(File *file, Options *options);
 
 int main(int argc, char **argv)
@@ -148,159 +138,6 @@ int main(int argc, char **argv)
     freelist(dirs, (free_func)freefile);
     free(options);
 }
-
-void printnametobuf(File *file, Options *options, Buf *buf)
-{
-    assert(file != NULL);
-    assert(options != NULL);
-    assert(buf != NULL);
-
-    /*
-     * print a character *before* the file showing its type (-O)
-     *
-     * early versions of BSD printed directories like [this]
-     */
-    switch (options->flags) {
-    case FLAGS_NORMAL:
-        break;
-    case FLAGS_OLD:
-        if (!isstat(file))
-            bufappend(buf, "?", 1, 1);
-        else if (isdir(file))
-            bufappend(buf, "[", 1, 1);
-        else if (islink(file))
-            bufappend(buf, "@", 1, 1);
-        else if (isexec(file))
-            bufappend(buf, "*", 1, 1);
-        break;
-    case FLAGS_NONE:
-        break;
-    }
-
-    /* color the file (-G and -K) */
-    /* these escape sequences shouldn't move the cursor,
-     * hence the 4th arg to bufappend is 0 */
-    /* TODO change this to something like setcolor(COLOR_BLUE) */
-    int colorused = 0;
-    if (options->color) {
-        if (!isstat(file)) {
-            bufappend(buf, options->colors->red, strlen(options->colors->red), 0);
-            colorused = 1;
-        } else if (isdir(file)) {
-            bufappend(buf, options->colors->blue, strlen(options->colors->blue), 0);
-            colorused = 1;
-        } else if (islink(file)) {
-            bufappend(buf, options->colors->cyan, strlen(options->colors->cyan), 0);
-            colorused = 1;
-        } else if (isexec(file)) {
-            bufappend(buf, options->colors->green, strlen(options->colors->green), 0);
-            colorused = 1;
-        }
-    }
-
-    const char *name = getname(file);
-    printtobuf(name, options->escape, buf);
-    /* don't free name */
-
-    /* reset the color back to normal (-G and -K) */
-    if (colorused) {
-        bufappend(buf, options->colors->none, strlen(options->colors->none), 0);
-    }
-
-    /* print a character after the file showing its type (-F and -O) */
-    switch (options->flags) {
-    case FLAGS_NORMAL:
-        if (!isstat(file))
-            bufappend(buf, "?", 1, 1);
-        else if (isdir(file))
-            bufappend(buf, "/", 1, 1);
-        else if (islink(file))
-            bufappend(buf, "@", 1, 1);
-        else if (isfifo(file))
-            bufappend(buf, "|", 1, 1);
-        else if (issock(file))
-            bufappend(buf, "=", 1, 1);
-        else if (isexec(file))
-            bufappend(buf, "*", 1, 1);
-        else
-            bufappend(buf, " ", 1, 1);
-        break;
-    case FLAGS_OLD:
-        if (!isstat(file))
-            bufappend(buf, "?", 1, 1);
-        else if (isdir(file))
-            bufappend(buf, "]", 1, 1);
-        else if (islink(file))
-            bufappend(buf, "@", 1, 1);
-        else if (isexec(file))
-            bufappend(buf, "*", 1, 1);
-        else
-            bufappend(buf, " ", 1, 1);
-        break;
-    case FLAGS_NONE:
-        break;
-    }
-}
-
-/**
- * Print the file name with flags and colors if requested
- * flags, color start, filename, color end, and flags are made into a single field
- * since we don't want spaces in between
- * if -L is given and the file is a symlink, the returned fields include the name
- * of the link's target (multiple times if there are multiple links)
- * i.e. link -> file
- * or even link -> link -> link -> file
- */
-Field *getnamefield(File *file, Options *options)
-{
-    if (file == NULL) {
-        errorf("file is NULL\n");
-        return NULL;
-    }
-    if (options == NULL) {
-        errorf("options is NULL\n");
-        return NULL;
-    }
-
-    Buf *buf = newbuf();
-    if (buf == NULL) {
-        errorf("buf is NULL\n");
-        return NULL;
-    }
-
-    /* print the file itself... */
-    printnametobuf(file, options, buf);
-
-    if (options->showlinks) {
-        /* resolve and print symlink targets recursively */
-        while (isstat(file) && islink(file)) {
-            file = gettarget(file);
-            bufappend(buf, " -> ", 4, 4);
-            printnametobuf(file, options, buf);
-        }
-    } else if (options->showlink) {
-        /* print only the first link target without stat'ing the target */
-        if (isstat(file) && islink(file)) {
-            file = gettarget(file);
-            bufappend(buf, " -> ", 4, 4);
-            printnametobuf(file, options, buf);
-        }
-    }
-
-    enum align align = ALIGN_NONE;
-    if (options->displaymode != DISPLAY_ONE_PER_LINE) {
-        align = ALIGN_LEFT;
-    }
-
-    Field *field = newfield(bufstring(buf), align, bufscreenpos(buf));
-    if (field == NULL) {
-        errorf("field is NULL\n");
-        return NULL;
-    }
-    freebuf(buf);
-    return field;
-}
-
 
 /**
  * Returns a list of Fields for the given file.
@@ -389,11 +226,6 @@ FieldList *getfields(File *file, Options *options)
     append(field, fieldlist);
     
     return (FieldList *)fieldlist;
-}
-
-void printwithnewline(void *string)
-{
-    puts((char *)string);
 }
 
 StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
@@ -536,7 +368,7 @@ void freefields(List *list)
 }
 
 /**
- * Print the given file list using the specified options->
+ * Print the given file list using the specified options.
  *
  * This function does any required sorting and figures out
  * what display format to use for printing.
@@ -653,92 +485,8 @@ void listdir(File *dir, Options *options)
     freelist(files, (free_func)freefile);
 }
 
-/* XXX does C really not provide this? */
-char *cescape(char c)
-{
-    switch (c) {
-    case '\001': return "\\001";
-    case '\002': return "\\002";
-    case '\003': return "\\003";
-    case '\004': return "\\004";
-    case '\005': return "\\005";
-    case '\006': return "\\006";
-    case '\007': return "\\a";
-    case '\010': return "\\b";
-    case '\011': return "\\t";
-    case '\012': return "\\n";
-    case '\013': return "\\v";
-    case '\014': return "\\f";
-    case '\015': return "\\r";
-    case '\016': return "\\016";
-    case '\017': return "\\017";
-    case '\020': return "\\020";
-    case '\021': return "\\021";
-    case '\022': return "\\022";
-    case '\023': return "\\023";
-    case '\024': return "\\024";
-    case '\025': return "\\025";
-    case '\026': return "\\026";
-    case '\027': return "\\027";
-    case '\030': return "\\030";
-    case '\031': return "\\031";
-    case '\032': return "\\032";
-    case '\033': return "\\033";
-    case '\034': return "\\034";
-    case '\035': return "\\035";
-    case '\036': return "\\036";
-    case '\037': return "\\037";
-    default: return NULL;
-    }
-}
-
-void printtobuf(const char *text, enum escape escape, Buf *buf)
-{
-    if (buf == NULL) {
-        errorf("buf is NULL\n");
-        return;
-    }
-    if (text == NULL) {
-        errorf("file is NULL\n");
-        return;
-    }
-
-    const char *p = text;
-    for (p = text; *p != '\0'; p++) {
-        if (!isprint(*p)) {
-            switch (escape) {
-            case ESCAPE_C:
-                {
-                    char *escaped = cescape(*p);
-                    if (escaped == NULL) {
-                        errorf("No C escape for %c\n", *p);
-                        bufappendchar(buf, *p);
-                    } else {
-                        bufappend(buf, escaped, strlen(escaped), 1);
-                    }
-                    break;
-                }
-            case ESCAPE_QUESTION:
-                bufappendchar(buf, '?');
-                break;
-            default:
-                errorf("Unknown escape mode\n");
-                /* fall through */
-            case ESCAPE_NONE:
-                bufappendchar(buf, *p);
-                break;
-            }
-        } else if (*p == '\\' && escape == ESCAPE_C) {
-            bufappendchar(buf, '\\');
-            bufappendchar(buf, '\\');
-        } else {
-            bufappendchar(buf, *p);
-        }
-    }
-}
-
 /**
- * Sort "files" based on the specified options->
+ * Sort "files" based on the specified options.
  */
 void sortfiles(List *files, Options *options)
 {
@@ -764,6 +512,11 @@ void sortfiles(List *files, Options *options)
     sortlist(files, compare);
 }
 
+void printwithnewline(void *string)
+{
+    puts((char *)string);
+}
+
 /**
  * Returns true if we should print this file,
  * false otherwise.
@@ -782,181 +535,6 @@ int want(File *file, Options *options)
     }
     /* XXX what to do if we can't lstat the file? */
     return !options->dirsonly || isdir(file);
-}
-
-Field *getbytesfield(File *file, Options *options, char *buf, int bufsize)
-{
-    int width;
-    if (isstat(file)) {
-        long bytes = getsize(file);
-        width = snprintf(buf, bufsize, "%ld", bytes);
-    } else {
-        width = snprintf(buf, bufsize, "?");
-    }
-    return newfield(buf, ALIGN_RIGHT, width);
-}
-
-Field *getdatetimefield(File *file, Options *options, char *buf, int bufsize)
-{
-    int width;
-    if (isstat(file)) {
-        time_t timestamp;
-        switch (options->timetype) {
-        case TIME_ATIME:
-            timestamp = getatime(file);
-            break;
-        case TIME_CTIME:
-            timestamp = getctime(file);
-            break;
-        /*
-        case TIME_BTIME:
-            timestamp = getbtime(file);
-            break;
-        */
-        default:
-            errorf("Unknown time attribute\n");
-            /* fall through */
-        case TIME_MTIME:
-            timestamp = getmtime(file);
-            break;
-        }
-        struct tm *timestruct = localtime(&timestamp);
-        if (!timestruct) {
-            errorf("timestruct is NULL\n");
-            return NULL;
-        }
-        if (options->timeformat != NULL) {
-            width = strftime(buf, bufsize, options->timeformat, timestruct);
-        } else {
-            /* month day hour and minute if file was modified in the last 6 months,
-               month day year otherwise */
-            if (options->now != -1 && timestamp <= options->now && timestamp > options->now - 180*86400) {
-                width = strftime(buf, bufsize, "%b %e %H:%M", timestruct);
-            } else {
-                width = strftime(buf, bufsize, "%b %e  %Y", timestruct);
-            }
-        }
-    } else {
-        width = snprintf(buf, bufsize, "?");
-    }
-    return newfield(buf, ALIGN_RIGHT, width);
-}
-
-Field *getgroupfield(File *file, Options *options, char *buf, int bufsize)
-{
-    int width;
-    if (isstat(file)) {
-        gid_t gid = getgroupnum(file);
-        if (options->numeric) {
-            width = snprintf(buf, bufsize, "%lu", (unsigned long)gid);
-        } else {
-            char *groupname = get(options->groupnames, gid);
-            if (!groupname) {
-                groupname = getgroupname(gid);
-                if (!groupname) {
-                    width = snprintf(buf, bufsize, "%lu", (unsigned long)gid);
-                    groupname = buf;
-                }
-                set(options->groupnames, gid, groupname);
-            }
-            if (groupname != buf) {
-                /* only do this if we didn't already print into the buf */
-                width = snprintf(buf, bufsize, "%s", groupname);
-            }
-        }
-    } else {
-        width = snprintf(buf, bufsize, "?");
-    }
-    return newfield(buf, ALIGN_LEFT, width);
-}
-
-Field *getinodefield(File *file, Options *options, char *buf, int bufsize)
-{
-    int width;
-    if (isstat(file)) {
-        ino_t inode = getinode(file);
-        width = snprintf(buf, bufsize, "%lu", inode);
-    } else {
-        width = snprintf(buf, bufsize, "%s", "?");
-    }
-    return newfield(buf, ALIGN_RIGHT, width);
-}
-
-Field *getlinkfield(File *file, Options *options, char *buf, int bufsize)
-{
-    int width;
-    if (isstat(file)) {
-        nlink_t nlinks = getlinkcount(file);
-        width = snprintf(buf, bufsize, "%lu", (unsigned long)nlinks);
-    } else {
-         width = snprintf(buf, bufsize, "%s", "?");
-    }
-    return newfield(buf, ALIGN_RIGHT, width);
-}
-
-Field *getmodesfield(File *file, Options *options, char *buf, int bufsize)
-{
-    int width;
-    if (isstat(file)) {
-        char *modes = getmodes(file);
-        width = snprintf(buf, bufsize, "%s", modes);
-        free(modes);
-    } else {
-        width = snprintf(buf, bufsize, "%s", "???????????");
-    }
-    return newfield(buf, ALIGN_LEFT, width);
-}
-
-Field *getownerfield(File *file, Options *options, char *buf, int bufsize)
-{
-    int width;
-    if (isstat(file)) {
-        uid_t uid = getownernum(file);
-        if (options->numeric) {
-            width = snprintf(buf, bufsize, "%lu", (unsigned long)uid);
-        } else {
-            char *username = get(options->usernames, uid);
-            if (!username) {
-                username = getusername(uid);
-                if (!username) {
-                    width = snprintf(buf, bufsize, "%lu", (unsigned long)uid);
-                    username = buf;
-                }
-                set(options->usernames, uid, username);
-            }
-            if (username != buf) {
-                width = snprintf(buf, bufsize, "%s", username);
-            }
-        }
-    } else {
-        width = snprintf(buf, bufsize, "?");
-    }
-    return newfield(buf, ALIGN_LEFT, width);
-}
-
-Field *getpermsfield(File *file, Options *options, char *buf, int bufsize)
-{
-    char *perms = getperms(file);
-    if (perms == NULL) {
-        errorf("perms is NULL\n");
-        return NULL;
-    }
-    int width = strlen(perms);
-    Field *field = newfield(perms, ALIGN_RIGHT, width);
-    free(perms);
-    return field;
-}
-
-Field *getsizefield(File *file, Options *options, char *buf, int bufsize)
-{
-    int width;
-    if (isstat(file)) {
-        unsigned long blocks = getblocks(file, options->blocksize);
-        width = snprintf(buf, bufsize, "%lu", blocks);
-    } else {
-        width = snprintf(buf, bufsize, "%s", "?");
-    }
-    return newfield(buf, ALIGN_RIGHT, width);
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/

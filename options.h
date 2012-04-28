@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 
+#include "buf.h"
 #include "display.h"
 #include "file.h"
 #include "logging.h"
@@ -12,7 +13,6 @@
 
 /* defaults should be the first element */
 enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS, DISPLAY_IN_ROWS };
-enum escape { ESCAPE_NONE, ESCAPE_QUESTION, ESCAPE_C };
 enum flags { FLAGS_NONE, FLAGS_NORMAL, FLAGS_OLD };
 enum timetype { TIME_MTIME, TIME_CTIME, TIME_ATIME, TIME_BTIME };
 enum sorttype { SORT_BY_NAME, SORT_BY_TIME, SORT_UNSORTED };

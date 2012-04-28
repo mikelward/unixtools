@@ -1,13 +1,16 @@
-#include "buf.h"
-#include "logging.h"
-
 #define _POSIX_C_SOURCE 200809L
 
 #include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "buf.h"
+#include "logging.h"
+#include "options.h"
+
+char *cescape(char c);
 
 Buf *newbuf(void)
 {
@@ -102,6 +105,90 @@ int bufscreenpos(Buf *buf)
         return 0;
     }
     return buf->screenpos;
+}
+
+void printtobuf(const char *text, enum escape escape, Buf *buf)
+{
+    if (buf == NULL) {
+        errorf("buf is NULL\n");
+        return;
+    }
+    if (text == NULL) {
+        errorf("file is NULL\n");
+        return;
+    }
+
+    const char *p = text;
+    for (p = text; *p != '\0'; p++) {
+        if (!isprint(*p)) {
+            switch (escape) {
+            case ESCAPE_C:
+                {
+                    char *escaped = cescape(*p);
+                    if (escaped == NULL) {
+                        errorf("No C escape for %c\n", *p);
+                        bufappendchar(buf, *p);
+                    } else {
+                        bufappend(buf, escaped, strlen(escaped), 1);
+                    }
+                    break;
+                }
+            case ESCAPE_QUESTION:
+                bufappendchar(buf, '?');
+                break;
+            default:
+                errorf("Unknown escape mode\n");
+                /* fall through */
+            case ESCAPE_NONE:
+                bufappendchar(buf, *p);
+                break;
+            }
+        } else if (*p == '\\' && escape == ESCAPE_C) {
+            bufappendchar(buf, '\\');
+            bufappendchar(buf, '\\');
+        } else {
+            bufappendchar(buf, *p);
+        }
+    }
+}
+
+/* XXX does C really not provide this? */
+char *cescape(char c)
+{
+    switch (c) {
+    case '\001': return "\\001";
+    case '\002': return "\\002";
+    case '\003': return "\\003";
+    case '\004': return "\\004";
+    case '\005': return "\\005";
+    case '\006': return "\\006";
+    case '\007': return "\\a";
+    case '\010': return "\\b";
+    case '\011': return "\\t";
+    case '\012': return "\\n";
+    case '\013': return "\\v";
+    case '\014': return "\\f";
+    case '\015': return "\\r";
+    case '\016': return "\\016";
+    case '\017': return "\\017";
+    case '\020': return "\\020";
+    case '\021': return "\\021";
+    case '\022': return "\\022";
+    case '\023': return "\\023";
+    case '\024': return "\\024";
+    case '\025': return "\\025";
+    case '\026': return "\\026";
+    case '\027': return "\\027";
+    case '\030': return "\\030";
+    case '\031': return "\\031";
+    case '\032': return "\\032";
+    case '\033': return "\\033";
+    case '\034': return "\\034";
+    case '\035': return "\\035";
+    case '\036': return "\\036";
+    case '\037': return "\\037";
+    default: return NULL;
+    }
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/

@@ -48,7 +48,7 @@ uninstall: $(PROGS)
 
 all: tags $(TESTS) $(PROGS) $(DOCS)
 
-l: l.o display.o list.o file.o field.o buf.o options.o map.o pair.o user.o group.o logging.o -ltermcap -lacl
+l: l.o display.o list.o filefields.o file.o field.o buf.o options.o map.o pair.o user.o group.o logging.o -ltermcap -lacl
 
 filetest: filetest.o file.o logging.o -lacl
 
