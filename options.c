@@ -17,7 +17,7 @@
 
 void freeoptions(Options *options)
 {
-	if (!options) return;
+    if (!options) return;
     freemap(options->usernames);
     freemap(options->groupnames);
     freecolors(options->colors);
@@ -289,11 +289,11 @@ int setoptions(Options *options, int argc, char **argv)
     }
 
     if (options->color) {
-	    Colors *colors = malloc(sizeof(*colors));
-		if (!colors) {
-			errorf("Out of memory?\n");
-			goto error;
-		}
+        Colors *colors = malloc(sizeof(*colors));
+        if (!colors) {
+            errorf("Out of memory?\n");
+            goto error;
+        }
 
         options->color = setupcolors(colors);
         options->colors = colors;

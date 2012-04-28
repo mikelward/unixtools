@@ -26,8 +26,8 @@ void copystring(const char *str, char **pbuf, int *pbufsize)
 
 void errorf2(const char *func, const char *format, ...)
 {
-	va_list ap;
-	va_start(ap, format);
+    va_list ap;
+    va_start(ap, format);
     int bufsize = sizeof(errorformat);
     char *buf = errorformat;
     if (myname) {
@@ -44,8 +44,8 @@ void errorf2(const char *func, const char *format, ...)
     if (bufsize <= 0) {
         errorf("Log message truncated to %d bytes\n", sizeof(errorformat));
     }
-	vfprintf(stderr, errorformat, ap);
-	va_end(ap);
+    vfprintf(stderr, errorformat, ap);
+    va_end(ap);
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/
