@@ -9,7 +9,7 @@ MD2HTML=pandoc -f markdown -t html
 
 SOURCES=*.c *.h
 DOCS=README.html
-TESTS=filetest listtest loggingtest
+TESTS=filetest listtest loggingtest maptest
 PROGS=l
 
 build: $(PROGS)
@@ -55,5 +55,7 @@ filetest: filetest.o file.o logging.o -lacl
 listtest: listtest.o list.o logging.o
 
 loggingtest: loggingtest.o logging.o
+
+maptest: map.o list.o pair.o logging.o
 
 #  vim: set ts=4 sw=4 tw=0 noet:
