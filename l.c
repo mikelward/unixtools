@@ -61,7 +61,8 @@ int  listfile(File *file, Options *options);
 void listfilewithnewline(File *file, Options *options);
 void listfiles(List *files, Options *options);
 void listdir(File *dir, Options *options);
-void printnametobuf(const char *name, Options *options, Buf *buf);
+void printtobuf(const char *text, enum escape escape, Buf *buf);
+void printnametobuf(File *file, Options *options, Buf *buf);
 int  printsize(File *file, Options *options);
 void sortfiles(List *files, Options *options);
 void usage(void);
@@ -148,7 +149,7 @@ int main(int argc, char **argv)
     free(options);
 }
 
-void getnamefieldhelper(File *file, Options *options, Buf *buf, int showpath)
+void printnametobuf(File *file, Options *options, Buf *buf)
 {
     assert(file != NULL);
     assert(options != NULL);
@@ -198,7 +199,7 @@ void getnamefieldhelper(File *file, Options *options, Buf *buf, int showpath)
     }
 
     const char *name = getname(file);
-    printnametobuf(name, options, buf);
+    printtobuf(name, options->escape, buf);
     /* don't free name */
 
     /* reset the color back to normal (-G and -K) */
@@ -268,21 +269,21 @@ Field *getnamefield(File *file, Options *options)
     }
 
     /* print the file itself... */
-    getnamefieldhelper(file, options, buf, 0);
+    printnametobuf(file, options, buf);
 
     if (options->showlinks) {
         /* resolve and print symlink targets recursively */
         while (isstat(file) && islink(file)) {
             file = gettarget(file);
             bufappend(buf, " -> ", 4, 4);
-            getnamefieldhelper(file, options, buf, 1);
+            printnametobuf(file, options, buf);
         }
     } else if (options->showlink) {
         /* print only the first link target without stat'ing the target */
         if (isstat(file) && islink(file)) {
             file = gettarget(file);
             bufappend(buf, " -> ", 4, 4);
-            getnamefieldhelper(file, options, buf, 1);
+            printnametobuf(file, options, buf);
         }
     }
 
@@ -691,21 +692,21 @@ char *cescape(char c)
     }
 }
 
-void printnametobuf(const char *name, Options *options, Buf *buf)
+void printtobuf(const char *text, enum escape escape, Buf *buf)
 {
     if (buf == NULL) {
         errorf("buf is NULL\n");
         return;
     }
-    if (name == NULL) {
+    if (text == NULL) {
         errorf("file is NULL\n");
         return;
     }
 
-    const char *p = name;
-    for (p = name; *p != '\0'; p++) {
+    const char *p = text;
+    for (p = text; *p != '\0'; p++) {
         if (!isprint(*p)) {
-            switch (options->escape) {
+            switch (escape) {
             case ESCAPE_C:
                 {
                     char *escaped = cescape(*p);
@@ -727,7 +728,7 @@ void printnametobuf(const char *name, Options *options, Buf *buf)
                 bufappendchar(buf, *p);
                 break;
             }
-        } else if (*p == '\\' && options->escape == ESCAPE_C) {
+        } else if (*p == '\\' && escape == ESCAPE_C) {
             bufappendchar(buf, '\\');
             bufappendchar(buf, '\\');
         } else {
