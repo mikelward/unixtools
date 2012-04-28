@@ -58,7 +58,7 @@ Map *newmap()
 		if (!list) {
 			errorf("Out of memory?\n");
 			/* XXX assumes calloc makes these NULL by default */
-			freemap(map, free);
+			freemap(map);
 			return NULL;
 		}
 		(map->slots)[i] = list;
@@ -68,12 +68,12 @@ Map *newmap()
 	return map;
 }
 
-void freemap(Map *map, free_func freer)
+void freemap(Map *map)
 {
 	if (!map) return;
 
 	for (int i = 0; i < map->size; i++) {
-		freelist((map->slots)[i], freer);
+		freelist((map->slots)[i], free);
 	}
 	free(map->slots);
 	free(map);

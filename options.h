@@ -6,6 +6,7 @@
 #include "display.h"
 #include "file.h"
 #include "logging.h"
+#include "map.h"
 
 #define OPTSTRING "1aBbCcDdEeFfGgIiKkLlMmNnOopqsTtrUux"
 
@@ -47,10 +48,12 @@ typedef struct options {
 
     /* these are more like global state variables than options */
     file_compare_function compare;  /* determines sort order */
+    Map *groupnames;                /* cache of gid -> groupname for -g */
     time_t now;                     /* current time - for determining date/time format */
     Colors *colors;                 /* the colors to use */
     short screenwidth;              /* how wide the screen is, 0 if unknown */
     const char *timeformat;         /* custom time format for -T */
+    Map *usernames;                 /* cache of uid -> username for -o */
 } Options;
 
 /**

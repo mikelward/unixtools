@@ -427,19 +427,6 @@ time_t getctime(File *file)
     return pstat && pstat->st_ctime;
 }
 
-char *getgroupname(File *file)
-{
-    struct stat *pstat = getstat(file);
-    if (!pstat) return "?";
-    struct group *pgrp = getgrgid(pstat->st_gid);
-    if (!pgrp) {
-        errorf("Group %lu not found\n", (unsigned long)pstat->st_gid);
-        // TODO return the gid as a string
-        return "?";
-    }
-    return pgrp->gr_name;
-}
-
 /* TODO return the number as a string or "?" if the group could not be determined */
 gid_t getgroupnum(File *file)
 {
@@ -615,19 +602,6 @@ char *getperms(File *file)
 
     *p = '\0';
     return perms;
-}
-
-char *getownername(File *file)
-{
-    struct stat *pstat = getstat(file);
-    if (!pstat) return "?";
-    struct passwd *ppwd = getpwuid(pstat->st_uid);
-    if (!ppwd) {
-        errorf("User %lu not found\n", (unsigned long)pstat->st_uid);
-        // TODO snprintf("%u", stat->st_uid);
-        return "?";
-    }
-    return ppwd->pw_name;
 }
 
 /* TODO return a string instead of uid_t, "?" on failure */

@@ -3,10 +3,14 @@
 
 #include "list.h"
 
+/**
+ * A Map from int to char *.
+ */
+
 typedef struct map Map;
 
 Map *newmap();
-void freemap(Map *map, free_func freer);
+void freemap(Map *map);
 
 char *get(Map *map, int key);
 void set(Map *map, int key, char *value);

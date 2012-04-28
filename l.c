@@ -36,9 +36,12 @@
 #include "display.h"
 #include "field.h"
 #include "file.h"
+#include "group.h"
 #include "list.h"
 #include "logging.h"
+#include "map.h"
 #include "options.h"
+#include "user.h"
 
 typedef List FileList;              /* list of files */
 typedef List FieldList;             /* list of fields for a single file */
@@ -395,13 +398,20 @@ FieldList *getfields(File *file, Options *options)
     if (options->owner) {
         int width;
         if (isstat(file)) {
+            uid_t uid = getownernum(file);
             if (options->numeric) {
-                // TODO error handling
-                uid_t uid = getownernum(file);
                 width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", (unsigned long)uid);
             } else {
-                char *owner = getownername(file);
-                width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", owner);
+                char *username = get(options->usernames, uid);
+                if (!username) {
+                    username = getusername(uid);
+                    if (!username) {
+                        snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", (unsigned long)uid);
+                        username = snprintfbuf;
+                    }
+                    set(options->usernames, uid, username);
+                }
+                width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", username);
             }
         } else {
             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "?");
@@ -419,13 +429,17 @@ FieldList *getfields(File *file, Options *options)
     if (options->group) {
         int width;
         if (isstat(file)) {
+            // TODO error handling
+            gid_t gid = getgroupnum(file);
             if (options->numeric) {
-                // TODO error handling
-                gid_t gid = getgroupnum(file);
                 width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%lu", (unsigned long)gid);
             } else {
-                char *group = getgroupname(file);
-                width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", group);
+                char *groupname = get(options->groupnames, gid);
+                if (!groupname) {
+                    groupname = getgroupname(gid);
+                    set(options->groupnames, gid, groupname);
+                }
+                width = snprintf(snprintfbuf, sizeof(snprintfbuf), "%s", groupname);
             }
         } else {
             width = snprintf(snprintfbuf, sizeof(snprintfbuf), "?");

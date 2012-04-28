@@ -12,12 +12,15 @@
 
 #include "display.h"
 #include "logging.h"
+#include "map.h"
 #include "options.h"
 
 void freeoptions(Options *options)
 {
 	if (!options) return;
-	freecolors(options->colors);
+    freemap(options->usernames);
+    freemap(options->groupnames);
+    freecolors(options->colors);
 }
 
 Options *newoptions(void)
@@ -61,10 +64,12 @@ void setdefaults(Options *options)
     options->timetype = TIME_MTIME;
 
     options->compare = NULL;
+    options->groupnames = NULL;
     options->now = -1;
     options->colors = NULL;
     options->screenwidth = 0;
     options->timeformat = NULL;
+    options->usernames = NULL;
 
     /* use BLOCKSIZE as default blocksize if set */
     char *blocksizeenv = getenv("BLOCKSIZE");
@@ -299,6 +304,21 @@ int setoptions(Options *options, int argc, char **argv)
         if (options->now == -1) {
             errorf("Cannot determine current time\n");
             /* non-fatal */
+        }
+    }
+
+    if (options->group && !options->numeric) {
+        options->groupnames = newmap();
+        if (!options->groupnames) {
+            errorf("Out of memory?\n");
+            goto error;
+        }
+    }
+    if (options->owner && !options->numeric) {
+        options->usernames = newmap();
+        if (!options->usernames) {
+            errorf("Out of memory?\n");
+            goto error;
         }
     }
 

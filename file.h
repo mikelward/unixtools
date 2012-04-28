@@ -89,12 +89,6 @@ bool hasacls(File *file);
 
 unsigned long getblocks(File *file, int blocksize);
 
-/**
- * Return the name of the group of the file.
- *
- * Caller must NOT free returned string.
- */
-char *getgroupname(File *file);
 gid_t getgroupnum(File *file);
 time_t getatime(File *file);
 //time_t getbtime(File *file);
@@ -110,12 +104,6 @@ nlink_t getlinkcount(File *file);
  */
 char *getmodes(File *file);
 
-/**
- * Return the name of the owner of the file.
- *
- * Caller must NOT free returned string.
- */
-char *getownername(File *file);
 uid_t getownernum(File *file);
 
 /**
