@@ -101,7 +101,7 @@ int main(int argc, char **argv)
         exit(1);
     }
     for (int i = 0; i < argc; i++) {
-        File *file = newfile(".", argv[i]);
+        File *file = newfile("", argv[i]);
         if (!file) {
             error("Error creating file for %s\n", argv[i]);
             exit(1);

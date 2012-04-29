@@ -270,7 +270,7 @@ char *makepath(const char *dirname, const char *filename)
     char *path = NULL;
     unsigned size;
 
-    if (!dirname || strcmp(dirname, ".") == 0) {
+    if (!dirname || !*dirname) {
         return strdup(filename);
     }
     if (!filename) {
