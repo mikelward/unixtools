@@ -21,6 +21,7 @@ void freeoptions(Options *options)
     freemap(options->usernames);
     freemap(options->groupnames);
     freecolors(options->colors);
+    free(options);
 }
 
 Options *newoptions(void)

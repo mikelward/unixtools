@@ -121,7 +121,7 @@ int main(int argc, char **argv)
     listdirs(dirs, options, firstoutput);
     freelist(dirs, (free_func)freefile);
 
-    free(options);
+    freeoptions(options);
 }
 
 StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
