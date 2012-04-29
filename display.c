@@ -173,6 +173,7 @@ void freecolors(Colors *colors)
     free(colors->magenta);
     free(colors->cyan);
     free(colors->white);
+    free(colors);
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/

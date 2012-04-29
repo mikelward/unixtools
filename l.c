@@ -331,6 +331,9 @@ void listfiles(FileList *files, Options *options)
     freelist(filestrings, (free_func)free);
 }
 
+void noop(void *ignored)
+{}
+
 /**
  * Print the contents of the given directory.
  */
@@ -381,6 +384,9 @@ void listdir(File *dir, Options *options)
         listdirs(subdirs, options, false);
     }
     freelist(files, (free_func)freefile);
+    // subdirs doesn't own the files (those are freed by freelist(files)),
+    // but we should free the subdirs list itself
+    freelist(subdirs, (free_func)noop);
 }
 
 void listdirs(FileList *dirs, Options *options, bool firstoutput)

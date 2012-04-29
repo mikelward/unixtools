@@ -33,6 +33,7 @@ void freelist(List *list, walker_func freeelem)
         }
     }
     free(list->data);
+    list->data = NULL;
     free(list);
 }
 
