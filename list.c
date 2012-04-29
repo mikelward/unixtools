@@ -7,23 +7,24 @@
 
 List *newlist(void)
 {
-    List *lp = malloc(sizeof *lp);
-    if (!lp) {
+    List *list = malloc(sizeof *list);
+    if (!list) {
         errorf("Out of memory\n");
         return NULL;
     }
-    lp->capacity = 1024;
-    lp->next = 0;
-    lp->data = malloc(lp->capacity * sizeof(void *));
-    if (!lp->data) {
-        free(lp);
+    list->capacity = 1024;
+    list->next = 0;
+    list->data = malloc(list->capacity * sizeof(void *));
+    if (!list->data) {
+        free(list);
         return NULL;
     }
-    return lp;
+    return list;
 }
 
 void freelist(List *list, walker_func freeelem)
 {
+    if (!list) return;
     int i = 0;
     for (; i < list->next; i++) {
         void *elem = (list->data)[i];
@@ -78,7 +79,7 @@ void *finditem(List *list, void *item1, equal_func isequal)
 
 void *getitem(List *list, unsigned index)
 {
-    if (list == NULL || list->next < index)
+    if (list == NULL || index >= list->next)
         return NULL;
 
     return (list->data)[index];
