@@ -65,6 +65,7 @@ asterisks, e.g.
 
 #### Sorting
  * sort by name (default)
+ * sort by size (`-S`)
  * sort by mtime (modification time, `-t`)
  * sort by ctime (change time, `-tc`) _just `-c` is sufficient if neither `-T` nor `-l` were given_
  * sort by atime (access time, `-tu`) _just `-u` is sufficient if neither `-T` nor `-l` were given_

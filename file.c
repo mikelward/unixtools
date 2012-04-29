@@ -384,6 +384,56 @@ int comparebymtime(const File **a, const File **b)
     }
 }
 
+/*
+ * returns:
+ * -1 if a should come before b (a is larger than b)
+ *  0 if a is the same size as b
+ *  1 if a should come after b (a is smaller than b)
+ *
+ *  this is backwards from normal,
+ *  but by default ls shows largest files first,
+ *  so it's what we want here
+ */
+int comparebyblocks(const File **a, const File **b)
+{
+    File *fa = *(File **)a;
+    File *fb = *(File **)b;
+
+    struct stat *psa = getstat(fa);
+    struct stat *psb = getstat(fb);
+
+    if (psa->st_blocks == psb->st_blocks) {
+        return strcoll(fa->path, fb->path);
+    } else {
+        return psa->st_blocks < psb->st_blocks;
+    }
+}
+
+/*
+ * returns:
+ * -1 if a should come before b (a is larger than b)
+ *  0 if a is the same size as b
+ *  1 if a should come after b (a is smaller than b)
+ *
+ *  this is backwards from normal,
+ *  but by default ls shows largest files first,
+ *  so it's what we want here
+ */
+int comparebysize(const File **a, const File **b)
+{
+    File *fa = *(File **)a;
+    File *fb = *(File **)b;
+
+    struct stat *psa = getstat(fa);
+    struct stat *psb = getstat(fb);
+
+    if (psa->st_size == psb->st_size) {
+        return strcoll(fa->path, fb->path);
+    } else {
+        return psa->st_size < psb->st_size;
+    }
+}
+
 unsigned long getblocks(File *file, int blocksize)
 {
     struct stat *pstat = getstat(file);

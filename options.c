@@ -219,7 +219,7 @@ int setoptions(Options *options, int argc, char **argv)
             options->reverse = 1;
             break;
         case 'S':
-            /* possibly reserved for sort by size option */
+            options->sorttype = SORT_BY_SIZE;
             break;
         case 's':
             options->size = 1;
@@ -281,6 +281,11 @@ int setoptions(Options *options, int argc, char **argv)
             options->compare = &comparebyname;
             break;
         }
+        break;
+    case SORT_BY_SIZE:
+        /* neither POSIX nor GNU seem to define "size"
+           but based on experiments, it seems to be the st_size field */
+        options->compare = &comparebysize;
         break;
     case SORT_UNSORTED:
         options->compare = NULL;
