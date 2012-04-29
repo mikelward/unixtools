@@ -80,29 +80,12 @@ File *newfile(const char *dir, const char *name)
  */
 void freefile(File *file)
 {
-    if (!file) {
-        errorf("file is NULL\n");
-        return;
-    }
+    if (!file) return;
 
-    if (file->name) {
-        free(file->name);
-        file->name = NULL;
-    }
-    if (file->path) {
-        free(file->path);
-        file->path = NULL;
-    }
-    if (file->pstat) {
-        free(file->pstat);
-        file->pstat = NULL;
-    }
-    File *target = file->target;
-    while (target) {
-        File *nexttarget = target->target;
-        freefile(target);
-        target = nexttarget;
-    }
+    free(file->name);
+    free(file->path);
+    free(file->pstat);
+    freefile(file->target);
     free(file);
 }
 
