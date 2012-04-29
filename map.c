@@ -73,7 +73,7 @@ void freemap(Map *map)
     if (!map) return;
 
     for (int i = 0; i < map->size; i++) {
-        freelist((map->slots)[i], free);
+        freelist((map->slots)[i], (free_func)freepair);
     }
     free(map->slots);
     free(map);
