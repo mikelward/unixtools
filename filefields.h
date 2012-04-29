@@ -3,7 +3,17 @@
 
 #include "field.h"
 #include "file.h"
+#include "list.h"
 #include "options.h"
+
+typedef List FieldList;             /* list of fields for a single file */
+
+/**
+ * Returns a list of Fields for the given file.
+ *
+ * Which fields are returned is controlled by options.
+ */
+FieldList *getfilefields(File *file, Options *options);
 
 Field *getbytesfield(File *file, Options *options, char *buf, int bufsize);
 Field *getdatetimefield(File *file, Options *options, char *buf, int bufsize);

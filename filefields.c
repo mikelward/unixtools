@@ -16,6 +16,90 @@
 
 void printnametobuf(File *file, Options *options, Buf *buf);
 
+FieldList *getfilefields(File *file, Options *options)
+{
+    if (file == NULL) {
+        errorf("file is NULL\n");
+        return NULL;
+    }
+
+    char snprintfbuf[1024];
+    List *fieldlist = newlist();
+    if (fieldlist == NULL) {
+        errorf("fieldlist is NULL\n");
+        return NULL;
+    }
+
+    /*
+     * with -L, display information about the link target file by setting file = target
+     * the originally named file is saved as "link" for displaying the name
+     */
+    File *link = file;
+    if (options->targetinfo) {
+        File *target = NULL;
+        while (isstat(file) && islink(file)) {
+            target = gettarget(file);
+            if (target == NULL) {
+                errorf("target is NULL\n");
+                walklist(fieldlist, free);
+                free(fieldlist);
+                return NULL;
+            }
+            file = target;
+        }
+    }
+
+    if (options->size) {
+        Field *sizefield = getsizefield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(sizefield, fieldlist);
+    }
+
+    if (options->inode) {
+        Field *inodefield = getinodefield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(inodefield, fieldlist);
+    }
+
+    if (options->modes) {
+        Field *modesfield = getmodesfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(modesfield, fieldlist);
+    }
+
+    if (options->linkcount) {
+        Field *linkfield = getlinkfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(linkfield, fieldlist);
+    }
+
+    if (options->owner) {
+        Field *ownerfield = getownerfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(ownerfield, fieldlist);
+    }
+
+    if (options->group) {
+        Field *groupfield = getgroupfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(groupfield, fieldlist);
+    }
+
+    if (options->perms) {
+        Field *permsfield = getpermsfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(permsfield, fieldlist);
+    }
+
+    if (options->bytes) {
+        Field *bytesfield = getbytesfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(bytesfield, fieldlist);
+    }
+
+    if (options->datetime) {
+        Field *datetimefield = getdatetimefield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        append(datetimefield, fieldlist);
+    }
+
+    Field *field = getnamefield(link, options);
+    append(field, fieldlist);
+
+    return (FieldList *)fieldlist;
+}
+
 Field *getbytesfield(File *file, Options *options, char *buf, int bufsize)
 {
     int width;
