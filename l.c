@@ -113,10 +113,10 @@ int main(int argc, char **argv)
         }
     }
 
+    int nfiles = length(files);
     listfiles(files, options);
     freelist(files, (free_func)freefile);
 
-    int nfiles = length(files);
     bool firstoutput = nfiles == 0;
     listdirs(dirs, options, firstoutput);
     freelist(dirs, (free_func)freefile);
