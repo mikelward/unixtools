@@ -9,7 +9,7 @@
 #include "logging.h"
 #include "map.h"
 
-#define OPTSTRING "1aBbCcDdEeFfGgIiKkLlMmNnOopqsTtrUux"
+#define OPTSTRING "1aBbCcDdEeFfGgIiKkLlMmNnOopqRrsTtUux"
 
 /* defaults should be the first element */
 enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS, DISPLAY_IN_ROWS };
@@ -38,6 +38,7 @@ typedef struct options {
     int numeric : 1;                /* 1 = display numeric uid and gid instead of names */
     int owner : 1;                  /* display the username of the file's owner */
     int perms : 1;                  /* display rwx modes for current user */
+    int recursive : 1;              /* display subdirectories recursively */
     int reverse : 1;                /* 0 = forwards, 1 = reverse1 */
     int showlink : 1;               /* 1 = show link -> target in name field (max. 1 link) */
     int showlinks : 1;              /* 1 = show link -> target in name field (resolve all links) */

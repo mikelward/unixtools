@@ -50,8 +50,9 @@ const int columnmargin = 1;
 
 int  listfile(File *file, Options *options);
 void listfilewithnewline(File *file, Options *options);
-void listfiles(List *files, Options *options);
+void listfiles(FileList *files, Options *options);
 void listdir(File *dir, Options *options);
+void listdirs(FileList *dirs, Options *options, bool firstoutput);
 void printtobuf(const char *text, enum escape escape, Buf *buf);
 int  printsize(File *file, Options *options);
 void printwithnewline(void *string);
@@ -118,24 +119,10 @@ int main(int argc, char **argv)
     listfiles(files, options);
     freelist(files, (free_func)freefile);
 
-    int ndirs = length(dirs);
-    int needlabel = nfiles > 0 || ndirs > 1;
-    for (int i = 0; i < ndirs; i++) {
-        File *dir = getitem(dirs, i);
-        if (!dir) {
-            error("dir is NULL\n");
-            continue;
-        }
-        if (nfiles > 0 || i > 0) {
-            printf("\n");
-        }
-        if (needlabel) {
-            printf("%s:\n", dir->path);
-        }
-        listdir(dir, options);
-    }
-
+    bool firstoutput = nfiles == 0;
+    listdirs(dirs, options, firstoutput);
     freelist(dirs, (free_func)freefile);
+
     free(options);
 }
 
@@ -373,7 +360,7 @@ void freefields(List *list)
  * This function does any required sorting and figures out
  * what display format to use for printing.
  */
-void listfiles(List *files, Options *options)
+void listfiles(FileList *files, Options *options)
 {
     if (files == NULL) {
         errorf("files is NULL\n");
@@ -456,13 +443,14 @@ void listdir(File *dir, Options *options)
         return;
     }
     unsigned long totalblocks = 0;
+    List *subdirs = newlist();
     struct dirent *dirent = NULL;
     while ((dirent = readdir(openeddir)) != NULL) {
         /* TODO: merge this hidden file check with want() */
         if (!options->all && dirent->d_name[0] == '.') {
             continue;
         }
-        File *file = newfile(dir->name, dirent->d_name);
+        File *file = newfile(dir->path, dirent->d_name);
         if (file == NULL) {
             errorf("file is NULL\n");
             return;
@@ -472,6 +460,9 @@ void listdir(File *dir, Options *options)
             continue;
         }
         append(file, files);
+        if (options->recursive && isdir(file)) {
+            append(file, subdirs);
+        }
         if (options->dirtotals) {
             totalblocks += getblocks(file, options->blocksize);
         }
@@ -482,7 +473,34 @@ void listdir(File *dir, Options *options)
         printf("total %lu\n", totalblocks);
     }
     listfiles(files, options);
+    if (options->recursive) {
+        listdirs(subdirs, options, false);
+    }
     freelist(files, (free_func)freefile);
+}
+
+void listdirs(FileList *dirs, Options *options, bool firstoutput)
+{
+    if (!dirs) return;
+    int ndirs = length(dirs);
+    bool needlabel = ndirs > 1 || !firstoutput || options->recursive;
+    for (int i = 0; i < ndirs; i++) {
+        File *dir = getitem(dirs, i);
+        if (!dir) {
+            error("dir is NULL\n");
+            continue;
+        }
+        if (i > 0) {
+            firstoutput = false;
+        }
+        if (!firstoutput) {
+            printf("\n");
+        }
+        if (needlabel) {
+            printf("%s:\n", dir->path);
+        }
+        listdir(dir, options);
+    }
 }
 
 /**

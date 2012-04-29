@@ -55,6 +55,7 @@ void setdefaults(Options *options)
     options->numeric = 0;
     options->owner = 0;
     options->perms = 0;
+    options->recursive = 0;
     options->reverse = 0;
     options->showlink = 0;
     options->showlinks = 0;
@@ -210,6 +211,9 @@ int setoptions(Options *options, int argc, char **argv)
             break;
         case 'q':
             options->escape = ESCAPE_QUESTION;
+            break;
+        case 'R':
+            options->recursive = 1;
             break;
         case 'r':
             options->reverse = 1;

@@ -38,6 +38,7 @@ asterisks, e.g.
 ####File selection
  * directories only (`-D`)
  * show all (including hidden files) (`-a`)
+ * list subdirectories recursively (`-R`)
 
 #### File properties
  * show inode number field (`-i`)
