@@ -22,6 +22,7 @@ Buf *newbuf(void)
     buf->size = 1024, buf->data = malloc(1024);
     if (buf->data == NULL) {
         errorf("buf->data is NULL\n");
+        free(buf);
         return NULL;
     }
     buf->data[0] = '\0';
