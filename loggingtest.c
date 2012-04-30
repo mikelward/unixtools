@@ -7,33 +7,41 @@
 
 void test1();
 void test2();
+void test3();
 
 int main(int argc, char **argv)
 {
+    myname = "loggingtest";
+
     test1();
     test2();
-    //test3();
+    test3();
     return 0;
 }
 
 void test1()
 {
-    char *buf = malloc(4);
     int bufsize = 4;
+    char *buf = malloc(bufsize);
     char *str = "abc";
-    char **pbuf = &buf;
-    copystring(str, pbuf, &bufsize);
-    assert(strcmp(str, buf) == 0);
+    char *origbuf = buf;
+    copystring(str, &buf, &bufsize);
+    assert(strcmp(str, origbuf) == 0);
     assert(bufsize == 1);
 }
 
 void test2()
 {
-    char *buf = malloc(4);
     int bufsize = 4;
+    char *buf = malloc(bufsize);
     char *str = "abcd";
-    char **pbuf = &buf;
-    copystring(str, pbuf, &bufsize);
-    assert(strcmp(buf, "abc") == 0);
+    char *origbuf = buf;
+    copystring(str, &buf, &bufsize);
+    assert(strcmp(origbuf, "abc") == 0);
     assert(bufsize == 0);
+}
+
+void test3()
+{
+    errorf("This is a message from function %s\n", __func__);
 }

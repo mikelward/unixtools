@@ -1,5 +1,6 @@
 #include "logging.h"
 
+#include <stdarg.h>
 #include <stdio.h>
 
 char errorformat[256];
@@ -20,7 +21,7 @@ void copystring(const char *str, char **pbuf, int *pbufsize)
     } else {
         buf[bufsize-1] = '\0';
     }
-    *pbuf = buf;
+    *pbuf = buf+len;
     *pbufsize = bufsize-len;
 }
 
@@ -42,7 +43,7 @@ void errorf2(const char *func, const char *format, ...)
         copystring(format, &buf, &bufsize);
     }
     if (bufsize <= 0) {
-        errorf("Log message truncated to %d bytes\n", sizeof(errorformat));
+        fprintf(stderr, "Log message truncated to %zu bytes\n", sizeof(errorformat));
     }
     vfprintf(stderr, errorformat, ap);
     va_end(ap);
