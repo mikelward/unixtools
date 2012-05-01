@@ -128,7 +128,7 @@ int setoptions(Options *options, int argc, char **argv)
             break;
         case 'c':
             options->timetype = TIME_CTIME;
-            /* this interacts with other options-> see below */
+            /* this interacts with other options see below */
             break;
         case 'D':
             options->dirsonly = true;
@@ -237,7 +237,7 @@ int setoptions(Options *options, int argc, char **argv)
             break;
         case 'u':
             options->timetype = TIME_ATIME;
-            /* this interacts with other options-> see below */
+            /* this interacts with other options see below */
             break;
         case 'x':
             options->displaymode = DISPLAY_IN_ROWS;
