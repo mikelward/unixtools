@@ -15,13 +15,14 @@ char *cescape(char c);
 Buf *newbuf(void)
 {
     Buf *buf = malloc(sizeof(*buf));
-    if (buf == NULL) {
+    if (!buf) {
         errorf("buf is NULL\n");
         return NULL;
     }
     buf->size = 1024, buf->data = malloc(1024);
-    if (buf->data == NULL) {
+    if (!buf->data) {
         errorf("buf->data is NULL\n");
+        free(buf);
         return NULL;
     }
     buf->data[0] = '\0';
@@ -42,7 +43,7 @@ void freebuf(Buf *buf)
 
 void bufappend(Buf *buf, char *string, int width, bool printable)
 {
-    if (buf == NULL) {
+    if (!buf) {
         errorf("buf is NULL\n");
         return;
     }
@@ -65,7 +66,7 @@ void bufappend(Buf *buf, char *string, int width, bool printable)
 /* c is assumed to be printable */
 void bufappendchar(Buf *buf, char c)
 {
-    if (buf == NULL) {
+    if (!buf) {
         errorf("buf is NULL\n");
         return;
     }
@@ -81,7 +82,7 @@ void bufappendchar(Buf *buf, char c)
 /* return the contents of buf as a NUL terminated string */
 char *bufstring(Buf *buf)
 {
-    if (buf == NULL) {
+    if (!buf) {
         errorf("buf is NULL\n");
         return NULL;
     }
@@ -91,7 +92,7 @@ char *bufstring(Buf *buf)
 
 int bufpos(Buf *buf)
 {
-    if (buf == NULL) {
+    if (!buf) {
         errorf("buf is NULL\n");
         return 0;
     }
@@ -100,7 +101,7 @@ int bufpos(Buf *buf)
 
 int bufscreenpos(Buf *buf)
 {
-    if (buf == NULL) {
+    if (!buf) {
         errorf("buf is NULL\n");
         return 0;
     }
@@ -109,11 +110,11 @@ int bufscreenpos(Buf *buf)
 
 void printtobuf(const char *text, enum escape escape, Buf *buf)
 {
-    if (buf == NULL) {
+    if (!buf) {
         errorf("buf is NULL\n");
         return;
     }
-    if (text == NULL) {
+    if (!text) {
         errorf("file is NULL\n");
         return;
     }
