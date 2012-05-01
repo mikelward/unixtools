@@ -38,31 +38,31 @@ Options *newoptions(void)
 void setdefaults(Options *options)
 {
     /* TODO use memset? */
-    options->all = 0;
+    options->all = false;
     options->blocksize = 1024;
-    options->bytes = 0;
-    options->color = 0;
-    options->datetime = 0;
-    options->directory = 0;
-    options->dirsonly = 0;
-    options->dirtotals = 0;
+    options->bytes = false;
+    options->color = false;
+    options->datetime = false;
+    options->directory = false;
+    options->dirsonly = false;
+    options->dirtotals = false;
     options->displaymode = DISPLAY_ONE_PER_LINE;
     options->escape = ESCAPE_NONE;
     options->flags = FLAGS_NONE;
-    options->group = 0;
-    options->inode = 0;
-    options->linkcount = 0;
-    options->modes = 0;
-    options->numeric = 0;
-    options->owner = 0;
-    options->perms = 0;
-    options->recursive = 0;
-    options->reverse = 0;
-    options->showlink = 0;
-    options->showlinks = 0;
-    options->size = 0;
+    options->group = false;
+    options->inode = false;
+    options->linkcount = false;
+    options->modes = false;
+    options->numeric = false;
+    options->owner = false;
+    options->perms = false;
+    options->recursive = false;
+    options->reverse = false;
+    options->showlink = false;
+    options->showlinks = false;
+    options->size = false;
     options->sorttype = SORT_BY_NAME;
-    options->targetinfo = 0;
+    options->targetinfo = false;
     options->timetype = TIME_MTIME;
 
     options->compare = NULL;
@@ -114,14 +114,14 @@ int setoptions(Options *options, int argc, char **argv)
             /* maybe print ACLs?  or -a without "." and ".."? */
             break;
         case 'a':
-            options->all = 1;
+            options->all = true;
             break;
         case 'B':
-            options->bytes = 1;
+            options->bytes = true;
             break;
         case 'b':
             /* GNU ls uses this for ESCAPE_C, but we use -e = escape */
-            options->bytes = 1;
+            options->bytes = true;
             break;
         case 'C':
             options->displaymode = DISPLAY_IN_COLUMNS;
@@ -131,10 +131,10 @@ int setoptions(Options *options, int argc, char **argv)
             /* this interacts with other options-> see below */
             break;
         case 'D':
-            options->dirsonly = 1;
+            options->dirsonly = true;
             break;
         case 'd':
-            options->directory = 1;
+            options->directory = true;
             break;
         case 'E':
             options->escape = ESCAPE_NONE;
@@ -150,15 +150,15 @@ int setoptions(Options *options, int argc, char **argv)
             break;
         case 'G':
             /* for compatibility with FreeBSD */
-            options->color = 1;
+            options->color = true;
             break;
         case 'g':
             /* hopefully saner than legacy ls */
-            options->group = 1;
+            options->group = true;
             break;
         case 'K':
             /* K = "kolor", somewhat mnemonic and unused in GNU ls */
-            options->color = 1;
+            options->color = true;
             break;
         case 'k':
             options->blocksize = 1024;
@@ -167,67 +167,67 @@ int setoptions(Options *options, int argc, char **argv)
             options->timeformat = "%Y-%m-%d %H:%M:%S";
             break;
         case 'i':
-            options->inode = 1;
+            options->inode = true;
             break;
         case 'L':
-            options->showlinks = 1;
-            options->targetinfo = 1;
+            options->showlinks = true;
+            options->targetinfo = true;
             break;
         case 'l':
-            options->modes = 1;
-            options->linkcount = 1;
-            options->owner = 1;
-            options->group = 1;
-            options->bytes = 1;
-            options->datetime = 1;
-            options->showlink = 1;
+            options->modes = true;
+            options->linkcount = true;
+            options->owner = true;
+            options->group = true;
+            options->bytes = true;
+            options->datetime = true;
+            options->showlink = true;
             options->displaymode = DISPLAY_ONE_PER_LINE;
-            options->dirtotals = 1;
+            options->dirtotals = true;
             break;
         case 'M':
             /* might change this to blocksize=1048576 later */
-            options->modes = 1;
+            options->modes = true;
             break;
         case 'm':
             /* conflicts with legacy ls "streams" mode */
-            options->modes = 1;
+            options->modes = true;
             break;
         case 'N':
-            options->linkcount = 1;
+            options->linkcount = true;
             break;
         case 'n':
-            options->numeric = 1;
+            options->numeric = true;
             break;
         case 'O':
             options->flags = FLAGS_OLD;
             break;
         case 'o':
-            options->owner = 1;
+            options->owner = true;
             break;
         case 'P':
             /* reserved for physical mode (don't follow symlinks) */
             break;
         case 'p':
-            options->perms = 1;
+            options->perms = false;
             break;
         case 'q':
             options->escape = ESCAPE_QUESTION;
             break;
         case 'R':
-            options->recursive = 1;
+            options->recursive = false;
             break;
         case 'r':
-            options->reverse = 1;
+            options->reverse = false;
             break;
         case 'S':
             options->sorttype = SORT_BY_SIZE;
             break;
         case 's':
-            options->size = 1;
-            options->dirtotals = 1;
+            options->size = false;
+            options->dirtotals = false;
             break;
         case 'T':
-            options->datetime = 1;
+            options->datetime = false;
             break;
         case 't':
             options->sorttype = SORT_BY_TIME;
