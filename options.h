@@ -2,6 +2,7 @@
 #define OPTIONS_H
 
 #include <sys/types.h>
+#include <stdbool.h>
 
 #include "buf.h"
 #include "display.h"
@@ -20,31 +21,31 @@ enum sorttype { SORT_BY_NAME, SORT_BY_TIME, SORT_BY_SIZE, SORT_UNSORTED };
 /* all the command line options */
 /* defaults should usually be 0 */
 typedef struct options {
-    int all : 1;                    /* 1 = also print hidden files */
-    int blocksize;                  /* units for -s option */
-    int bytes : 1;                  /* 1 = print file size in bytes */
-    int color : 1;                  /* 1 = colorize file and directory names */
-    int datetime : 1;               /* 1 = print the file's modification date and time */
-    int directory : 1;              /* 1 = print directory name rather than contents */
-    int dirsonly : 1;               /* 1 = don't print regular files */
-    int dirtotals : 1;              /* 1 = print directory size totals */
+    bool all : 1;                   /* true = also show hidden files */
+    bool blocksize;                 /* units for -s option */
+    bool bytes : 1;                 /* true = show file size in bytes */
+    bool color : 1;                 /* true = colorize file and directory names */
+    bool datetime : 1;              /* true = show the file's modification date and time */
+    bool directory : 1;             /* true = show directory name rather than contents */
+    bool dirsonly : 1;              /* true = only list directories, not regular files */
+    bool dirtotals : 1;             /* true = show directory size totals */
     enum display displaymode;       /* one-per-line, columns, rows, etc. */ 
     enum escape escape;             /*     how to handle non-printable characters */
-    enum flags flags;               /*     print file "flags" */
-    int group : 1;                  /* display the groupname of the file's group */
-    int inode : 1;                  /* 1 = print the inode number */
-    int linkcount : 1;              /* 1 = print number of hard links */
-    int modes : 1;                  /* displays file modes, e.g. -rwxr-xr-x */
-    int numeric : 1;                /* 1 = display numeric uid and gid instead of names */
-    int owner : 1;                  /* display the username of the file's owner */
-    int perms : 1;                  /* display rwx modes for current user */
-    int recursive : 1;              /* display subdirectories recursively */
-    int reverse : 1;                /* 0 = forwards, 1 = reverse1 */
-    int showlink : 1;               /* 1 = show link -> target in name field (max. 1 link) */
-    int showlinks : 1;              /* 1 = show link -> target in name field (resolve all links) */
-    int size : 1;                   /* 1 = print file size in blocks */    
+    enum flags flags;               /*     show file "flags" */
+    bool group : 1;                 /* true = show the file's group */
+    bool inode : 1;                 /* true = show the inode number */
+    bool linkcount : 1;             /* true = show number of hard links */
+    bool modes : 1;                 /* true = show the file's modes, e.g. -rwxr-xr-x */
+    bool numeric : 1;               /* true = show uid and gid instead of username and groupname */
+    bool owner : 1;                 /* true = show the file's owner */
+    bool perms : 1;                 /* true = show permissions for the current user, e.g. rwx */
+    bool recursive : 1;             /* true = after listing a directory, list its subdirectories recursively */
+    bool reverse : 1;               /* true = sort oldest to newest (or smallest to largest with -S option) */
+    bool showlink : 1;              /* true = show link -> target in name field (max. 1 link) */
+    bool showlinks : 1;             /* true = show link -> target in name field (resolve all links) */
+    bool size : 1;                  /* true = show file size in blocks */
     enum sorttype sorttype;         /* how to sort */
-    int targetinfo : 1;             /* 1 = field info is based on symlink target */
+    bool targetinfo : 1;            /* true = field info is based on symlink target */
     enum timetype timetype;         /* which time to show (mtime, ctime, etc.) */
 
     /* these are more like global state variables than options */
