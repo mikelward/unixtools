@@ -90,6 +90,11 @@ char *get(Map *map, int key)
     return getvalue(pair);
 }
 
+bool inmap(Map *map, int key)
+{
+    return findpair(map, key) != NULL;
+}
+
 void set(Map *map, int key, char *value)
 {
     int hashcode = gethashcode(map, key);

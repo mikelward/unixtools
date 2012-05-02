@@ -14,5 +14,9 @@ void freemap(Map *map);
 
 char *get(Map *map, int key);
 void set(Map *map, int key, char *value);
+/**
+ * Return true if there is an entry with the given key in the map.
+ */
+bool inmap(Map *map, int key);
 
 #endif
