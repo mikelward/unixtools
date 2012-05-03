@@ -41,7 +41,7 @@ void freebuf(Buf *buf)
     }
 }
 
-void bufappend(Buf *buf, char *string, int width, bool printable)
+void bufappend(Buf *buf, char *string, size_t width, bool printable)
 {
     if (!buf) {
         errorf("buf is NULL\n");
@@ -90,7 +90,7 @@ char *bufstring(Buf *buf)
     return buf->data;
 }
 
-int bufpos(Buf *buf)
+size_t bufpos(Buf *buf)
 {
     if (!buf) {
         errorf("buf is NULL\n");
@@ -99,7 +99,7 @@ int bufpos(Buf *buf)
     return buf->pos;
 }
 
-int bufscreenpos(Buf *buf)
+size_t bufscreenpos(Buf *buf)
 {
     if (!buf) {
         errorf("buf is NULL\n");

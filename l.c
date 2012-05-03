@@ -46,7 +46,7 @@ typedef List FileFieldList;         /* list of fields for each file */
 
 const int columnmargin = 1;
 
-int  listfile(File *file, Options *options);
+int *getmaxfilefieldwidths(FileFieldList *filefields);
 void listfilewithnewline(File *file, Options *options);
 void listfiles(FileList *files, Options *options);
 void listdir(File *dir, Options *options);
