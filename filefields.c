@@ -62,6 +62,7 @@ FieldList *getfilefields(File *file, Options *options)
             }
             file = target;
         }
+        freemap(linkmap);
     }
 
     if (options->size) {
