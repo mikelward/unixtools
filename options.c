@@ -208,26 +208,26 @@ int setoptions(Options *options, int argc, char **argv)
             /* reserved for physical mode (don't follow symlinks) */
             break;
         case 'p':
-            options->perms = false;
+            options->perms = true;
             break;
         case 'q':
             options->escape = ESCAPE_QUESTION;
             break;
         case 'R':
-            options->recursive = false;
+            options->recursive = true;
             break;
         case 'r':
-            options->reverse = false;
+            options->reverse = true;
             break;
         case 'S':
             options->sorttype = SORT_BY_SIZE;
             break;
         case 's':
-            options->size = false;
-            options->dirtotals = false;
+            options->size = true;
+            options->dirtotals = true;
             break;
         case 'T':
-            options->datetime = false;
+            options->datetime = true;
             break;
         case 't':
             options->sorttype = SORT_BY_TIME;
