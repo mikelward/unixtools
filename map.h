@@ -1,10 +1,12 @@
 #ifndef MAP_H
 #define MAP_H
 
+#include <inttypes.h>
+
 #include "list.h"
 
 /**
- * A Map from int to char *.
+ * A Map from unsigned to char *.
  */
 
 typedef struct map Map;
@@ -12,11 +14,11 @@ typedef struct map Map;
 Map *newmap();
 void freemap(Map *map);
 
-char *get(Map *map, int key);
-void set(Map *map, int key, char *value);
+char *get(Map *map, uintmax_t key);
+void set(Map *map, uintmax_t key, char *value);
 /**
  * Return true if there is an entry with the given key in the map.
  */
-bool inmap(Map *map, int key);
+bool inmap(Map *map, uintmax_t key);
 
 #endif

@@ -26,6 +26,8 @@ Pair *newpair(int key, char *value)
             free(pair);
             return NULL;
         }
+    } else {
+        pair->value = NULL;
     }
 
     return pair;

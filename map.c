@@ -9,11 +9,11 @@ typedef List PairList;
 
 typedef struct map {
     PairList **slots;
-    int size;
-    int load;
+    unsigned size;
+    unsigned load;
 } Map;
 
-int gethashcode(Map *map, int key)
+unsigned gethashcode(Map *map, uintmax_t key)
 {
     return key % map->size;
 }
@@ -24,7 +24,7 @@ bool keysequal(Pair *pair1, Pair *pair2)
     return getkey(pair1) == getkey(pair2);
 }
 
-Pair *findpair(Map *map, int key)
+Pair *findpair(Map *map, uintmax_t key)
 {
     if (!map) {
         errorf("map is NULL\n");
@@ -53,7 +53,7 @@ Map *newmap()
 
     map->size = 10;
     map->slots = calloc(map->size, sizeof(*map->slots));
-    for (int i = 0; i < map->size; i++) {
+    for (unsigned i = 0; i < map->size; i++) {
         PairList *list = newlist();
         if (!list) {
             errorf("Out of memory?\n");
@@ -72,14 +72,14 @@ void freemap(Map *map)
 {
     if (!map) return;
 
-    for (int i = 0; i < map->size; i++) {
+    for (unsigned i = 0; i < map->size; i++) {
         freelist((map->slots)[i], (free_func)freepair);
     }
     free(map->slots);
     free(map);
 }
 
-char *get(Map *map, int key)
+char *get(Map *map, uintmax_t key)
 {
     if (!map) {
         errorf("map is NULL\n");
@@ -90,14 +90,14 @@ char *get(Map *map, int key)
     return getvalue(pair);
 }
 
-bool inmap(Map *map, int key)
+bool inmap(Map *map, uintmax_t key)
 {
     return findpair(map, key) != NULL;
 }
 
-void set(Map *map, int key, char *value)
+void set(Map *map, uintmax_t key, char *value)
 {
-    int hashcode = gethashcode(map, key);
+    unsigned hashcode = gethashcode(map, key);
     PairList *pairs = (map->slots)[hashcode];
     /* TODO allocate list here instead? */
     if (!pairs) {

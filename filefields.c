@@ -30,74 +30,103 @@ FieldList *getfilefields(File *file, Options *options)
         return NULL;
     }
 
+    Map *linkmap = NULL;
+
     /*
      * with -L, display information about the link target file by setting file = target
      * the originally named file is saved as "link" for displaying the name
      */
     File *link = file;
     if (options->targetinfo) {
+        /* XXX ls seems to use stat() instead of lstat() here */
+        linkmap = newmap();
+        if (!linkmap) {
+            errorf("Out of memory?\n");
+            goto error;
+        }
         File *target = NULL;
         while (isstat(file) && islink(file)) {
             target = gettarget(file);
-            if (target == NULL) {
-                errorf("target is NULL\n");
-                walklist(fieldlist, free);
-                free(fieldlist);
-                return NULL;
+            if (!target) {
+                errorf("Cannot determine target of %s for %s\n", file->name, link->name);
+                file = NULL;
+                break;
+            }
+            if (inmap(linkmap, getinode(target))) {
+                errorf("Symlink loop in %s\n", file->name);
+                /* no file to stat, but want to print the name field */
+                file = NULL;
+                break;
+            } else {
+                set(linkmap, (uintmax_t)getinode(target), NULL);
             }
             file = target;
         }
     }
 
     if (options->size) {
-        Field *sizefield = getsizefield(file, options, snprintfbuf, sizeof(snprintfbuf));
-        append(sizefield, fieldlist);
+        Field *field = getsizefield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        if (!field) goto error;
+        append(field, fieldlist);
     }
 
     if (options->inode) {
-        Field *inodefield = getinodefield(file, options, snprintfbuf, sizeof(snprintfbuf));
-        append(inodefield, fieldlist);
+        Field *field = getinodefield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        if (!field) goto error;
+        append(field, fieldlist);
     }
 
     if (options->modes) {
-        Field *modesfield = getmodesfield(file, options, snprintfbuf, sizeof(snprintfbuf));
-        append(modesfield, fieldlist);
+        Field *field = getmodesfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        if (!field) goto error;
+        append(field, fieldlist);
     }
 
     if (options->linkcount) {
-        Field *linkfield = getlinkfield(file, options, snprintfbuf, sizeof(snprintfbuf));
-        append(linkfield, fieldlist);
+        Field *field = getlinkfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        if (!field) goto error;
+        append(field, fieldlist);
     }
 
     if (options->owner) {
-        Field *ownerfield = getownerfield(file, options, snprintfbuf, sizeof(snprintfbuf));
-        append(ownerfield, fieldlist);
+        Field *field = getownerfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        if (!field) goto error;
+        append(field, fieldlist);
     }
 
     if (options->group) {
-        Field *groupfield = getgroupfield(file, options, snprintfbuf, sizeof(snprintfbuf));
-        append(groupfield, fieldlist);
+        Field *field = getgroupfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        if (!field) goto error;
+        append(field, fieldlist);
     }
 
     if (options->perms) {
-        Field *permsfield = getpermsfield(file, options, snprintfbuf, sizeof(snprintfbuf));
-        append(permsfield, fieldlist);
+        Field *field = getpermsfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        if (!field) goto error;
+        append(field, fieldlist);
     }
 
     if (options->bytes) {
-        Field *bytesfield = getbytesfield(file, options, snprintfbuf, sizeof(snprintfbuf));
-        append(bytesfield, fieldlist);
+        Field *field = getbytesfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        if (!field) goto error;
+        append(field, fieldlist);
     }
 
     if (options->datetime) {
-        Field *datetimefield = getdatetimefield(file, options, snprintfbuf, sizeof(snprintfbuf));
-        append(datetimefield, fieldlist);
+        Field *field = getdatetimefield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        if (!field) goto error;
+        append(field, fieldlist);
     }
 
     Field *field = getnamefield(link, options);
     append(field, fieldlist);
 
     return (FieldList *)fieldlist;
+
+error:
+    freemap(linkmap);
+    freelist(fieldlist, (free_func)freefield);
+    return NULL;
 }
 
 Field *getbytesfield(File *file, Options *options, char *buf, int bufsize)
@@ -231,20 +260,23 @@ Field *getmodesfield(File *file, Options *options, char *buf, int bufsize)
  * of the link's target (multiple times if there are multiple links)
  * i.e. link -> file
  * or even link -> link -> link -> file
+ *
+ * A symlink loop will be printed as
+ * link1 -> link2 -> link3 -> link1
  */
 Field *getnamefield(File *file, Options *options)
 {
-    if (file == NULL) {
+    if (!file) {
         errorf("file is NULL\n");
         return NULL;
     }
-    if (options == NULL) {
+    if (!options) {
         errorf("options is NULL\n");
         return NULL;
     }
 
     Buf *buf = newbuf();
-    if (buf == NULL) {
+    if (!buf) {
         errorf("buf is NULL\n");
         return NULL;
     }
@@ -253,11 +285,25 @@ Field *getnamefield(File *file, Options *options)
     printnametobuf(file, options, buf);
 
     if (options->showlinks) {
-        /* resolve and print symlink targets recursively */
-        while (isstat(file) && islink(file)) {
-            file = gettarget(file);
-            bufappend(buf, " -> ", 4, 4);
-            printnametobuf(file, options, buf);
+        Map *linkmap = newmap();
+        if (linkmap) {
+            /* resolve and print symlink targets recursively */
+            while (isstat(file) && islink(file)) {
+                if (inmap(linkmap, getinode(file))) {
+                    /* error already printed by getfilefields */
+                    /* no file to stat, but want to print the name field */
+                    file = NULL;
+                    break;
+                } else {
+                    set(linkmap, (uintmax_t)getinode(file), NULL);
+                }
+                file = gettarget(file);
+                bufappend(buf, " -> ", 4, 4);
+                printnametobuf(file, options, buf);
+            }
+            freemap(linkmap);
+        } else {
+            errorf("Out of memory?\n");
         }
     } else if (options->showlink) {
         /* print only the first link target without stat'ing the target */

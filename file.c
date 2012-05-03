@@ -181,7 +181,6 @@ static struct stat *getstat(File *file)
 bool isstat(File *file)
 {
     if (!file) {
-        errorf("file is NULL\n");
         return 0;
     }
 
