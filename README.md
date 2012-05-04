@@ -111,12 +111,18 @@ asterisks, e.g.
  * `-o` - adds an owner column, rather than long-without-group (could rename to `-O` if `-o` is really needed)
  * `-p` - adds a permissions column, rather than appending slash to directories (use `-F` or `-O`)
 
+### Build
+
+You need a C99 compiler, GNU make, and `ncurses` and `libacl` development packages.
+
+Debian/Ubuntu: `sudo apt-get install gcc make libncurses-dev libacl1-dev`.  
+Red Hat/Fedora: `sudo yum install gcc make ncurses-devel libacl-devel`.
+
+Then, run `make`.
+
 ### Installation
 
 Run `make install`.  Files are installed under `/usr/local` by default.  Install
 somewhere else by doing `make install DESTDIR=<path>`.
-
-For ACL support, libacl is currently required.  On Fedora, `yum install
-libacl-devel`.  On Ubuntu, `apt-get install libacl1-dev`.
 
 Patches and pull requests are welcome.
