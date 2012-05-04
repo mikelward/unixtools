@@ -52,6 +52,7 @@ void test1(void)
         int *pi = (int *)getitem(pl, i);
         assert(*pi == i);
     }
+    freelist(pl, free);
 }
 
 int compareints(const void *pi1, const void *pi2)
@@ -94,6 +95,7 @@ void test2(void)
         int *pi = getitem(pl, i);
         assert(*pi == is[i]);
     }
+    freelist(pl, free);
 }
 
 void sum(void *pnumber, void *context)
@@ -121,6 +123,7 @@ void test3(void)
     walklistcontext(pl, &sum, &total);
     //printf("total = %d\n", total);
     assert(total == 6);
+    freelist(pl, free);
 }
 
 void printintptr(void *elem)
@@ -182,6 +185,7 @@ void test4(void)
 
     int *pi = &i;
     walklistcontext(pl, &checkbackwards, &pi);
+    freelist(pl, free);
 }
 
 void test5(void)
@@ -198,6 +202,7 @@ void test5(void)
     }
 
     walklist(pl, &printintptr);
+    freelist(pl, free);
 }
 
 void test6(void)
@@ -214,6 +219,7 @@ void test6(void)
     }
 
     walklist(pl, &donothing);
+    freelist(pl, free);
 }
 
 void test7(void)
@@ -223,6 +229,7 @@ void test7(void)
     error("%s\n", __func__);
 
     walklist(pl, &printintptr);
+    freelist(pl, free);
 }
 
 /*
