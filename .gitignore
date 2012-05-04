@@ -3,6 +3,7 @@
 *.out
 *.log
 *.core
+*.sublime-workspace
 l
 filetest
 listtest
