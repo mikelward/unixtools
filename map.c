@@ -7,11 +7,11 @@
 
 typedef List PairList;
 
-typedef struct map {
+struct map {
     PairList **slots;
     unsigned size;
     unsigned load;
-} Map;
+};
 
 unsigned gethashcode(Map *map, uintmax_t key)
 {
