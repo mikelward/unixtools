@@ -22,7 +22,7 @@ enum sorttype { SORT_BY_NAME, SORT_BY_TIME, SORT_BY_SIZE, SORT_UNSORTED };
 /* defaults should usually be 0 */
 typedef struct options {
     bool all : 1;                   /* true = also show hidden files */
-    bool blocksize;                 /* units for -s option */
+    unsigned blocksize;             /* units for -s option */
     bool bytes : 1;                 /* true = show file size in bytes */
     bool color : 1;                 /* true = colorize file and directory names */
     bool datetime : 1;              /* true = show the file's modification date and time */
