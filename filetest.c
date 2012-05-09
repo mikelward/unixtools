@@ -15,7 +15,7 @@ int test_bare_file();
 int test_absolute_file();
 int test_relative_file();
 int test_dot();
-int test_attributes();
+int test_filename();
 
 int main(int argc, char **argv)
 {
@@ -23,7 +23,7 @@ int main(int argc, char **argv)
     test_absolute_file();
     test_relative_file();
     test_dot();
-    test_attributes();
+    test_filename();
     return 0;
 }
 
@@ -88,7 +88,7 @@ int test_dot(void)
     return 0;
 }
 
-int test_attributes(void)
+int test_filename(void)
 {
     errorf("\n");   /* prints the function name */
     const char *tempfilename = tmpnam(NULL);
