@@ -70,22 +70,18 @@ void testmapduplicatehash()
 
     key = 3;
     val = get(map, key);
-    printf("%d => %s\n", key, val);
     assert(strcmp(val, "three") == 0);
 
     key = 5;
     val = get(map, key);
-    printf("%d => %s\n", key, val);
     assert(strcmp(val, "five") == 0);
 
     key = 11;
     val = get(map, key);
-    printf("%d => %s\n", key, val);
     assert(strcmp(val, "eleven") == 0);
 
     key = 13;
     val = get(map, key);
-    printf("%d => %s\n", key, val);
     assert(strcmp(val, "thirteen") == 0);
 }
 
