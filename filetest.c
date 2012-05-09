@@ -20,6 +20,8 @@ int test_fileperms();
 
 int main(int argc, char **argv)
 {
+    myname = "filetest";
+
     test_bare_file();
     test_absolute_file();
     test_relative_file();

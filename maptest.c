@@ -8,21 +8,23 @@
 #include "logging.h"
 #include "map.h"
 
-void testmapempty();
-void testmaponeitem();
-void testmapduplicatehash();
-void testmapnullkeyisset();
+void test_new_map_is_empty();
+void test_map_has_set_item();
+void test_item_with_duplicate_hashcode_doesnt_overwrite_existing_item();
+void test_map_can_hold_pair_with_null_value();
 
 int main(int argc, char const *argv[])
 {
-    testmapempty();
-    testmaponeitem();
-    testmapduplicatehash();
-    testmapnullkeyisset();
+    myname = "maptest";
+    
+    test_new_map_is_empty();
+    test_map_has_set_item();
+    test_item_with_duplicate_hashcode_doesnt_overwrite_existing_item();
+    test_map_can_hold_pair_with_null_value();
     return 0;
 }
 
-void testmapempty()
+void test_new_map_is_empty()
 {
     errorf("\n");   /* prints the function name */
     Map *map = newmap();
@@ -34,7 +36,7 @@ void testmapempty()
     assert(res == NULL);
 }
 
-void testmaponeitem()
+void test_map_has_set_item()
 {
     errorf("\n");   /* prints the function name */
     Map *map = newmap();
@@ -48,7 +50,7 @@ void testmaponeitem()
     assert(strcmp(res, "three") == 0);
 }
 
-void testmapduplicatehash()
+void test_item_with_duplicate_hashcode_doesnt_overwrite_existing_item()
 {
     errorf("\n");   /* prints the function name */
     Map *map = newmap();
@@ -85,7 +87,7 @@ void testmapduplicatehash()
     assert(strcmp(val, "thirteen") == 0);
 }
 
-void testmapnullkeyisset()
+void test_map_can_hold_pair_with_null_value()
 {
     errorf("\n");   /* prints the function name */
     Map *map = newmap();
