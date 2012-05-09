@@ -16,6 +16,7 @@ int test_absolute_file();
 int test_relative_file();
 int test_dot();
 int test_filename();
+int test_fileperms();
 
 int main(int argc, char **argv)
 {
@@ -24,6 +25,7 @@ int main(int argc, char **argv)
     test_relative_file();
     test_dot();
     test_filename();
+    test_fileperms();
     return 0;
 }
 
@@ -92,11 +94,31 @@ int test_filename(void)
 {
     errorf("\n");   /* prints the function name */
     const char *tempfilename = tmpnam(NULL);
-    umask(S_IWGRP|S_IWOTH);
     FILE *cfile = fopen(tempfilename, "w");
     File *file = newfile("", tempfilename);
     const char *name = getname(file);
     fclose(cfile);
     assert(strcmp(tempfilename, name) == 0);
+    return 0;
+}
+
+int test_fileperms(void)
+{
+    errorf("\n");   /* prints the function name */
+    const char *tempfilename = tmpnam(NULL);
+    umask(S_IWGRP|S_IWOTH);
+    FILE *cfile = fopen(tempfilename, "w");
+    fclose(cfile);
+
+    File *file = newfile("", tempfilename);
+    char *modes = getmodes(file);
+    /* space at end assuming no extended ACLs on current directory */
+    assert(strcmp(modes, "-rw-r--r-- ") == 0);
+    free(modes);
+
+    char *perms = getperms(file);
+    assert(strcmp(perms, "rw-") == 0);
+    free(perms);
+
     return 0;
 }

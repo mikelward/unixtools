@@ -100,6 +100,9 @@ nlink_t getlinkcount(File *file);
 /**
  * Return modes as a string, e.g. "-rwxr-xr-x"
  *
+ * Modes will have a "+" suffix if file has extended ACLs
+ * and a " " suffix if file has only minimal ACLs.
+ *
  * Caller must free returned string.
  */
 char *getmodes(File *file);
