@@ -51,7 +51,7 @@ Map *newmap()
         return NULL;
     }
 
-    map->size = 10;
+    map->size = 8;
     map->slots = calloc(map->size, sizeof(*map->slots));
     for (unsigned i = 0; i < map->size; i++) {
         PairList *list = newlist();
