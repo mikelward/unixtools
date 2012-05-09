@@ -5,22 +5,28 @@
 
 #include "logging.h"
 
-void test1();
-void test2();
-void test3();
+void testvalidstring();
+void testtoolongstring();
+void testerrorffuncname();
 
 int main(int argc, char **argv)
 {
     myname = "loggingtest";
 
-    test1();
-    test2();
-    test3();
+    testerrorffuncname();
+    testvalidstring();
+    testtoolongstring();
     return 0;
 }
 
-void test1()
+void testerrorffuncname()
 {
+    errorf("This is a message from function %s\n", __func__);
+}
+
+void testvalidstring()
+{
+    errorf("\n");
     int bufsize = 4;
     char *buf = malloc(bufsize);
     char *str = "abc";
@@ -30,8 +36,9 @@ void test1()
     assert(bufsize == 1);
 }
 
-void test2()
+void testtoolongstring()
 {
+    errorf("\n");
     int bufsize = 4;
     char *buf = malloc(bufsize);
     char *str = "abcd";
@@ -39,9 +46,4 @@ void test2()
     copystring(str, &buf, &bufsize);
     assert(strcmp(origbuf, "abc") == 0);
     assert(bufsize == 0);
-}
-
-void test3()
-{
-    errorf("This is a message from function %s\n", __func__);
 }

@@ -8,23 +8,35 @@
 #include "logging.h"
 #include "map.h"
 
-void test1();
-void test2();
-void test3();
-void test4();
+void testmapempty();
+void testmaponeitem();
+void testmapduplicatehash();
+void testmapnullkeyisset();
 
 int main(int argc, char const *argv[])
 {
-    test1();
-    test2();
-    test3();
-    test4();
+    testmapempty();
+    testmaponeitem();
+    testmapduplicatehash();
+    testmapnullkeyisset();
     return 0;
 }
 
-void test1()
+void testmapempty()
 {
-    errorf("%s", "Running\n");
+    errorf("\n");   /* prints the function name */
+    Map *map = newmap();
+
+    int key = 3;
+
+    char *res = get(map, key);
+
+    assert(res == NULL);
+}
+
+void testmaponeitem()
+{
+    errorf("\n");   /* prints the function name */
     Map *map = newmap();
 
     int key = 3;
@@ -36,21 +48,9 @@ void test1()
     assert(strcmp(res, "three") == 0);
 }
 
-void test2()
+void testmapduplicatehash()
 {
-    errorf("Running\n");
-    Map *map = newmap();
-
-    int key = 3;
-
-    char *res = get(map, key);
-
-    assert(res == NULL);
-}
-
-void test3()
-{
-    errorf("Running\n");
+    errorf("\n");   /* prints the function name */
     Map *map = newmap();
 
     int key;
@@ -59,10 +59,13 @@ void test3()
     key = 3, val = "three";
     set(map, key, val);
 
-    key = 13, val = "thirteen";
+    key = 5, val = "five";
     set(map, key, val);
 
-    key = 5, val = "five";
+    key = 11, val = "eleven";
+    set(map, key, val);
+
+    key = 13, val = "thirteen";
     set(map, key, val);
 
     key = 3;
@@ -75,15 +78,20 @@ void test3()
     printf("%d => %s\n", key, val);
     assert(strcmp(val, "five") == 0);
 
+    key = 11;
+    val = get(map, key);
+    printf("%d => %s\n", key, val);
+    assert(strcmp(val, "eleven") == 0);
+
     key = 13;
     val = get(map, key);
     printf("%d => %s\n", key, val);
     assert(strcmp(val, "thirteen") == 0);
 }
 
-void test4()
+void testmapnullkeyisset()
 {
-    errorf("Running\n");
+    errorf("\n");   /* prints the function name */
     Map *map = newmap();
 
     int key;
@@ -99,4 +107,3 @@ void test4()
     assert(inmap(map, 5));
     assert(!inmap(map, 7));
 }
-
