@@ -22,7 +22,9 @@ typedef List StringList;
 
 void printacross(StringList *list, int stringwidth, int screenwidth);
 void printdown(StringList *list, int stringwidth, int screenwidth);
+void printspaces(int n);
 
+int ceildiv(int num, int mult);
 int setupcolors(Colors *colors);
 void freecolors(Colors *colors);
 

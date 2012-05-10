@@ -113,6 +113,13 @@ void printdown(StringList *list, int stringwidth, int screenwidth)
     }
 }
 
+void printspaces(int n)
+{
+    for (int i = 0; i < n; i++) {
+        putchar(' ');
+    }
+}
+
 /**
  * Try to set up color output.
  *
@@ -174,6 +181,20 @@ void freecolors(Colors *colors)
     free(colors->cyan);
     free(colors->white);
     free(colors);
+}
+
+/*
+ * divide num by mult
+ * and return the nearest integer >= the result
+ */
+int ceildiv(int num, int mult)
+{
+    if (mult == 0) {
+        errorf("division by zero (%d, %d)\n", num, mult);
+        assert(mult != 0);
+    }
+    int res = (num + mult - 1) / mult;
+    return res;
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/

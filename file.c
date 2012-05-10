@@ -571,7 +571,8 @@ char *getmodes(File *file)
     }
 
     /* POSIX says we should print a space if there are no extended ACLs,
-       GNU ls prints nothing */
+       GNU ls prints nothing
+       follow POSIX */
     if (!islink(file) && hasacls(file))
         *p++ = '+';
     else

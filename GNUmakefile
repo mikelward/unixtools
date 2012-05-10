@@ -1,7 +1,7 @@
-CC=cc
+CC=c99
 DEBUG=-g
 WARNINGS=-Wall -Werror
-CFLAGS=-std=c99 $(WARNINGS) $(DEBUG)
+CFLAGS=$(WARNINGS) $(DEBUG)
 LDFLAGS=$(WARNINGS) $(DEBUG)
 
 DESTDIR=/usr/local
@@ -22,6 +22,12 @@ tags: $(SOURCES)
 	ctags -f $@ *.c *.h
 
 doc: $(DOCS)
+
+%.o: %.c options.h
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+%: %.o
+	$(CC) $(LDFLAGS) -o $@ $^
 
 %.html: %.md
 	$(MD2HTML) -o $@ $<

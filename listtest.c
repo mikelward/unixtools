@@ -6,41 +6,31 @@
 #include "list.h"
 #include "logging.h"
 
-void test1(void);
-void test2(void);
-void test3(void);
-void test4(void);
-void test5(void);
-void test6(void);
-void test7(void);
-void test8(void);
-void test9(void);
-void test10(void);
-void test11(void);
+void test_list_appended_items_match_inserted(void);
+void test_sortlist(void);
+void test_walklist(void);
+void test_reverselist(void);
+void test_finditem(void);
 
 int main(int argc, const char *argv[])
 {
-    test1();
-    test2();
-    test3();
-    test4();
-    test5();
-    test6();
-    test7();
-    //test8();
-    test9();
-    test10();
-    test11();
+    myname = "listtest";
+
+    test_list_appended_items_match_inserted();
+    test_sortlist();
+    test_walklist();
+    test_reverselist();
+    test_finditem();
 
     return 0;
 }
 
-void test1(void)
+void test_list_appended_items_match_inserted(void)
 {
     int i;
     List *pl = newlist();
 
-    error("%s\n", __func__);
+    errorf("\n");
 
     for (i = 0; i < 10; i++) {
         int *pi = malloc(sizeof(int));
@@ -52,6 +42,7 @@ void test1(void)
         int *pi = (int *)getitem(pl, i);
         assert(*pi == i);
     }
+    freelist(pl, free);
 }
 
 int compareints(const void *pi1, const void *pi2)
@@ -72,14 +63,14 @@ int compareintptrs(const void **ppi1, const void **ppi2)
     return i1 - i2;
 }
 
-void test2(void)
+void test_sortlist(void)
 {
     List *pl = newlist();
     int is[] = { 3, 1, 4, 1, 5, 2, 9 };
     int i;
     size_t nelems = sizeof(is) / sizeof(is[0]);
 
-    error("%s\n", __func__);
+    errorf("\n");
 
     for (i = 0; i < nelems; i++) {
         int *pi = malloc(sizeof *pi);
@@ -94,6 +85,7 @@ void test2(void)
         int *pi = getitem(pl, i);
         assert(*pi == is[i]);
     }
+    freelist(pl, free);
 }
 
 void sum(void *pnumber, void *context)
@@ -104,13 +96,13 @@ void sum(void *pnumber, void *context)
     *ptotal += value;
 }
 
-void test3(void)
+void test_walklist(void)
 {
     List *pl = newlist();
     int i;
     int total = 0;
 
-    error("%s\n", __func__);
+    errorf("\n");
 
     for (i = 1; i <= 3; i++) {
         int *pi = malloc(sizeof *pi);
@@ -121,6 +113,7 @@ void test3(void)
     walklistcontext(pl, &sum, &total);
     //printf("total = %d\n", total);
     assert(total == 6);
+    freelist(pl, free);
 }
 
 void printintptr(void *elem)
@@ -161,12 +154,12 @@ void checkbackwards(void *vpthisint, void *vpplastint /* really void ** */)
     *pplastint = pthisint;
 }
 
-void test4(void)
+void test_reverselist(void)
 {
     List *pl = newlist();
     int i;
 
-    error("%s\n", __func__);
+    errorf("\n");
 
     for (i = 1; i <= 3; i++) {
         int *pi = malloc(sizeof *pi);
@@ -174,55 +167,11 @@ void test4(void)
         append(pi, pl);
     }
 
-    printf("before reversing\n");
-    walklist(pl, &printintptr);
     reverselist(pl);
-    printf("after reversing\n");
-    walklist(pl, &printintptr);
 
     int *pi = &i;
     walklistcontext(pl, &checkbackwards, &pi);
-}
-
-void test5(void)
-{
-    List *pl = newlist();
-    int i;
-
-    error("%s\n", __func__);
-
-    for (i = 0; i <= 6; i++) {
-        int *pi = malloc(sizeof *pi);
-        *pi = i;
-        append(pi, pl);
-    }
-
-    walklist(pl, &printintptr);
-}
-
-void test6(void)
-{
-    List *pl = newlist();
-    int i;
-
-    error("%s\n", __func__);
-
-    for (i = 0; i <= 1000000; i++) {
-        int *pi = malloc(sizeof *pi);
-        *pi = i;
-        append(pi, pl);
-    }
-
-    walklist(pl, &donothing);
-}
-
-void test7(void)
-{
-    List *pl = newlist();
-
-    error("%s\n", __func__);
-
-    walklist(pl, &printintptr);
+    freelist(pl, free);
 }
 
 /*
@@ -232,7 +181,7 @@ void test8(void)
     List *pl = newlist();
     int i;
 
-    error("%s\n", __func__);
+    errorf("\n");
 
     for (i = 0; i <= 9; i++) {
         int *pi = malloc(sizeof *pi);
@@ -258,56 +207,18 @@ int printint(void *pv, void *pvoptions)
     return printf("%d", *pi);
 }
 
-void test9(void)
-{
-    List *pl = newlist();
-    int i;
-
-    error("%s\n", __func__);
-
-    for (i = 0; i <= 9; i++) {
-        int *pi = malloc(sizeof *pi);
-        *pi = i;
-        append(pi, pl);
-    }
-
-    int screenwidth = 10;
-    printf("print across (screenwidth=%d)\n", screenwidth);
-    printlistacross(pl, screenwidth, &getintwidth, &printint, NULL);
-    freelist(pl, free);
-}
-
-void test10(void)
-{
-    List *pl = newlist();
-    int i;
-
-    error("%s\n", __func__);
-
-    for (i = 0; i <= 9; i++) {
-        int *pi = malloc(sizeof *pi);
-        *pi = i;
-        append(pi, pl);
-    }
-
-    int screenwidth = 10;
-    printf("print down (screenwidth=%d)\n", screenwidth);
-    printlistdown(pl, screenwidth, &getintwidth, &printint, NULL);
-    freelist(pl, free);
-}
-
 bool intptrsequal(int *pi1, int *pi2)
 {
     if (!pi1 || !pi2) return false;
     return *pi1 == *pi2;
 }
 
-void test11(void)
+void test_finditem(void)
 {
     List *list = newlist();
     int i;
 
-    error("%s\n", __func__);
+    errorf("\n");
 
     for (i = 0; i <= 9; i++) {
         int *pi = malloc(sizeof *pi);

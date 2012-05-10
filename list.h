@@ -32,16 +32,6 @@ void sortlist(List *list, list_compare_function compare);
 void reverselist(List *list);
 void walklist(List *list, walker_func func);
 void walklistcontext(List *list, walker_context_func func, void *context);
-void printlist(List *list, printer_func printer, void *pvoptions);
-void printlistacross(List *list,
-                     int screenwidth, width_func getwidth,
-                     printer_func printer, void *pvoptions);
-void printlistdown(List *list,
-                   int screenwidth, width_func getwidth,
-                   printer_func printer, void *pvoptions);
-/* XXX move to display.[ch] */
-void printspaces(int n);
-int ceildiv(int num, int mult);
 
 #endif
 /* vim: set ts=4 sw=4 tw=0 et:*/
