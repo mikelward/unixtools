@@ -1,4 +1,5 @@
 #define _XOPEN_SOURCE 600   /* for readlink(), strdup(), snprintf() */
+#define _GNU_SOURCE         /* for strverscmp() */
 
 #include <sys/stat.h>
 #include <sys/param.h>      /* for DEV_BSIZE */
@@ -422,6 +423,20 @@ int comparebysize(const File **a, const File **b)
     } else {
         return psa->st_size < psb->st_size;
     }
+}
+
+/*
+ * returns:
+ * -1 if a should come before b (a's version is lower than b's)
+ *  0 if a is the same size as b
+ *  1 if a should come after b (a's version is higher than b's)
+ */
+int comparebyversion(const File **a, const File **b)
+{
+    File *fa = *(File **)a;
+    File *fb = *(File **)b;
+
+    return strverscmp(fa->name, fb->name);
 }
 
 unsigned long getblocks(File *file, int blocksize)

@@ -120,6 +120,7 @@ int comparebyctime(const File **a, const File **b);
 int comparebymtime(const File **a, const File **b);
 int comparebyblocks(const File **a, const File **b);
 int comparebysize(const File **a, const File **b);
+int comparebyversion(const File **a, const File **b);
 
 #endif
 /* vim: set ts=4 sw=4 tw=0 et:*/

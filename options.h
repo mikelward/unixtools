@@ -10,13 +10,13 @@
 #include "logging.h"
 #include "map.h"
 
-#define OPTSTRING "1aBbCcDdEeFfGgIiKkLlMmNnOopqRrSsTtUux"
+#define OPTSTRING "1aBbCcDdEeFfGgIiKkLlMmNnOopqRrSsTtUuvx"
 
 /* defaults should be the first element */
 enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS, DISPLAY_IN_ROWS };
 enum flags { FLAGS_NONE, FLAGS_NORMAL, FLAGS_OLD };
 enum timetype { TIME_MTIME, TIME_CTIME, TIME_ATIME, TIME_BTIME };
-enum sorttype { SORT_BY_NAME, SORT_BY_TIME, SORT_BY_SIZE, SORT_UNSORTED };
+enum sorttype { SORT_BY_NAME, SORT_BY_TIME, SORT_BY_SIZE, SORT_UNSORTED, SORT_BY_VERSION };
 
 /* all the command line options */
 /* defaults should usually be 0 */

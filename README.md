@@ -69,6 +69,7 @@ asterisks, e.g.
  * sort by mtime (modification time, `-t`)
  * sort by ctime (change time, `-tc`) _just `-c` is sufficient if neither `-T` nor `-l` were given_
  * sort by atime (access time, `-tu`) _just `-u` is sufficient if neither `-T` nor `-l` were given_
+ * sort by version (numeric order, `-v`)
  * reverse sort (`-r`)
  * don't sort (`-f` or `-U`)
 

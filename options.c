@@ -239,6 +239,9 @@ int setoptions(Options *options, int argc, char **argv)
             options->timetype = TIME_ATIME;
             /* this interacts with other options see below */
             break;
+        case 'v':
+            options->sorttype = SORT_BY_VERSION;
+            break;
         case 'x':
             options->displaymode = DISPLAY_IN_ROWS;
             break;
@@ -287,6 +290,9 @@ int setoptions(Options *options, int argc, char **argv)
         /* neither POSIX nor GNU seem to define "size"
            but based on experiments, it seems to be the st_size field */
         options->compare = &comparebysize;
+        break;
+    case SORT_BY_VERSION:
+        options->compare = &comparebyversion;
         break;
     case SORT_UNSORTED:
         options->compare = NULL;
