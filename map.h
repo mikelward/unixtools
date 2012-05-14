@@ -2,6 +2,7 @@
 #define MAP_H
 
 #include <inttypes.h>
+#include <stdbool.h>
 
 #include "list.h"
 

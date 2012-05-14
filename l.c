@@ -344,9 +344,9 @@ void listdir(File *dir, Options *options)
         errorf("files in NULL\n");
         return;
     }
-    DIR *openeddir = opendir(dir->path);
+    DIR *openeddir = opendir(getpath(dir));
     if (openeddir == NULL) {
-        errorf("Cannot open %s\n", dir->path);
+        errorf("Cannot open %s\n", getpath(dir));
         return;
     }
     unsigned long totalblocks = 0;
@@ -357,7 +357,7 @@ void listdir(File *dir, Options *options)
         if (!options->all && dirent->d_name[0] == '.') {
             continue;
         }
-        File *file = newfile(dir->path, dirent->d_name);
+        File *file = newfile(getpath(dir), dirent->d_name);
         if (file == NULL) {
             errorf("file is NULL\n");
             return;
@@ -407,7 +407,7 @@ void listdirs(FileList *dirs, Options *options, bool firstoutput)
             printf("\n");
         }
         if (needlabel) {
-            printf("%s:\n", dir->path);
+            printf("%s:\n", getpath(dir));
         }
         listdir(dir, options);
     }
@@ -454,7 +454,7 @@ int want(File *file, Options *options)
     if (file == NULL) {
         errorf("file is NULL\n");
         return 0;
-    } else if (file->path == NULL) {
+    } else if (getpath(file) == NULL) {
         errorf("path is NULL\n");
         return 0;
     } else if (options == NULL) {

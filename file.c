@@ -14,6 +14,14 @@
 #include "file.h"
 #include "logging.h"
 
+struct file {
+    char *name;
+    char *path;
+    int didstat;
+    struct stat *pstat;
+    struct file *target;           /* holds target file if this file is a symlink */
+};
+
 /**
  * A File.
  *
@@ -288,7 +296,7 @@ int comparebyname(const File **a, const File **b)
     File *fa = *(File **)a;
     File *fb = *(File **)b;
 
-    return strcoll(fa->path, fb->path);
+    return strcoll(fa->name, fb->name);
 }
 
 /*
@@ -310,7 +318,7 @@ int comparebyatime(const File **a, const File **b)
     struct stat *psb = getstat(fb);
 
     if (psa->st_atime == psb->st_atime) {
-        return strcoll(fa->path, fb->path);
+        return strcoll(fa->name, fb->name);
     } else {
         return psa->st_atime < psb->st_atime;
     }
@@ -335,7 +343,7 @@ int comparebyctime(const File **a, const File **b)
     struct stat *psb = getstat(fb);
 
     if (psa->st_ctime == psb->st_ctime) {
-        return strcoll(fa->path, fb->path);
+        return strcoll(fa->name, fb->name);
     } else {
         return psa->st_ctime < psb->st_ctime;
     }
@@ -360,7 +368,7 @@ int comparebymtime(const File **a, const File **b)
     struct stat *psb = getstat(fb);
 
     if (psa->st_mtime == psb->st_mtime) {
-        return strcoll(fa->path, fb->path);
+        return strcoll(fa->name, fb->name);
     } else {
         return psa->st_mtime < psb->st_mtime;
     }
@@ -385,7 +393,7 @@ int comparebyblocks(const File **a, const File **b)
     struct stat *psb = getstat(fb);
 
     if (psa->st_blocks == psb->st_blocks) {
-        return strcoll(fa->path, fb->path);
+        return strcoll(fa->name, fb->name);
     } else {
         return psa->st_blocks < psb->st_blocks;
     }
@@ -410,7 +418,7 @@ int comparebysize(const File **a, const File **b)
     struct stat *psb = getstat(fb);
 
     if (psa->st_size == psb->st_size) {
-        return strcoll(fa->path, fb->path);
+        return strcoll(fa->name, fb->name);
     } else {
         return psa->st_size < psb->st_size;
     }

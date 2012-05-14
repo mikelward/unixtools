@@ -7,13 +7,8 @@
 #include <stdio.h>
 #include <unistd.h>
 
-typedef struct file {
-    char *name;
-    char *path;
-    int didstat;
-    struct stat *pstat;
-    struct file *target;           /* holds target file if this file is a symlink */
-} File;
+struct file;
+typedef struct file File;
 
 typedef int (*file_compare_function)(const File **a, const File **b);
 

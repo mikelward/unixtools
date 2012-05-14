@@ -48,12 +48,12 @@ FieldList *getfilefields(File *file, Options *options)
         while (isstat(file) && islink(file)) {
             target = gettarget(file);
             if (!target) {
-                errorf("Cannot determine target of %s for %s\n", file->name, link->name);
+                errorf("Cannot determine target of %s for %s\n", getname(file), getname(link));
                 file = NULL;
                 break;
             }
             if (inmap(linkmap, getinode(target))) {
-                errorf("Symlink loop in %s\n", file->name);
+                errorf("Symlink loop in %s\n", getname(file));
                 /* no file to stat, but want to print the name field */
                 file = NULL;
                 break;
