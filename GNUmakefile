@@ -1,6 +1,6 @@
 CC=c99
 DEBUG=-g
-WARNINGS=-Wall -Werror
+WARNINGS=-Wall -Werror -Wfatal-errors
 CFLAGS=$(WARNINGS) $(DEBUG)
 LDFLAGS=$(WARNINGS) $(DEBUG)
 
