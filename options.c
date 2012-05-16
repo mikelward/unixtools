@@ -42,6 +42,7 @@ void setdefaults(Options *options)
     options->blocksize = 1024;
     options->bytes = false;
     options->color = false;
+    options->compatible = true;         /* XXX change to false?? */
     options->datetime = false;
     options->directory = false;
     options->dirsonly = false;
@@ -260,7 +261,9 @@ int setoptions(Options *options, int argc, char **argv)
     }
 
     /* -c = -ct, -u = -ut (unless -T or -l) */
-    if (!options->datetime && options->timetype != TIME_MTIME) {
+    if (options->compatible &&
+       !options->datetime &&
+        options->timetype != TIME_MTIME) {
         options->sorttype = SORT_BY_TIME;
     }
 

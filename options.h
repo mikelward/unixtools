@@ -24,6 +24,7 @@ typedef struct options {
     bool all : 1;                   /* true = also show hidden files */
     unsigned blocksize;             /* units for -s option */
     bool bytes : 1;                 /* true = show file size in bytes */
+    bool compatible : 1;            /* true = do complicated stuff for compatibility */
     bool color : 1;                 /* true = colorize file and directory names */
     bool datetime : 1;              /* true = show the file's modification date and time */
     bool directory : 1;             /* true = show directory name rather than contents */
