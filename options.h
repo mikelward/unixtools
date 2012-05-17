@@ -10,7 +10,7 @@
 #include "logging.h"
 #include "map.h"
 
-#define OPTSTRING "1aBbCcDdEeFfGgIiKkLlMmNnOopqRrSsTtUuvx"
+#define OPTSTRING "1aBbCcDdEeFfGgIiKkLlMmNnOopqRrSsTtUuVvx"
 
 /* defaults should be the first element */
 enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS, DISPLAY_IN_ROWS };

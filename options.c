@@ -170,7 +170,6 @@ int setoptions(Options *options, int argc, char **argv)
             options->inode = true;
             break;
         case 'L':
-            options->showlinks = true;
             options->targetinfo = true;
             break;
         case 'l':
@@ -238,6 +237,9 @@ int setoptions(Options *options, int argc, char **argv)
         case 'u':
             options->timetype = TIME_ATIME;
             /* this interacts with other options see below */
+            break;
+        case 'V':
+            options->showlinks = true;
             break;
         case 'v':
             options->sorttype = SORT_BY_VERSION;
