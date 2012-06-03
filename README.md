@@ -43,7 +43,7 @@ asterisks, e.g.
 #### File properties
  * show inode number field (`-i`)
  * show size in blocks (`-s`)
- * show file modes (`-M` or `-m`), e.g. `-rwxr-xr-x.`
+ * show file modes, e.g. `-rwxr-xr-x.` (`-M` or `-m`)
  * show link count (`-N`)
  * show file owner (`-o`)
  * show file group (`-g`)
@@ -117,8 +117,9 @@ _`-q` is the default if output is a terminal, otherwise `-E`._
  * tabular output format, e.g. `<field>[\t<field>]*\n` (no need for null separation given -e flag)
 
 #### Incompatibilities
- * `-D` - lists only directories, rather than GNU Emacs Dired mode
+ * `-A` - not implemented
  * `-b` - adds a file size in bytes column (use `-e` to escape file names)
+ * `-D` - lists only directories, rather than GNU Emacs Dired mode
  * `-g` - adds a group column, rather than useless long-without-owner
  * `-m` - adds a modes column, rather than stream mode
  * `-o` - adds an owner column, rather than long-without-group (could rename to `-O` if `-o` is really needed)
