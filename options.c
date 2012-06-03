@@ -275,10 +275,6 @@ int setoptions(Options *options, int argc, char **argv)
         options->sorttype = SORT_BY_TIME;
     }
 
-    if (options->targetinfo) {
-      options->showlink = false;
-    }
-
     switch (options->sorttype) {
     case SORT_BY_NAME:
         options->compare = &comparebyname;
@@ -335,6 +331,10 @@ int setoptions(Options *options, int argc, char **argv)
 
     if (options->targetinfo == DEFAULT) {
         options->targetinfo = OFF;
+    }
+
+    if (options->targetinfo == ON) {
+      options->showlink = false;
     }
 
     if (options->color) {
