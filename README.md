@@ -24,13 +24,13 @@ with appropriate colors (`-G` or `-K`) or flags (`-F` or `-O`) if requested.
 making it more useful than the `-rwxr-xr-x user group` format of `ls -l`,
 e.g.
 
-    $ l -M file_i_can_only_read
+    $ l -p file_i_can_only_read
     r-- file_i_can_only_read
 
-`l -M` prints directory names inside square brackets and executables inside
+`l -O` prints directory names inside square brackets and executables inside
 asterisks, e.g.
 
-    $ l -M
+    $ l -O
     [dir1]  [dir2]  *exe*   file
 
 ### Supported options
