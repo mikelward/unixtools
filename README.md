@@ -27,15 +27,15 @@ e.g.
     $ l -M file_i_can_only_read
     r-- file_i_can_only_read
 
-`l -O` prints directory names inside square brackets and executables inside
+`l -M` prints directory names inside square brackets and executables inside
 asterisks, e.g.
 
     $ l -M
     [dir1]  [dir2]  *exe*   file
 
-###Supported options
+### Supported options
 
-####File selection
+#### File selection
  * directories only (`-D`)
  * show all (including hidden files) (`-a`)
  * list subdirectories recursively (`-R`)
