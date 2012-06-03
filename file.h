@@ -112,7 +112,22 @@ uid_t getownernum(File *file);
 char *getperms(File *file);
 long getsize(File *file);
 
+/**
+ * Get the file that file points at immediately.
+ *
+ * file must be a symlink.  Only resolves one level of links.
+ */
 File *gettarget(File *file);
+/**
+ * Get the file that file points at eventually.
+ *
+ * file must be a symlink.  Resolves all symlinks until a non-symlink target is found
+ * Returns NULL if a loop is detected.
+ *
+ * Does not free anything, even on error, since calling code should always call
+ * freefile() on file anyway, and that frees file and its targets.
+ */
+File *getfinaltarget(File *file);
 
 int comparebyname(const File **a, const File **b);
 int comparebyatime(const File **a, const File **b);

@@ -30,39 +30,19 @@ FieldList *getfilefields(File *file, Options *options)
         return NULL;
     }
 
-    Map *linkmap = NULL;
-
     /*
      * with -L, display information about the link target file by setting file = target
      * the originally named file is saved as "link" for displaying the name
      */
     File *link = file;
-    if (options->targetinfo) {
+    if (options->targetinfo && islink(file)) {
         /* XXX ls seems to use stat() instead of lstat() here */
-        linkmap = newmap();
-        if (!linkmap) {
-            errorf("Out of memory?\n");
-            goto error;
+        file = getfinaltarget(file);
+        if (!file) {
+            errorf("Cannot determine target of %s for %s\n", getname(file));
+            /* file is NULL,
+               code below should handle this and print "?" or similar */
         }
-        File *target = NULL;
-        while (isstat(file) && islink(file)) {
-            target = gettarget(file);
-            if (!target) {
-                errorf("Cannot determine target of %s for %s\n", getname(file), getname(link));
-                file = NULL;
-                break;
-            }
-            if (inmap(linkmap, getinode(target))) {
-                errorf("Symlink loop in %s\n", getname(file));
-                /* no file to stat, but want to print the name field */
-                file = NULL;
-                break;
-            } else {
-                set(linkmap, (uintmax_t)getinode(target), NULL);
-            }
-            file = target;
-        }
-        freemap(linkmap);
     }
 
     if (options->size) {
@@ -125,7 +105,6 @@ FieldList *getfilefields(File *file, Options *options)
     return (FieldList *)fieldlist;
 
 error:
-    freemap(linkmap);
     freelist(fieldlist, (free_func)freefield);
     return NULL;
 }

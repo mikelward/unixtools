@@ -42,7 +42,7 @@ void setdefaults(Options *options)
     options->blocksize = 1024;
     options->bytes = false;
     options->color = false;
-    options->compatible = true;         /* XXX change to false?? */
+    options->compatible = true;
     options->datetime = false;
     options->directory = false;
     options->dirsonly = false;
@@ -50,9 +50,11 @@ void setdefaults(Options *options)
     options->displaymode = DISPLAY_ONE_PER_LINE;
     options->escape = ESCAPE_NONE;
     options->flags = FLAGS_NONE;
+    options->followdirlinkargs = DEFAULT; /* see setoptions() for rules */
     options->group = false;
     options->inode = false;
     options->linkcount = false;
+    options->longformat = false;
     options->modes = false;
     options->numeric = false;
     options->owner = false;
@@ -63,7 +65,7 @@ void setdefaults(Options *options)
     options->showlinks = false;
     options->size = false;
     options->sorttype = SORT_BY_NAME;
-    options->targetinfo = false;
+    options->targetinfo = DEFAULT;
     options->timetype = TIME_MTIME;
 
     options->compare = NULL;
@@ -157,12 +159,8 @@ int setoptions(Options *options, int argc, char **argv)
             /* hopefully saner than legacy ls */
             options->group = true;
             break;
-        case 'K':
-            /* K = "kolor", somewhat mnemonic and unused in GNU ls */
-            options->color = true;
-            break;
-        case 'k':
-            options->blocksize = 1024;
+        case 'H':
+            options->followdirlinkargs = ON;
             break;
         case 'I':
             options->timeformat = "%Y-%m-%d %H:%M:%S";
@@ -170,11 +168,18 @@ int setoptions(Options *options, int argc, char **argv)
         case 'i':
             options->inode = true;
             break;
+        case 'K':
+            /* K = "kolor", somewhat mnemonic and unused in GNU ls */
+            options->color = true;
+            break;
+        case 'k':
+            options->blocksize = 1024;
+            break;
         case 'L':
-            options->showlinks = true;
-            options->targetinfo = true;
+            options->targetinfo = ON;
             break;
         case 'l':
+            options->longformat = true;
             options->modes = true;
             options->linkcount = true;
             options->owner = true;
@@ -206,7 +211,7 @@ int setoptions(Options *options, int argc, char **argv)
             options->owner = true;
             break;
         case 'P':
-            /* reserved for physical mode (don't follow symlinks) */
+            options->targetinfo = OFF;
             break;
         case 'p':
             options->perms = true;
@@ -240,6 +245,9 @@ int setoptions(Options *options, int argc, char **argv)
             options->timetype = TIME_ATIME;
             /* this interacts with other options see below */
             break;
+        case 'V':
+            options->showlinks = true;
+            break;
         case 'v':
             options->sorttype = SORT_BY_VERSION;
             break;
@@ -260,7 +268,7 @@ int setoptions(Options *options, int argc, char **argv)
         }
     }
 
-    /* -c = -ct, -u = -ut (unless -T or -l) */
+    /* compatibility: -c = -ct, -u = -ut (unless -T or -l) */
     if (options->compatible &&
        !options->datetime &&
         options->timetype != TIME_MTIME) {
@@ -305,6 +313,24 @@ int setoptions(Options *options, int argc, char **argv)
             options->reverse = 0;
         }
         break;
+    }
+
+    /* if -H was not given, set it based on other flags...*/
+    if (options->followdirlinkargs == DEFAULT) {
+        if (options->targetinfo != DEFAULT) {
+            /* -L implies -H, -P implies not -H */
+            options->followdirlinkargs = options->targetinfo;
+        } else if (options->compatible && (options->flags || options->longformat)) {
+            /* -F or -l imply not -H */
+            options->followdirlinkargs = OFF;
+        } else {
+            /* if not -L, -P, -F, or -l, -H defaults to on */
+            options->followdirlinkargs = ON;
+        }
+    }
+
+    if (options->targetinfo == DEFAULT) {
+        options->targetinfo = OFF;
     }
 
     if (options->color) {

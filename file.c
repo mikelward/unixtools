@@ -14,6 +14,7 @@
 
 #include "file.h"
 #include "logging.h"
+#include "map.h"
 
 struct file {
     char *name;
@@ -712,6 +713,34 @@ File *gettarget(File *file)
         }
     }
     return file->target;
+}
+
+File *getfinaltarget(File *file)
+{
+    Map *linkmap = newmap();
+    if (!linkmap) {
+        errorf("Out of memory?\n");
+        return NULL;
+    }
+    File *target = NULL;
+    while (isstat(file) && islink(file)) {
+        target = gettarget(file);
+        if (!target) {
+            errorf("Cannot determine target of %s for %s\n", getname(file));
+            break;
+        }
+        if (inmap(linkmap, getinode(target))) {
+            errorf("Symlink loop in %s\n", getname(file));
+            /* no file to stat, but want to print the name field */
+            target = NULL;
+            break;
+        } else {
+            set(linkmap, (uintmax_t)getinode(target), NULL);
+        }
+        file = target;
+    }
+    freemap(linkmap);
+    return target;
 }
 
 /*

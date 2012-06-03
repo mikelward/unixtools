@@ -10,13 +10,14 @@
 #include "logging.h"
 #include "map.h"
 
-#define OPTSTRING "1aBbCcDdEeFfGgIiKkLlMmNnOopqRrSsTtUuvx"
+#define OPTSTRING "1aBbCcDdEeFfGgHIiKkLlMmNnOoPpqRrSsTtUuvx"
 
 /* defaults should be the first element */
 enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS, DISPLAY_IN_ROWS };
 enum flags { FLAGS_NONE, FLAGS_NORMAL, FLAGS_OLD };
 enum timetype { TIME_MTIME, TIME_CTIME, TIME_ATIME, TIME_BTIME };
 enum sorttype { SORT_BY_NAME, SORT_BY_TIME, SORT_BY_SIZE, SORT_UNSORTED, SORT_BY_VERSION };
+enum tri { DEFAULT = -1, OFF = 0, ON = 1 };
 
 /* all the command line options */
 /* defaults should usually be 0 */
@@ -33,9 +34,11 @@ typedef struct options {
     enum display displaymode;       /* one-per-line, columns, rows, etc. */ 
     enum escape escape;             /*     how to handle non-printable characters */
     enum flags flags;               /*     show file "flags" */
+    enum tri followdirlinkargs : 2; /* ON = dereference links to dirs in args */
     bool group : 1;                 /* true = show the file's group */
     bool inode : 1;                 /* true = show the inode number */
     bool linkcount : 1;             /* true = show number of hard links */
+    bool longformat : 1;            /* true = long format */
     bool modes : 1;                 /* true = show the file's modes, e.g. -rwxr-xr-x */
     bool numeric : 1;               /* true = show uid and gid instead of username and groupname */
     bool owner : 1;                 /* true = show the file's owner */
@@ -46,7 +49,7 @@ typedef struct options {
     bool showlinks : 1;             /* true = show link -> target in name field (resolve all links) */
     bool size : 1;                  /* true = show file size in blocks */
     enum sorttype sorttype;         /* how to sort */
-    bool targetinfo : 1;            /* true = field info is based on symlink target */
+    enum tri targetinfo : 2;        /* ON = field info is based on symlink target */
     enum timetype timetype;         /* which time to show (mtime, ctime, etc.) */
 
     /* these are more like global state variables than options */

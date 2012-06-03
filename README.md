@@ -51,17 +51,30 @@ asterisks, e.g.
  * show file modification time (`-T`)
  * show file change time (`-Tc`)
  * show file access time (`-Tu`)
- * append a flag showing the file's type (`-F`)
+ * append a flag showing the file's type (`-F`) _makes `-H` default to off_
  * append a flag showing the file's type - old BSD style (`-O`)
- * long format (`-l`, same as `-MNogBT1`)
- * show information about symlink target rather than symlink (`-L`)
+ * long format (`-l`, same as `-MNogBT1`) _makes `-H` default to off_
  * show numeric owner and group instead of looking up their names (`-n`)
- * show time in ISO 8601 format (`yyyy-mm-dd HH:MM:SS`, `-I`)
+ * show time in ISO 8601 format (`-I`), e.g. `2012-05-30 20:30:40`
+ * show file symlink chain (`-V`), e.g. `link1 -> link2 -> file`
+
+#### Symlinks
+ * follow symlinks (show information about symlink target, `-L`)
+ * don't follow symlinks (show information about symlink itself, `-P`)
+ * follow symlinks to directories specified as command line arguments (`-H`, defaults to on unless `-P`, _`-F`, or `-l`_ were given)
+
+ If `-H` is not specified:
+
+  * if `-L` is specified, `-H` is enabled; if `-P` is specified, `-H` is disabled
+  * _else if `-F` or `-l` are specified, `-H` is disabled_
+  * otherwise, `-H` is enabled
 
 #### Display format
  * columns (`-C`)
  * rows (`-x`)
  * one-per-line (`-1`)
+
+ _`-C` is the default if output is a terminal, otherwise `-1`._
 
 #### Sorting
  * sort by name (default)
@@ -78,6 +91,8 @@ asterisks, e.g.
  * print control characters using C-style escapes (`-e`)
  * disable escaping (`-E`)
 
+_`-q` is the default if output is a terminal, otherwise `-E`._
+
 #### Coming soon
  * sort by btime (creation time, a.k.a. birth time, `-b`, or maybe `-U`)
  * show file ACLs (`-A`?)
@@ -86,13 +101,11 @@ asterisks, e.g.
 
 #### Coming later
  * locale and Unicode support
- * symlink options, including `-H`, `-L`, `-P`, and interaction with `-f`, `-F`, etc.
  * other stuff
 
 #### To investigate
  * remove `-f` option (same as `-U`)
  * make `-e` the default instead of `-q`?
- * `-F` symlink behavior
  * `-I <pattern>` to ignore files matching `<pattern>`
  * file ACLs and extended attributes
  * list major/minor numbers for block/character devices
@@ -105,12 +118,13 @@ asterisks, e.g.
 
 #### Incompatibilities
  * `-D` - lists only directories, rather than GNU Emacs Dired mode
- * `-L` - shows more information than classic `ls -L`
  * `-b` - adds a file size in bytes column (use `-e` to escape file names)
  * `-g` - adds a group column, rather than useless long-without-owner
  * `-m` - adds a modes column, rather than stream mode
  * `-o` - adds an owner column, rather than long-without-group (could rename to `-O` if `-o` is really needed)
  * `-p` - adds a permissions column, rather than appending slash to directories (use `-F` or `-O`)
+ * `-H` - only follows links to directories, similar to GNU ls rather than BSD ls
+ * `-f` - only disables sorting, similar to BSD ls rather than GNU ls
 
 ### Build
 

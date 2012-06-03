@@ -55,7 +55,8 @@ void printtobuf(const char *text, enum escape escape, Buf *buf);
 int  printsize(File *file, Options *options);
 void printwithnewline(void *string);
 void sortfiles(List *files, Options *options);
-int  want(File *file, Options *options);
+bool islinktodir(File *file);
+bool want(File *file, Options *options);
 
 int main(int argc, char **argv)
 {
@@ -105,7 +106,9 @@ int main(int argc, char **argv)
             exit(1);
         }
         if (isstat(file)) {
-            if (!options->directory && isdir(file)) {
+            if (!options->directory &&
+                (isdir(file) ||
+                (options->followdirlinkargs && islinktodir(file)))) {
                 append(file, dirs);
             } else {
                 append(file, files);
@@ -445,11 +448,28 @@ void printwithnewline(void *string)
     puts((char *)string);
 }
 
+bool islinktodir(File *file)
+{
+    if (!islink(file)) {
+        return false;
+    }
+
+    File *target = getfinaltarget(file);
+    if (!target) {
+        errorf("Error getting target for %s\n", getname(file));
+        return false;
+    }
+
+    return isdir(target);
+    /* don't free here, since we already free file later
+       (and that also frees file's targets) */
+}
+
 /**
  * Returns true if we should print this file,
  * false otherwise.
  */
-int want(File *file, Options *options)
+bool want(File *file, Options *options)
 {
     if (file == NULL) {
         errorf("file is NULL\n");
