@@ -13,9 +13,9 @@ where it makes sense, but add some options to make it more useful to me.
 
 `l -D` displays only directories.
 
-`l -L` follows and displays symlink information, e.g.
+`l -V` follows and displays symlink information, e.g.
 
-    $ l -L link_to_link_to_file
+    $ l -V link_to_link_to_file
     link_to_link_to_file -> link_to_file -> file
 
 with appropriate colors (`-G` or `-K`) or flags (`-F` or `-O`) if requested.
