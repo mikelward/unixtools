@@ -1,0 +1,91 @@
+#!/bin/bash
+
+set -e
+l="$PWD/l"
+
+check() {
+    if test "$@"; then
+        echo "${FUNCNAME[1]} OK"
+        return 0
+    else
+        echo "${FUNCNAME[1]} FAILURE: $@"
+        return 1
+        fi
+}
+
+setup() {
+    olddir="$PWD"
+    tmpdir="$(mktemp -d)"
+
+    test -n "$tmpdir"
+    test "$tmpdir" != "/"
+    cd "$tmpdir"
+}
+
+cleanup() {
+    cd "$olddir"
+    rm -rf "$tmpdir"
+}
+
+testBasic() {
+    setup
+    touch test
+    check "$(l)" = "test"
+    cleanup
+}
+
+testNameOrder1() {
+    setup
+    touch a c b
+    check "$(l -1)" = "a
+b
+c"
+    cleanup
+}
+
+testNameOrder2() {
+    setup
+    touch test
+    ln -s test testlink
+    check "$(l -1)" = "test
+testlink"
+    cleanup
+}
+
+testSymlinkShowsSymlinkNameByDefault() {
+    setup
+    touch test
+    ln -s test testlink
+    check "$(l -1 testlink)" = "testlink"
+    cleanup
+}
+
+testSymlinkShowsSymlinkNameWithL() {
+    setup
+    touch test
+    ln -s test testlink
+    check "$(l -1L testlink)" = "testlink"
+    cleanup
+}
+
+testListDirectoryContents() {
+    setup
+    mkdir dir
+    touch dir/file
+    check "$(l -1 dir)" = "file"
+}
+
+testListDirectoryItself() {
+    setup
+    mkdir dir
+    touch dir/file
+    check "$(l -1d dir)" = "dir"
+}
+
+testBasic
+testNameOrder1
+testNameOrder2
+testSymlinkShowsSymlinkNameByDefault
+testSymlinkShowsSymlinkNameWithL
+testListDirectoryContents
+testListDirectoryItself
