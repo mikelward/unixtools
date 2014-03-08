@@ -56,7 +56,7 @@ all: tags $(TESTS) $(PROGS) $(DOCS)
 
 l: l.o display.o list.o filefields.o file.o field.o buf.o options.o map.o pair.o user.o group.o logging.o -ltermcap -lacl
 
-filetest: filetest.o file.o logging.o -lacl
+filetest: filetest.o file.o map.o pair.o list.o logging.o -lacl
 
 listtest: listtest.o list.o logging.o
 
