@@ -1,16 +1,18 @@
 #define _POSIX_C_SOURCE 200809L
+#define _XOPEN_SOURCE  // for wcwidth
 
 #include <assert.h>
 #include <ctype.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
+#include <wctype.h>
 
 #include "buf.h"
 #include "logging.h"
 #include "options.h"
-
-char *cescape(char c);
 
 Buf *newbuf(void)
 {
@@ -28,6 +30,7 @@ Buf *newbuf(void)
     buf->data[0] = '\0';
     buf->pos = 0;
     buf->screenpos = 0;
+    memset(&buf->shiftstate, 0, sizeof buf->shiftstate);
     return buf;
 }
 
@@ -41,7 +44,15 @@ void freebuf(Buf *buf)
     }
 }
 
-void bufappend(Buf *buf, char *string, size_t width, bool printable)
+/**
+ * Append string to buf.
+ *
+ * @param buf           A Buf to append to.
+ * @param string        The string to append to buf.
+ * @param width         The number of bytes in string.
+ * @param columns       The number of columns needed to display string.
+ */
+void bufappend(Buf *buf, char *string, size_t width, size_t columns)
 {
     if (!buf) {
         errorf("buf is NULL\n");
@@ -58,9 +69,27 @@ void bufappend(Buf *buf, char *string, size_t width, bool printable)
     strncpy(buf->data+buf->pos, string, width);
     buf->data[buf->pos+width] = '\0';
     buf->pos += width;
-    if (printable) {
-        buf->screenpos += width;
+    buf->screenpos += columns;
+}
+
+/**
+ * Append srcbuf to buf.
+ */
+void bufappendbuf(Buf *buf, Buf *srcbuf)
+{
+    if (!buf) {
+        errorf("buf is NULL\n");
+        return;
     }
+    if (!srcbuf) {
+        errorf("srcbuf is NULL\n");
+        return;
+    }
+
+    char *string = srcbuf->data;
+    size_t width = srcbuf->pos;
+    size_t columns = srcbuf->screenpos;
+    bufappend(buf, string, width, columns);
 }
 
 /* c is assumed to be printable */
@@ -77,6 +106,25 @@ void bufappendchar(Buf *buf, char c)
 
     buf->data[buf->pos] = c;
     buf->pos++; buf->screenpos++;
+}
+
+/* append a wide character as-is, accounting for its display width */
+void bufappendwchar(Buf *buf, wchar_t wc)
+{
+    if (!buf) {
+        errorf("buf is NULL\n");
+        return;
+    }
+
+    char mbbuf[MB_LEN_MAX];
+    int columns = wcwidth(wc);
+    size_t width = wcrtomb(mbbuf, wc, &buf->shiftstate);
+    if (width == -1) {
+        // XXX: Append a question mark? Return error and handle in caller?
+        errorf("Invalid multibyte sequence\n");
+        return;
+    }
+    bufappend(buf, mbbuf, width, columns);
 }
 
 /* return the contents of buf as a NUL terminated string */
@@ -108,6 +156,15 @@ size_t bufscreenpos(Buf *buf)
     return buf->screenpos;
 }
 
+/**
+ * Put "text" in buf.
+ *
+ * Text may be escaped depending on the value of escape and the current locale.
+ *
+ * @param text          The string to append to buf.
+ * @param escape        How to escape non-printable characters.
+ * @param buf           The buffer to append to.
+ */
 void printtobuf(const char *text, enum escape escape, Buf *buf)
 {
     if (!buf) {
@@ -120,36 +177,66 @@ void printtobuf(const char *text, enum escape escape, Buf *buf)
     }
 
     const char *p = text;
-    for (p = text; *p != '\0'; p++) {
-        if (!isprint(*p)) {
-            switch (escape) {
-            case ESCAPE_C:
-                {
-                    char *escaped = cescape(*p);
-                    if (escaped == NULL) {
-                        errorf("No C escape for %c\n", *p);
-                        bufappendchar(buf, *p);
-                    } else {
-                        bufappend(buf, escaped, strlen(escaped), 1);
-                    }
-                    break;
-                }
-            case ESCAPE_QUESTION:
-                bufappendchar(buf, '?');
-                break;
-            default:
-                errorf("Unknown escape mode\n");
-                /* fall through */
-            case ESCAPE_NONE:
-                bufappendchar(buf, *p);
-                break;
-            }
-        } else if (*p == '\\' && escape == ESCAPE_C) {
-            bufappendchar(buf, '\\');
-            bufappendchar(buf, '\\');
-        } else {
-            bufappendchar(buf, *p);
+    wchar_t wc;
+    mbstate_t ps = { 0 };
+    size_t bytes;
+    Buf *bytebuf = newbuf();
+    while ((bytes = mbrtowc(&wc, p, MB_LEN_MAX, &ps)) > 0) {
+        printwchartobuf(wc, escape, bytebuf);
+        p += bytes;
+    }
+    if (bytes != 0) {
+        errorf("Incomplete multibyte character\n");
+        return;
+    }
+    bufappendbuf(buf, bytebuf);
+}
+
+/* append a wide character to buf, possibly escaping control chars */
+void printwchartobuf(wchar_t wc, enum escape escape, Buf *buf)
+{
+    if (wc == L'\\' && escape == ESCAPE_C) {
+        /* backslash becomes double backslash */
+        bufappendchar(buf, '\\');
+        bufappendchar(buf, '\\');
+    } else if (iswprint(wc)) {
+        bufappendwchar(buf, wc);
+    } else if (iswcntrl(wc)) {
+        switch (escape) {
+        case ESCAPE_C:
+            printwesctobuf(wc, buf);
+            break;
+        case ESCAPE_QUESTION:
+            bufappendchar(buf, '?');
+            break;
+        case ESCAPE_NONE:
+            bufappendwchar(buf, wc);
+            break;
+        default:
+            errorf("Unknown escape mode\n");
+            bufappendwchar(buf, wc);
+            break;
         }
+    } else {
+        errorf("Unknown character type, is locale initialized?\n");
+    }
+}
+
+/* append a wide character to buf, escaped C-style */
+void printwesctobuf(wchar_t wc, Buf *buf)
+{
+    int byte = wctob(wc);
+    if (byte != EOF) {
+        char *escaped = cescape(byte);
+        if (escaped == NULL) {
+            errorf("No C escape for %c\n", byte);
+            bufappendchar(buf, byte);
+        } else {
+            size_t len = strlen(escaped);
+            bufappend(buf, escaped, len, len);
+        }
+    } else {
+        errorf("Inescapable multibyte character\n");
     }
 }
 
