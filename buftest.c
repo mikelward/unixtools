@@ -32,6 +32,25 @@ int test_append_string(void)
     return 0;
 }
 
+int test_printtobuf_arabic(void)
+{
+    Buf *buf = newbuf();
+
+    printtobuf("دليل", ESCAPE_NONE, buf);
+    assert(bufscreenpos(buf) == 4);
+    return 0;
+}
+
+int test_printtobuf_japanese(void)
+{
+    Buf *buf = newbuf();
+
+    printtobuf("ディレクトリ", ESCAPE_NONE, buf);
+    /* 6 double width characters == 12 characters */
+    assert(bufscreenpos(buf) == 12);
+    return 0;
+}
+
 int test_printwchartobuf_ascii(void)
 {
     Buf *buf = newbuf();
@@ -116,6 +135,8 @@ int main(int argc, char **argv)
 
     test_newbuf();
     test_append_string();
+    test_printtobuf_arabic();
+    test_printtobuf_japanese();
     test_printwchartobuf_ascii();
     test_printwchartobuf_unicode();
     test_printwchartobuf_backslash_noescape();
