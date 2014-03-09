@@ -178,18 +178,19 @@ void printtobuf(const char *text, enum escape escape, Buf *buf)
 
     const char *p = text;
     wchar_t wc;
-    mbstate_t ps = { 0 };
+    mbstate_t state = { 0 };
     size_t bytes;
     Buf *bytebuf = newbuf();
-    while ((bytes = mbrtowc(&wc, p, MB_LEN_MAX, &ps)) > 0) {
+    while ((bytes = mbrtowc(&wc, p, MB_LEN_MAX, &state)) > 0) {
         printwchartobuf(wc, escape, bytebuf);
         p += bytes;
     }
-    if (bytes != 0) {
+    if (bytes == 0) {
+        bufappendbuf(buf, bytebuf);
+    } else {
         errorf("Incomplete multibyte character\n");
-        return;
     }
-    bufappendbuf(buf, bytebuf);
+    freebuf(bytebuf);
 }
 
 /* append a wide character to buf, possibly escaping control chars */
