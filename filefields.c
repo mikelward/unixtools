@@ -158,7 +158,7 @@ Field *getdatetimefield(File *file, Options *options, char *buf, int bufsize)
             width = strftime(buf, bufsize, "%b %e  %Y", timestruct);
             if (options->now != -1 && timestamp <= options->now) {
                 if (timestamp > options->now - 6*86400) {
-                    width = strftime(buf, bufsize, "%a %H:%M:%S", timestruct);
+                    width = strftime(buf, bufsize, "%a    %H:%M", timestruct);
                 } else if (timestamp > options->now - 180*86400) {
                     width = strftime(buf, bufsize, "%b %e %H:%M", timestruct);
                 }
