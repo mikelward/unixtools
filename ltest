@@ -1,7 +1,10 @@
 #!/bin/bash
 
 set -e
-l="$PWD/l"
+OUTDIR="$PWD"
+l() {
+    "$OUTDIR/l" "$@"
+}
 
 check() {
     if test "$@"; then
@@ -10,7 +13,7 @@ check() {
     else
         echo "${FUNCNAME[1]} FAILURE: $@"
         return 1
-        fi
+    fi
 }
 
 setup() {
