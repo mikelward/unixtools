@@ -10,11 +10,12 @@
 #include "logging.h"
 #include "map.h"
 
-#define OPTSTRING "1aBbCcDdEeFfGgHIiKkLlMmNnOoPpqRrSsTtUuVvx"
+#define OPTSTRING "1aBbCcDdEeFfGgHhIiKkLlMmNnOoPpqRrSsTtUuVvx"
 
 /* defaults should be the first element */
 enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS, DISPLAY_IN_ROWS };
 enum flags { FLAGS_NONE, FLAGS_NORMAL, FLAGS_OLD };
+enum sizestyle { SIZE_DEFAULT, SIZE_HUMAN };
 enum timetype { TIME_MTIME, TIME_CTIME, TIME_ATIME, TIME_BTIME };
 /* TODO: add support for ISO 8601 format */
 enum timestyle { TIME_TRADITIONAL, TIME_RELATIVE };
@@ -50,6 +51,7 @@ typedef struct options {
     bool showlink : 1;              /* true = show link -> target in name field (max. 1 link) */
     bool showlinks : 1;             /* true = show link -> target in name field (resolve all links) */
     bool size : 1;                  /* true = show file size in blocks */
+    enum sizestyle sizestyle;       /* how to display sizes */
     enum sorttype sorttype;         /* how to sort */
     enum tri targetinfo : 2;        /* ON = field info is based on symlink target */
     enum timestyle timestyle;       /* how to display times */

@@ -66,6 +66,7 @@ void setdefaults(Options *options)
     options->showlink = false;
     options->showlinks = false;
     options->size = false;
+    options->sizestyle = SIZE_DEFAULT;
     options->sorttype = SORT_BY_NAME;
     options->targetinfo = DEFAULT;
     options->timestyle = TIME_TRADITIONAL;
@@ -183,6 +184,9 @@ int setoptions(Options *options, int argc, char **argv)
             break;
         case 'H':
             options->followdirlinkargs = ON;
+            break;
+        case 'h':
+            options->sizestyle = SIZE_HUMAN;
             break;
         case 'I':
             options->timeformat = "%Y-%m-%d %H:%M:%S";

@@ -14,6 +14,10 @@
 #include "string.h"
 #include "user.h"
 
+#define HUMANBUFSIZE 64
+char humanbuf[HUMANBUFSIZE];
+
+const char *humanbytes(unsigned long bytes);
 void printnametobuf(File *file, Options *options, Buf *buf);
 
 FieldList *getfilefields(File *file, Options *options)
@@ -112,11 +116,18 @@ error:
 Field *getbytesfield(File *file, Options *options, char *buf, int bufsize)
 {
     int width;
-    if (isstat(file)) {
-        long bytes = getsize(file);
-        width = snprintf(buf, bufsize, "%ld", bytes);
-    } else {
+    if (!isstat(file)) {
         width = snprintf(buf, bufsize, "?");
+    } else {
+        long bytes = getsize(file);
+        if (options->sizestyle == SIZE_DEFAULT) {
+            width = snprintf(buf, bufsize, "%ld", bytes);
+        } else if (options->sizestyle == SIZE_HUMAN) {
+            width = snprintf(buf, bufsize, "%s", humanbytes(bytes));
+        } else {
+            errorf("Unknown sizestyle %d\n", options->sizestyle);
+            width = snprintf(buf, bufsize, "%ld", bytes);
+        }
     }
     return newfield(buf, ALIGN_RIGHT, width);
 }
@@ -373,11 +384,19 @@ Field *getpermsfield(File *file, Options *options, char *buf, int bufsize)
 Field *getsizefield(File *file, Options *options, char *buf, int bufsize)
 {
     int width;
-    if (isstat(file)) {
-        unsigned long blocks = getblocks(file, options->blocksize);
-        width = snprintf(buf, bufsize, "%lu", blocks);
-    } else {
+    if (!isstat(file)) {
         width = snprintf(buf, bufsize, "%s", "?");
+    } else {
+        unsigned long blocks = getblocks(file, options->blocksize);
+        if (options->sizestyle == SIZE_DEFAULT) {
+            width = snprintf(buf, bufsize, "%lu", blocks);
+        } else if (options->sizestyle == SIZE_HUMAN) {
+            unsigned long bytes = blocks * options->blocksize;
+            width = snprintf(buf, bufsize, "%s", humanbytes(bytes));
+        } else {
+            errorf("Unknown sizestyle %d", options->sizestyle);
+            width = snprintf(buf, bufsize, "%lu", blocks);
+        }
     }
     return newfield(buf, ALIGN_RIGHT, width);
 }
@@ -473,4 +492,15 @@ void printnametobuf(File *file, Options *options, Buf *buf)
     case FLAGS_NONE:
         break;
     }
+}
+
+const char *humanbytes(unsigned long bytes)
+{
+    char *units[] = {"", "K", "M", "G", "T", "P", "E", "Z", "Y", NULL};
+    int i;
+    for (i = 0; bytes >= 1000 && units[i] != NULL; i++) {
+        bytes /= 1000;
+    }
+    snprintf(humanbuf, sizeof(humanbuf), "%ld%s", bytes, units[i]);
+    return humanbuf;
 }
