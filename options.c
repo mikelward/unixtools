@@ -7,7 +7,9 @@
 #define _POSIX_C_SOURCE 200809L /* needed to make getopt() and opt* visible */
 
 #include <sys/ioctl.h>
+#include <getopt.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include "display.h"
@@ -66,6 +68,7 @@ void setdefaults(Options *options)
     options->size = false;
     options->sorttype = SORT_BY_NAME;
     options->targetinfo = DEFAULT;
+    options->timestyle = TIME_TRADITIONAL;
     options->timetype = TIME_MTIME;
 
     options->compare = NULL;
@@ -104,12 +107,31 @@ void setdefaults(Options *options)
         options->screenwidth = 80;
 }
 
+static struct option longopts[] = {
+    {"time-style", required_argument, NULL, 0},
+    {NULL, 0, NULL, 0},
+};
+
+static int longindex = 0;
+
 int setoptions(Options *options, int argc, char **argv)
 {
     opterr = 0;     /* we will print our own error messages */
     int option;
-    while ((option = getopt(argc, argv, ":" OPTSTRING)) != -1) {
+    while ((longindex = 0, option = getopt_long(argc, argv, ":" OPTSTRING, longopts, &longindex)) != -1) {
         switch(option) {
+        case 0:
+            if (strcmp(longopts[longindex].name, "time-style") == 0) {
+                options->datetime = true;
+                if (strcmp(optarg, "traditional") == 0) {
+                    options->timestyle = TIME_TRADITIONAL;
+                } else if (strcmp(optarg, "relative") == 0) {
+                    options->timestyle = TIME_RELATIVE;
+                } else {
+                    error("Unsupported time-style '%s'\n", optarg);
+                    exit(2);
+                }
+            }
         case '1':
             options->displaymode = DISPLAY_ONE_PER_LINE;
             break;
@@ -348,7 +370,7 @@ int setoptions(Options *options, int argc, char **argv)
         options->colors = colors;
     }
 
-    if (options->datetime && options->timeformat == NULL) {
+    if (options->datetime) {
         options->now = time(NULL);
         if (options->now == -1) {
             errorf("Cannot determine current time\n");

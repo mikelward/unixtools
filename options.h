@@ -16,6 +16,8 @@
 enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS, DISPLAY_IN_ROWS };
 enum flags { FLAGS_NONE, FLAGS_NORMAL, FLAGS_OLD };
 enum timetype { TIME_MTIME, TIME_CTIME, TIME_ATIME, TIME_BTIME };
+/* TODO: add support for ISO 8601 format */
+enum timestyle { TIME_TRADITIONAL, TIME_RELATIVE };
 enum sorttype { SORT_BY_NAME, SORT_BY_TIME, SORT_BY_SIZE, SORT_UNSORTED, SORT_BY_VERSION };
 enum tri { DEFAULT = -1, OFF = 0, ON = 1 };
 
@@ -50,6 +52,7 @@ typedef struct options {
     bool size : 1;                  /* true = show file size in blocks */
     enum sorttype sorttype;         /* how to sort */
     enum tri targetinfo : 2;        /* ON = field info is based on symlink target */
+    enum timestyle timestyle;       /* how to display times */
     enum timetype timetype;         /* which time to show (mtime, ctime, etc.) */
 
     /* these are more like global state variables than options */

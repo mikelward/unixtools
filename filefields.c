@@ -152,11 +152,29 @@ Field *getdatetimefield(File *file, Options *options, char *buf, int bufsize)
         }
         if (options->timeformat != NULL) {
             width = strftime(buf, bufsize, options->timeformat, timestruct);
+        } else if (options->timestyle == TIME_RELATIVE) {
+            assert(options->now > 0);
+            time_t seconds_ago = options->now - timestamp;
+            if (seconds_ago > 60*60*24*31*12) {
+                width = snprintf(buf, bufsize, "%ld years ago", seconds_ago/60/60/24/31/12);
+            } else if (seconds_ago > 60*60*24*31) {
+                width = snprintf(buf, bufsize, "%ld months ago", seconds_ago/60/60/24/31);
+            } else if (seconds_ago > 60*60*24) {
+                width = snprintf(buf, bufsize, "%ld days ago", seconds_ago/60/60/24);
+            } else if (seconds_ago > 60*60) {
+                width = snprintf(buf, bufsize, "%ld hours ago", seconds_ago/60/60);
+            } else if (seconds_ago > 60) {
+                width = snprintf(buf, bufsize, "%ld minutes ago", seconds_ago/60);
+            } else {
+                /* also covers future-date files */
+                width = snprintf(buf, bufsize, "%ld seconds ago", seconds_ago);
+            }
         } else {
             /* month day hour and minute if file was modified in the last 6 months,
                month day year otherwise */
+            assert(options->now > 0);
             width = strftime(buf, bufsize, "%b %e  %Y", timestruct);
-            if (options->now != -1 && timestamp <= options->now) {
+            if (timestamp <= options->now) {
                 if (timestamp > options->now - 6*86400) {
                     width = strftime(buf, bufsize, "%a    %H:%M", timestruct);
                 } else if (timestamp > options->now - 180*86400) {
