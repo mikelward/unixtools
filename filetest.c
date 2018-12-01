@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "file.h"
 #include "logging.h"
@@ -95,22 +96,28 @@ int test_dot(void)
 int test_filename(void)
 {
     errorf("\n");   /* prints the function name */
-    const char *tempfilename = tmpnam(NULL);
-    FILE *cfile = fopen(tempfilename, "w");
+    char tempfilename[L_tmpnam];
+    strcpy(tempfilename, "/tmp/filetestXXXXXX");
+    int fd = mkstemp(tempfilename);
+    assert(fd > 0);
+
     File *file = newfile("", tempfilename);
     const char *name = getname(file);
-    fclose(cfile);
     assert(strcmp(tempfilename, name) == 0);
+    free(file);
+    close(fd);
+    unlink(tempfilename);
     return 0;
 }
 
 int test_fileperms(void)
 {
     errorf("\n");   /* prints the function name */
-    const char *tempfilename = tmpnam(NULL);
-    umask(S_IWGRP|S_IWOTH);
-    FILE *cfile = fopen(tempfilename, "w");
-    fclose(cfile);
+    char tempfilename[L_tmpnam];
+    strcpy(tempfilename, "/tmp/filetestXXXXXX");
+    int fd = mkstemp(tempfilename);
+    assert(fd > 0);
+    assert(chmod(tempfilename, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH) == 0);
 
     File *file = newfile("", tempfilename);
     char *modes = getmodes(file);
@@ -121,6 +128,8 @@ int test_fileperms(void)
     char *perms = getperms(file);
     assert(strcmp(perms, "rw-") == 0);
     free(perms);
+    close(fd);
+    unlink(tempfilename);
 
     return 0;
 }

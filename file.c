@@ -622,6 +622,7 @@ time_t getmtime(File *file)
     return pstat->st_mtime;
 }
 
+/* caller must free */
 char *getperms(File *file)
 {
     char *unknownperms = "???";
