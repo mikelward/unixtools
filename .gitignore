@@ -5,8 +5,5 @@
 *.core
 *.sublime-workspace
 l
-filetest
-listtest
-loggingtest
-maptest
+*test
 tags
