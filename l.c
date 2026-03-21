@@ -350,10 +350,17 @@ void listdir(File *dir, Options *options)
     DIR *openeddir = opendir(getpath(dir));
     if (openeddir == NULL) {
         errorf("Cannot open %s\n", getpath(dir));
+        freelist(files, (free_func)freefile);
         return;
     }
     unsigned long totalblocks = 0;
     List *subdirs = newlist();
+    if (subdirs == NULL) {
+        errorf("subdirs is NULL\n");
+        closedir(openeddir);
+        freelist(files, (free_func)freefile);
+        return;
+    }
     struct dirent *dirent = NULL;
     while ((dirent = readdir(openeddir)) != NULL) {
         /* TODO: merge this hidden file check with want() */
@@ -363,7 +370,7 @@ void listdir(File *dir, Options *options)
         File *file = newfile(getpath(dir), dirent->d_name);
         if (file == NULL) {
             errorf("file is NULL\n");
-            return;
+            break;
         }
         if (!want(file, options)) {
             freefile(file);
