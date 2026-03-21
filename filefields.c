@@ -43,7 +43,7 @@ FieldList *getfilefields(File *file, Options *options)
         /* XXX ls seems to use stat() instead of lstat() here */
         file = getfinaltarget(file);
         if (!file) {
-            errorf("Cannot determine target of %s for %s\n", getname(file));
+            errorf("Cannot determine target of %s\n", getname(link));
             /* file is NULL,
                code below should handle this and print "?" or similar */
         }
