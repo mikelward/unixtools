@@ -319,10 +319,12 @@ int comparebyatime(const File **a, const File **b)
     struct stat *psa = getstat(fa);
     struct stat *psb = getstat(fb);
 
+    if (!psa || !psb) return (!psa) - (!psb);
+
     if (psa->st_atime == psb->st_atime) {
         return strcoll(fa->name, fb->name);
     } else {
-        return psa->st_atime < psb->st_atime;
+        return (psa->st_atime < psb->st_atime) - (psa->st_atime > psb->st_atime);
     }
 }
 
@@ -344,10 +346,12 @@ int comparebyctime(const File **a, const File **b)
     struct stat *psa = getstat(fa);
     struct stat *psb = getstat(fb);
 
+    if (!psa || !psb) return (!psa) - (!psb);
+
     if (psa->st_ctime == psb->st_ctime) {
         return strcoll(fa->name, fb->name);
     } else {
-        return psa->st_ctime < psb->st_ctime;
+        return (psa->st_ctime < psb->st_ctime) - (psa->st_ctime > psb->st_ctime);
     }
 }
 
@@ -369,10 +373,12 @@ int comparebymtime(const File **a, const File **b)
     struct stat *psa = getstat(fa);
     struct stat *psb = getstat(fb);
 
+    if (!psa || !psb) return (!psa) - (!psb);
+
     if (psa->st_mtime == psb->st_mtime) {
         return strcoll(fa->name, fb->name);
     } else {
-        return psa->st_mtime < psb->st_mtime;
+        return (psa->st_mtime < psb->st_mtime) - (psa->st_mtime > psb->st_mtime);
     }
 }
 
@@ -394,10 +400,12 @@ int comparebyblocks(const File **a, const File **b)
     struct stat *psa = getstat(fa);
     struct stat *psb = getstat(fb);
 
+    if (!psa || !psb) return (!psa) - (!psb);
+
     if (psa->st_blocks == psb->st_blocks) {
         return strcoll(fa->name, fb->name);
     } else {
-        return psa->st_blocks < psb->st_blocks;
+        return (psa->st_blocks < psb->st_blocks) - (psa->st_blocks > psb->st_blocks);
     }
 }
 
@@ -419,10 +427,12 @@ int comparebysize(const File **a, const File **b)
     struct stat *psa = getstat(fa);
     struct stat *psb = getstat(fb);
 
+    if (!psa || !psb) return (!psa) - (!psb);
+
     if (psa->st_size == psb->st_size) {
         return strcoll(fa->name, fb->name);
     } else {
-        return psa->st_size < psb->st_size;
+        return (psa->st_size < psb->st_size) - (psa->st_size > psb->st_size);
     }
 }
 
@@ -466,7 +476,8 @@ unsigned long getblocks(File *file, int blocksize)
 time_t getatime(File *file)
 {
     struct stat *pstat = getstat(file);
-    return pstat && pstat->st_atime;
+    if (!pstat) return 0;
+    return pstat->st_atime;
 }
 
 /*
@@ -480,7 +491,8 @@ time_t getbtime(File *file)
 time_t getctime(File *file)
 {
     struct stat *pstat = getstat(file);
-    return pstat && pstat->st_ctime;
+    if (!pstat) return 0;
+    return pstat->st_ctime;
 }
 
 /* TODO return the number as a string or "?" if the group could not be determined */
@@ -727,7 +739,7 @@ File *getfinaltarget(File *file)
     while (isstat(file) && islink(file)) {
         target = gettarget(file);
         if (!target) {
-            errorf("Cannot determine target of %s for %s\n", getname(file));
+            errorf("Cannot determine target of %s\n", getname(file));
             break;
         }
         if (inmap(linkmap, getinode(target))) {
