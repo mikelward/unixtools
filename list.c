@@ -22,7 +22,7 @@ List *newlist(void)
     return list;
 }
 
-void freelist(List *list, walker_func freeelem)
+void freelist(List *list, free_func freeelem)
 {
     if (!list) return;
     int i = 0;
@@ -42,12 +42,12 @@ void append(void *element, List *list)
 {
     if (!list) return;
     if (list->next == list->capacity) {
-        void **newdata = realloc(list->data, (list->capacity+=1024)*sizeof(*newdata));
+        void **newdata = realloc(list->data, (list->capacity+1024)*sizeof(*newdata));
         if (!newdata) {
-            free(list->data);
             errorf("Out of memory\n");
-            /* exit? */
+            return;
         }
+        list->capacity += 1024;
         list->data = newdata;
     }
     (list->data)[list->next++] = element;
@@ -87,7 +87,7 @@ void *getitem(List *list, unsigned index)
 
 void setitem(List *list, unsigned index, void *elem)
 {
-    if (list == NULL || list->next < index)
+    if (list == NULL || index >= list->next)
         return;
 
     (list->data)[index] = elem;
@@ -129,7 +129,7 @@ void reverselist(List *list)
     int l = length(list);
     int m = l / 2;
     int last = l - 1;
-    for (int i = 0; i <= m; i++) {
+    for (int i = 0; i < m; i++) {
         void *t = getitem(list, i);
         int j = last - i;
         setitem(list, i, getitem(list, j));

@@ -10,6 +10,9 @@ void test_list_appended_items_match_inserted(void);
 void test_sortlist(void);
 void test_walklist(void);
 void test_reverselist(void);
+void test_reverselist_even(void);
+void test_reverselist_single(void);
+void test_setitem_out_of_bounds(void);
 void test_finditem(void);
 
 int main(int argc, const char *argv[])
@@ -20,6 +23,9 @@ int main(int argc, const char *argv[])
     test_sortlist();
     test_walklist();
     test_reverselist();
+    test_reverselist_even();
+    test_reverselist_single();
+    test_setitem_out_of_bounds();
     test_finditem();
 
     return 0;
@@ -171,6 +177,64 @@ void test_reverselist(void)
 
     int *pi = &i;
     walklistcontext(pl, &checkbackwards, &pi);
+    freelist(pl, free);
+}
+
+void test_reverselist_even(void)
+{
+    List *pl = newlist();
+    int i;
+
+    errorf("\n");
+
+    for (i = 1; i <= 4; i++) {
+        int *pi = malloc(sizeof *pi);
+        *pi = i;
+        append(pi, pl);
+    }
+
+    reverselist(pl);
+
+    assert(*(int *)getitem(pl, 0) == 4);
+    assert(*(int *)getitem(pl, 1) == 3);
+    assert(*(int *)getitem(pl, 2) == 2);
+    assert(*(int *)getitem(pl, 3) == 1);
+    freelist(pl, free);
+}
+
+void test_reverselist_single(void)
+{
+    List *pl = newlist();
+
+    errorf("\n");
+
+    int *pi = malloc(sizeof *pi);
+    *pi = 42;
+    append(pi, pl);
+
+    reverselist(pl);
+
+    assert(*(int *)getitem(pl, 0) == 42);
+    freelist(pl, free);
+}
+
+void test_setitem_out_of_bounds(void)
+{
+    List *pl = newlist();
+    int i;
+
+    errorf("\n");
+
+    for (i = 0; i < 3; i++) {
+        int *pi = malloc(sizeof *pi);
+        *pi = i;
+        append(pi, pl);
+    }
+
+    int bad = 99;
+    setitem(pl, 3, &bad);  /* index == length, should be rejected */
+    assert(getitem(pl, 2) != NULL);
+    assert(*(int *)getitem(pl, 2) == 2);  /* unchanged */
     freelist(pl, free);
 }
 
