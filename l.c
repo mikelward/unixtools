@@ -169,26 +169,25 @@ StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
     
             if (align == ALIGN_RIGHT) {
                 for (int k = 0; k < paddedwidth - screenwidth; k++) {
-                    bufappend(buf, " ", 1, 1);
+                    bufappendchar(buf, ' ');
                 }
             }
             /* always print as many characters as needed */
-            int nchars = snprintf(snprintfbuf, sizeof(snprintfbuf),
-                "%s", fieldstring(field));
-            bufappend(buf, snprintfbuf, nchars, screenwidth);
+            const char *fstr = fieldstring(field);
+            bufappend(buf, (char *)fstr, strlen(fstr), screenwidth);
             if (align == ALIGN_LEFT) {
                 for (int k = 0; k < paddedwidth - screenwidth; k++) {
-                    bufappend(buf, " ", 1, 1);
+                    bufappendchar(buf, ' ');
                 }
             }
             if (j != nfields - 1) {
                 for (int k = 0; k < columnmargin; k++) {
-                    bufappend(buf, " ", 1, 1);
+                    bufappendchar(buf, ' ');
                 }
             }
         }
-        append(bufstring(buf), filestrings);
-        free(buf);      /* not freebuf because we want to keep the buf->data */
+        append(strdup(bufstring(buf)), filestrings);
+        freebuf(buf);
     }
 
     return filestrings;

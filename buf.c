@@ -61,14 +61,22 @@ void bufappend(Buf *buf, char *string, size_t width, size_t columns)
     /* buf->data should never be null since newbuf checks for that */
     assert(buf->data != NULL);
     if (buf->pos + width >= buf->size) {
-        /* XXX should this put as much as will fit in the buffer anyway? */
-        errorf("string too long\n");
-        return;
+        size_t newsize = buf->size;
+        while (buf->pos + width >= newsize) {
+            newsize *= 2;
+        }
+        char *newdata = realloc(buf->data, newsize);
+        if (!newdata) {
+            errorf("Out of memory growing buffer\n");
+            return;
+        }
+        buf->data = newdata;
+        buf->size = newsize;
     }
 
-    strncpy(buf->data+buf->pos, string, width);
-    buf->data[buf->pos+width] = '\0';
+    memcpy(buf->data + buf->pos, string, width);
     buf->pos += width;
+    buf->data[buf->pos] = '\0';
     buf->screenpos += columns;
 }
 
@@ -100,12 +108,20 @@ void bufappendchar(Buf *buf, char c)
         return;
     }
     if (buf->pos >= buf->size - 1) {
-        errorf("buf is full\n");
-        return;
+        size_t newsize = buf->size * 2;
+        char *newdata = realloc(buf->data, newsize);
+        if (!newdata) {
+            errorf("Out of memory growing buffer\n");
+            return;
+        }
+        buf->data = newdata;
+        buf->size = newsize;
     }
 
     buf->data[buf->pos] = c;
-    buf->pos++; buf->screenpos++;
+    buf->pos++;
+    buf->data[buf->pos] = '\0';
+    buf->screenpos++;
 }
 
 /* append a wide character as-is, accounting for its display width */
