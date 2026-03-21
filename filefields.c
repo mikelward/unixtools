@@ -496,9 +496,10 @@ void printnametobuf(File *file, Options *options, Buf *buf)
 
 const char *humanbytes(unsigned long bytes)
 {
-    char *units[] = {"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB", NULL};
+    char *units[] = {"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
+    int nunits = sizeof(units) / sizeof(units[0]);
     int i;
-    for (i = 0; bytes >= 1000 && units[i] != NULL; i++) {
+    for (i = 0; bytes >= 1000 && i < nunits - 1; i++) {
         bytes /= 1000;
     }
     snprintf(humanbuf, sizeof(humanbuf), "%ld %s", bytes, units[i]);

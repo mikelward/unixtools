@@ -26,4 +26,6 @@ Field *getownerfield(File *file, Options *options, char *buf, int bufsize);
 Field *getpermsfield(File *file, Options *options, char *buf, int bufsize);
 Field *getsizefield(File *file, Options *options, char *buf, int bufsize);
 
+const char *humanbytes(unsigned long bytes);
+
 #endif
