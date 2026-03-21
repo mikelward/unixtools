@@ -180,6 +180,7 @@ void freecolors(Colors *colors)
     free(colors->magenta);
     free(colors->cyan);
     free(colors->white);
+    free(colors->none);
     free(colors);
 }
 
