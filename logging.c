@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+char *myname;
 char errorformat[256];
 
 void copystring(const char *str, char **pbuf, int *pbufsize)

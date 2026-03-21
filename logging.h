@@ -3,7 +3,7 @@
 
 #include <stdarg.h>
 
-char *myname;       /* defined in the main module */
+extern char *myname;       /* defined in the main module */
 
 /**
  * Copy str into *pbuf.
