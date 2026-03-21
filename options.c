@@ -133,6 +133,7 @@ int setoptions(Options *options, int argc, char **argv)
                     exit(2);
                 }
             }
+            break;
         case '1':
             options->displaymode = DISPLAY_ONE_PER_LINE;
             break;
