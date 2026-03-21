@@ -181,14 +181,24 @@ void printtobuf(const char *text, enum escape escape, Buf *buf)
     mbstate_t state = { 0 };
     size_t bytes;
     Buf *bytebuf = newbuf();
+    if (!bytebuf) {
+        errorf("bytebuf is NULL\n");
+        return;
+    }
     while ((bytes = mbrtowc(&wc, p, MB_LEN_MAX, &state)) > 0) {
+        if (bytes == (size_t)-1) {
+            errorf("Invalid multibyte sequence\n");
+            break;
+        }
+        if (bytes == (size_t)-2) {
+            errorf("Incomplete multibyte character\n");
+            break;
+        }
         printwchartobuf(wc, escape, bytebuf);
         p += bytes;
     }
     if (bytes == 0) {
         bufappendbuf(buf, bytebuf);
-    } else {
-        errorf("Incomplete multibyte character\n");
     }
     freebuf(bytebuf);
 }
