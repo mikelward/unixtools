@@ -29,6 +29,7 @@ Field *newfield(const char *string, enum align align, int width)
     field->string = strdup(string);
     if (!field->string) {
         errorf("field->string is NULL: out of memory?\n");
+        free(field);
         return NULL;
     }
     field->align = align;

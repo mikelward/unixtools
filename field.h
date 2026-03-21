@@ -6,7 +6,7 @@ enum align { ALIGN_NONE, ALIGN_LEFT, ALIGN_RIGHT };
 typedef struct field {
     char *string;
     enum align align;
-    int width : 8;
+    int width;
 } Field;
 
 Field *newfield(const char *string, enum align align, int width);
