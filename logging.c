@@ -4,7 +4,6 @@
 #include <stdio.h>
 
 char *myname;
-char errorformat[256];
 
 void copystring(const char *str, char **pbuf, int *pbufsize)
 {
@@ -30,23 +29,17 @@ void errorf2(const char *func, const char *format, ...)
 {
     va_list ap;
     va_start(ap, format);
-    int bufsize = sizeof(errorformat);
-    char *buf = errorformat;
     if (myname) {
-        copystring(myname, &buf, &bufsize);
-        copystring(": ", &buf, &bufsize);
+        fputs(myname, stderr);
+        fputs(": ", stderr);
     }
     if (func) {
-        copystring(func, &buf, &bufsize);
-        copystring(": ", &buf, &bufsize);
+        fputs(func, stderr);
+        fputs(": ", stderr);
     }
     if (format) {
-        copystring(format, &buf, &bufsize);
+        vfprintf(stderr, format, ap);
     }
-    if (bufsize <= 0) {
-        fprintf(stderr, "Log message truncated to %zu bytes\n", sizeof(errorformat));
-    }
-    vfprintf(stderr, errorformat, ap);
     va_end(ap);
 }
 
