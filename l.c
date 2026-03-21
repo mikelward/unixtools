@@ -139,7 +139,6 @@ StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
         return NULL;
     }
 
-    char snprintfbuf[1024];
     StringList *filestrings = newlist();
     if (filestrings == NULL) {
         errorf("filestrings is NULL\n");
