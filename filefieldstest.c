@@ -8,6 +8,7 @@
 
 void test_humanbytes(void);
 void test_humanbytes_large(void);
+void test_humanbytes_precision(void);
 
 int main(int argc, char **argv)
 {
@@ -15,6 +16,7 @@ int main(int argc, char **argv)
 
     test_humanbytes();
     test_humanbytes_large();
+    test_humanbytes_precision();
     return 0;
 }
 
@@ -26,6 +28,15 @@ void test_humanbytes(void)
     assert(strcmp(humanbytes(1000), "1 KB") == 0);
     assert(strcmp(humanbytes(1000000), "1 MB") == 0);
     assert(strcmp(humanbytes(1000000000), "1 GB") == 0);
+}
+
+void test_humanbytes_precision(void)
+{
+    errorf("\n");
+    /* 1900 bytes -> 2 KB with rounding and no trailing space in source */
+    const char *result = humanbytes(1900);
+    printf("1900 bytes -> %s\n", result);
+    assert(strcmp(result, "2 KB") == 0);
 }
 
 void test_humanbytes_large(void)

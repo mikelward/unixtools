@@ -498,10 +498,12 @@ const char *humanbytes(unsigned long bytes)
 {
     char *units[] = {"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
     int nunits = sizeof(units) / sizeof(units[0]);
+    double dbytes = bytes;
     int i;
-    for (i = 0; bytes >= 1000 && i < nunits - 1; i++) {
-        bytes /= 1000;
+    for (i = 0; dbytes >= 1000 && i < nunits - 1; i++) {
+        dbytes /= 1000;
     }
-    snprintf(humanbuf, sizeof(humanbuf), "%ld %s", bytes, units[i]);
+    /* round to the nearest integer using %.0f */
+    snprintf(humanbuf, sizeof(humanbuf), "%.0f %s", dbytes, units[i]);
     return humanbuf;
 }
