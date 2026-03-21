@@ -1,16 +1,17 @@
 #define _XOPEN_SOURCE 600       /* for strdup() */
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "logging.h"
 
 typedef struct pair {
-    int key;
+    uintmax_t key;
     char *value;
 } Pair;
 
-Pair *newpair(int key, char *value)
+Pair *newpair(uintmax_t key, char *value)
 {
     Pair *pair = malloc(sizeof(*pair));
     if (!pair) {
@@ -40,7 +41,7 @@ void freepair(Pair *pair)
     free(pair);
 }
 
-int getkey(Pair *pair)
+uintmax_t getkey(Pair *pair)
 {
     if (!pair) {
         errorf("pair is NULL\n");
