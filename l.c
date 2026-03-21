@@ -112,6 +112,8 @@ int main(int argc, char **argv)
             } else {
                 append(file, files);
             }
+        } else {
+            freefile(file);
         }
     }
 
@@ -364,7 +366,7 @@ void listdir(File *dir, Options *options)
             return;
         }
         if (!want(file, options)) {
-            free(file);
+            freefile(file);
             continue;
         }
         append(file, files);
