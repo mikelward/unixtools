@@ -33,11 +33,18 @@ asterisks, e.g.
     $ l -O
     [dir1]  [dir2]  *exe*   file
 
+`l -h` displays human-readable file sizes using SI units (1000-based), e.g.
+`1 KB`, `23 MB`.
+
+`l --time-style=relative` displays file times as relative durations, e.g.
+`3 days`, `2 hours`, `45 minutes`.
+
 ### Supported options
 
 #### File selection
  * directories only (`-D`)
  * show all (including hidden files) (`-a`)
+ * list directory names instead of their contents (`-d`)
  * list subdirectories recursively (`-R`)
 
 #### File properties
@@ -57,6 +64,7 @@ asterisks, e.g.
  * show numeric owner and group instead of looking up their names (`-n`)
  * show time in ISO 8601 format (`-I`), e.g. `2012-05-30 20:30:40`
  * show file symlink chain (`-V`), e.g. `link1 -> link2 -> file`
+ * human-readable file sizes (`-h`), e.g. `1 KB`, `23 MB`
 
 #### Symlinks
  * follow symlinks (show information about symlink target, `-L`)
@@ -76,15 +84,25 @@ asterisks, e.g.
 
  _`-C` is the default if output is a terminal, otherwise `-1`._
 
+#### Colors
+ * `-G` enables colored output (FreeBSD compatibility)
+ * `-K` enables colored output (mnemonic: "kolor")
+
+ Colors are obtained via terminfo. Assignments: blue for directories, cyan for
+ symlinks, green for executables, red for files that cannot be stat'd.
+
 #### Sorting
  * sort by name (default)
- * sort by size (`-S`)
- * sort by mtime (modification time, `-t`)
+ * sort by size (`-S`, largest first)
+ * sort by mtime (modification time, `-t`, newest first)
  * sort by ctime (change time, `-tc`) _just `-c` is sufficient if neither `-T` nor `-l` were given_
  * sort by atime (access time, `-tu`) _just `-u` is sufficient if neither `-T` nor `-l` were given_
  * sort by version (numeric order, `-v`)
  * reverse sort (`-r`)
  * don't sort (`-f` or `-U`)
+
+ When sorting by time or size, ties are broken by name (alphabetical).
+ Files that cannot be stat'd sort last.
 
 #### Escaping
  * print control characters as question marks (`-q`)
@@ -93,17 +111,55 @@ asterisks, e.g.
 
 _`-q` is the default if output is a terminal, otherwise `-E`._
 
-#### Coming soon
+#### Time display
+ * ISO 8601 format (`-I`): `YYYY-MM-DD HH:MM:SS`
+ * traditional format (default): day+time for recent files, month+year for older files
+ * relative format (`--time-style=relative`): e.g. `3 days`, `2 hours`
+
+### Display layout
+
+Column display (`-C`) fills entries down columns first (newspaper style),
+row display (`-x`) fills across rows first.
+
+Columns are separated by a 2-space outer margin. Fields within a line are
+separated by a 1-space margin. Fields are right- or left-aligned and padded to
+the maximum width across all entries for consistent column layout.
+
+Terminal width is detected via `ioctl(TIOCGWINSZ)` on stdout, defaulting to 80
+columns if detection fails or output is not a terminal.
+
+### ACL support
+
+In long format (`-l` or `-M`), the mode string includes an 11th character:
+`+` if extended ACLs are present, or ` ` (space) if not.  ACL detection is
+skipped for symlinks and on filesystems that don't support ACLs.
+
+### Directory listing behavior
+
+When given multiple arguments or using `-R`, directory headers are printed as
+`dirname:` with blank lines between sections. Files listed on the command line
+are always displayed before directories.
+
+With `-s` or `-l`, a `total <blocks>` line is printed before each directory's
+contents, showing the sum of block allocations. The default block size is 1024
+and can be overridden with the `BLOCKSIZE` environment variable.
+
+### Error handling
+
+Errors are printed to stderr. Most errors (stat failures, permission errors,
+etc.) are non-fatal - the program continues processing remaining files.
+Invalid options cause the program to print usage and exit with code 2.
+
+### Coming soon
  * sort by btime (creation time, a.k.a. birth time, `-b`, or maybe `-U`)
  * show file ACLs (`-A`?)
- * human-readable file sizes (`-h`?)
  * file sizes in megabytes and gigabytes (`-M`, `-G`?)
 
-#### Coming later
+### Coming later
  * locale and Unicode support
  * other stuff
 
-#### To investigate
+### To investigate
  * remove `-f` option (same as `-U`)
  * make `-e` the default instead of `-q`?
  * `-I <pattern>` to ignore files matching `<pattern>`
@@ -116,7 +172,7 @@ _`-q` is the default if output is a terminal, otherwise `-E`._
  * escape all fields, e.g. usernames, etc.
  * tabular output format, e.g. `<field>[\t<field>]*\n` (no need for null separation given -e flag)
 
-#### Incompatibilities
+### Incompatibilities
  * `-A` - not implemented
  * `-b` - adds a file size in bytes column (use `-e` to escape file names)
  * `-D` - lists only directories, rather than GNU Emacs Dired mode
@@ -131,7 +187,7 @@ _`-q` is the default if output is a terminal, otherwise `-E`._
 
 You need a C99 compiler, GNU make, and `ncurses` and `libacl` development packages.
 
-Debian/Ubuntu: `sudo apt-get install gcc make libncurses-dev libacl1-dev`.  
+Debian/Ubuntu: `sudo apt-get install gcc make libncurses-dev libacl1-dev`.
 Red Hat/Fedora: `sudo yum install gcc make ncurses-devel libacl-devel`.
 
 Then, run `make`.
