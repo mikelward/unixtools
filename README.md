@@ -1,7 +1,7 @@
 unixtools
 =========
 
-An excuse to write some C code for Linux-like systems.
+An excuse to write some C code for Linux and macOS (and other Unix-like systems).
 
 l
 -
@@ -186,10 +186,12 @@ Invalid options cause the program to print usage and exit with code 2.
 
 ### Build
 
-You need a C99 compiler, GNU make, and `ncurses` and `libacl` development packages.
+You need a C99 compiler, GNU make, and `ncurses` development packages.
+ACL support also requires `libacl` on Linux.
 
 Debian/Ubuntu: `sudo apt-get install gcc make libncurses-dev libacl1-dev`.
 Red Hat/Fedora: `sudo yum install gcc make ncurses-devel libacl-devel`.
+macOS: `xcode-select --install` (provides compiler and make; ncurses is included).
 
 Then, run `make`.
 
