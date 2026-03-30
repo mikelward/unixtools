@@ -18,6 +18,7 @@ int test_relative_file();
 int test_dot();
 int test_filename();
 int test_fileperms();
+int test_device_numbers();
 
 int main(int argc, char **argv)
 {
@@ -29,6 +30,7 @@ int main(int argc, char **argv)
     test_dot();
     test_filename();
     test_fileperms();
+    test_device_numbers();
     return 0;
 }
 
@@ -130,6 +132,37 @@ int test_fileperms(void)
     free(perms);
     close(fd);
     unlink(tempfilename);
+
+    return 0;
+}
+
+int test_device_numbers(void)
+{
+    errorf("\n");   /* prints the function name */
+
+    /* /dev/null is character device 1, 3 */
+    File *file = newfile("", "/dev/null");
+    assert(isstat(file));
+    assert(ischardev(file));
+    assert(isdevice(file));
+    assert(getmajor(file) == 1);
+    assert(getminor(file) == 3);
+    freefile(file);
+
+    /* /dev/zero is character device 1, 5 */
+    file = newfile("", "/dev/zero");
+    assert(isstat(file));
+    assert(ischardev(file));
+    assert(isdevice(file));
+    assert(getmajor(file) == 1);
+    assert(getminor(file) == 5);
+    freefile(file);
+
+    /* a regular file is not a device */
+    file = newfile(".", "file.c");
+    assert(isstat(file));
+    assert(!isdevice(file));
+    freefile(file);
 
     return 0;
 }

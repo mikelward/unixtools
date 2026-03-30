@@ -170,6 +170,10 @@ The `BLOCKSIZE` environment variable sets the default block size if present.
 
 Human-readable format: `%.0f UNIT` where units are B, KB, MB, GB, TB, PB, EB, ZB, YB. Threshold for next unit is 1000.
 
+### Device Numbers
+
+For block and character device files, the size in blocks (`-s`) and size in bytes (`-B`/`-b`) fields display `major, minor` device numbers instead of the file size. The numbers are extracted from `st_rdev` using the `major()` and `minor()` macros. The format is `%u, %u` (e.g., `1, 3` for `/dev/null`), right-aligned in the same column as the size field.
+
 ### Date/Time Format
 
 | Flag | Long option | Description |

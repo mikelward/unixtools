@@ -58,6 +58,7 @@ asterisks, e.g.
  * show file modification time (`-T`, `--show-time`)
  * show file change time (`-Tc`)
  * show file access time (`-Tu`)
+ * show device major/minor numbers for block and character devices (in place of size)
  * append a flag showing the file's type (`-F`, `--classify`) _makes `-H` default to off_
  * append a flag showing the file's type - old BSD style (`-O`, `--old-flags`)
  * long format (`-l`, `--long`, same as `-MNogBT1`) _makes `-H` default to off_
@@ -165,7 +166,6 @@ Invalid options cause the program to print usage and exit with code 2.
  * make `-e` the default instead of `-q`?
  * `-I <pattern>` to ignore files matching `<pattern>`
  * file ACLs and extended attributes
- * list major/minor numbers for block/character devices
  * customizable colors
  * colors and flags for files with setuid/setgid/sticky bits or capabilities
  * sub-second times for sorting and display
