@@ -210,6 +210,8 @@ int setoptions(Options *options, int argc, char **argv)
                     options->timetype = TIME_ATIME;
                 } else if (strcmp(optarg, "ctime") == 0 || strcmp(optarg, "status") == 0) {
                     options->timetype = TIME_CTIME;
+                } else if (strcmp(optarg, "btime") == 0 || strcmp(optarg, "birth") == 0 || strcmp(optarg, "creation") == 0) {
+                    options->timetype = TIME_BTIME;
                 } else {
                     error("Unsupported time type '%s'\n", optarg);
                     exit(2);
@@ -422,6 +424,9 @@ int setoptions(Options *options, int argc, char **argv)
         case TIME_CTIME:
             options->compare = &comparebyctime;
             break;
+        case TIME_BTIME:
+            options->compare = &comparebybtime;
+            break;
         default:
             errorf("Unknown time type\n");
             options->compare = &comparebyname;
@@ -575,7 +580,7 @@ void usage(void)
         "      --format=FORMAT        output format: long, single-column,\n"
         "                               vertical, across\n"
         "      --sort=WORD            sort by: name, size, time, version, none\n"
-        "      --time=WORD            time type: mtime, atime, ctime\n"
+        "      --time=WORD            time type: mtime, atime, ctime, btime\n"
         "      --time-style=STYLE     time format: traditional, relative\n",
         myname, OPTSTRING);
 }

@@ -86,7 +86,7 @@ unsigned long getblocks(File *file, int blocksize);
 
 gid_t getgroupnum(File *file);
 time_t getatime(File *file);
-//time_t getbtime(File *file);
+time_t getbtime(File *file);
 time_t getctime(File *file);
 time_t getmtime(File *file);
 ino_t getinode(File *file);
@@ -131,6 +131,7 @@ File *getfinaltarget(File *file);
 
 int comparebyname(const File **a, const File **b);
 int comparebyatime(const File **a, const File **b);
+int comparebybtime(const File **a, const File **b);
 int comparebyctime(const File **a, const File **b);
 int comparebymtime(const File **a, const File **b);
 int comparebyblocks(const File **a, const File **b);

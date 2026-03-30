@@ -97,6 +97,7 @@ asterisks, e.g.
  * sort by mtime (modification time, `-t`, `--sort=time`, newest first)
  * sort by ctime (change time, `-tc`, `--time=ctime`) _just `-c` is sufficient if neither `-T` nor `-l` were given_
  * sort by atime (access time, `-tu`, `--time=atime`) _just `-u` is sufficient if neither `-T` nor `-l` were given_
+ * sort by btime (birth/creation time, `--time=btime`) _uses Linux statx() syscall_
  * sort by version (numeric order, `-v`, `--sort=version`)
  * reverse sort (`-r`, `--reverse`)
  * don't sort (`-f`, `-U`, `--unsorted`, `--sort=none`)
@@ -151,7 +152,6 @@ etc.) are non-fatal - the program continues processing remaining files.
 Invalid options cause the program to print usage and exit with code 2.
 
 ### Coming soon
- * sort by btime (creation time, a.k.a. birth time, `-b`, or maybe `-U`)
  * show file ACLs (`-A`?)
  * file sizes in megabytes and gigabytes (`-M`, `-G`?)
 

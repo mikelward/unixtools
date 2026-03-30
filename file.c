@@ -2,9 +2,12 @@
 #define _GNU_SOURCE         /* for strverscmp() */
 
 #include <sys/stat.h>
+#include <sys/syscall.h>    /* for SYS_statx */
+#include <linux/stat.h>     /* for struct statx, STATX_BTIME */
 #include <sys/param.h>      /* for DEV_BSIZE */
 #include <sys/acl.h>
 #include <errno.h>
+#include <fcntl.h>          /* for AT_FDCWD, AT_SYMLINK_NOFOLLOW */
 #include <grp.h>
 #include <libgen.h>
 #include <pwd.h>
@@ -355,6 +358,23 @@ int comparebyctime(const File **a, const File **b)
     }
 }
 
+int comparebybtime(const File **a, const File **b)
+{
+    File *fa = *(File **)a;
+    File *fb = *(File **)b;
+
+    time_t ba = getbtime(fa);
+    time_t bb = getbtime(fb);
+
+    if (!ba || !bb) return (!ba) - (!bb);
+
+    if (ba == bb) {
+        return strcoll(fa->name, fb->name);
+    } else {
+        return (ba < bb) - (ba > bb);
+    }
+}
+
 /*
  * returns:
  * -1 if a should come before b (a is newer than b)
@@ -480,13 +500,21 @@ time_t getatime(File *file)
     return pstat->st_atime;
 }
 
-/*
 time_t getbtime(File *file)
 {
-    struct stat *pstat = getstat(file);
-    return pstat && pstat->st_birthtime;
+    if (!file) return 0;
+    struct statx stx;
+    if (syscall(SYS_statx, AT_FDCWD, file->path,
+                AT_SYMLINK_NOFOLLOW | AT_STATX_SYNC_AS_STAT,
+                STATX_BTIME, &stx) != 0) {
+        errorf("Cannot statx %s: %s\n", file->path, strerror(errno));
+        return 0;
+    }
+    if (!(stx.stx_mask & STATX_BTIME)) {
+        return 0;
+    }
+    return stx.stx_btime.tv_sec;
 }
-*/
 
 time_t getctime(File *file)
 {
