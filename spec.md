@@ -107,9 +107,10 @@ When `-L` is active, if the final target of a symlink cannot be determined, fiel
 
 | Flag | Long option | Effect |
 |------|-------------|--------|
-| `-c` | `--time=ctime` | Use ctime (status change time) for sorting and display |
-| `-u` | `--time=atime` | Use atime (access time) for sorting and display |
-| | `--time=btime` | Use btime (birth/creation time) for sorting and display. Also accepts `--time=birth` or `--time=creation`. Uses Linux `statx()` syscall; returns 0 on filesystems that don't support birth time. |
+| `-c` | `--ctime`, `--time=ctime` | Use ctime (status change time) for sorting and display |
+| `-u` | `--atime`, `--time=atime` | Use atime (access time) for sorting and display |
+| | `--btime`, `--time=btime` | Use btime (birth/creation time) for sorting and display. Also accepts `--time=birth` or `--time=creation`. Uses Linux `statx()` syscall; returns 0 on filesystems that don't support birth time. |
+| | `--mtime`, `--time=mtime` | Use mtime (modification time) for sorting and display (default) |
 
 **Compatibility behavior**: If `-c` or `-u` is given without `-T` or `-l`, it implies `-t` (sort by time). This matches traditional `ls` behavior where `-c` alone means "sort by ctime".
 

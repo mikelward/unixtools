@@ -95,9 +95,10 @@ asterisks, e.g.
  * sort by name (`--sort=name`, default)
  * sort by size (`-S`, `--sort=size`, largest first)
  * sort by mtime (modification time, `-t`, `--sort=time`, newest first)
- * sort by ctime (change time, `-tc`, `--time=ctime`) _just `-c` is sufficient if neither `-T` nor `-l` were given_
- * sort by atime (access time, `-tu`, `--time=atime`) _just `-u` is sufficient if neither `-T` nor `-l` were given_
- * sort by btime (birth/creation time, `--time=btime`) _uses Linux statx() syscall_
+ * sort by ctime (change time, `-tc`, `--ctime`, `--time=ctime`) _just `-c` is sufficient if neither `-T` nor `-l` were given_
+ * sort by atime (access time, `-tu`, `--atime`, `--time=atime`) _just `-u` is sufficient if neither `-T` nor `-l` were given_
+ * sort by btime (birth/creation time, `--btime`, `--time=btime`) _uses Linux statx() syscall_
+ * sort by mtime (modification time, `--mtime`, `--time=mtime`) _this is the default_
  * sort by version (numeric order, `-v`, `--sort=version`)
  * reverse sort (`-r`, `--reverse`)
  * don't sort (`-f`, `-U`, `--unsorted`, `--sort=none`)
