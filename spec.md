@@ -6,6 +6,8 @@ This document specifies the behavior of the `l` file listing utility (a custom `
 
 `l` is a file listing utility compatible with GNU, BSD, and POSIX `ls` where sensible, with additional custom features. It lists files and directories with configurable sorting, formatting, coloring, and metadata display.
 
+`l` supports Linux and macOS (and other BSDs where possible).
+
 ## Command-Line Interface
 
 ```
@@ -362,11 +364,12 @@ These options have **different meanings** from standard `ls`:
 
 ### Portability
 
-`l` targets Linux and BSDs (FreeBSD, OpenBSD, NetBSD, macOS). Platform-specific differences:
+`l` targets Linux and macOS, and also aims to support other BSDs (FreeBSD, OpenBSD, NetBSD). Platform-specific differences:
 
 - **`major()`/`minor()` macros**: On Linux, these require `<sys/sysmacros.h>` (glibc 2.25+ removed them from `<sys/types.h>`). On BSDs and macOS, they are in `<sys/types.h>`. Use a `#ifdef __linux__` guard for the Linux-specific include.
-- **Birth time (`btime`)**: Uses the Linux-specific `statx()` syscall. Not available on all BSDs; may need platform-specific alternatives (e.g., `st_birthtime` on FreeBSD/macOS).
-- **ACLs**: Uses POSIX ACL API (`<sys/acl.h>`, `libacl`). Available on Linux and FreeBSD. Other BSDs may need different ACL interfaces or may not support ACLs.
-- **Terminal capabilities**: Uses `termcap` (`-ltermcap`). BSDs may use `terminfo` via `ncurses` (`-lncurses` or `-ltinfo`) instead.
+- **Birth time (`btime`)**: Uses the Linux-specific `statx()` syscall on Linux, `st_birthtime` on macOS/FreeBSD.
+- **`strverscmp()`**: GNU extension used for `--sort=version`. Not available on macOS/BSDs; a bundled implementation is provided as a fallback.
+- **ACLs**: Uses POSIX ACL API (`<sys/acl.h>`, `libacl`) on Linux and FreeBSD. On macOS, uses `ACL_TYPE_EXTENDED`. ACL support is optional and controlled by the `HAVE_ACL` compile-time flag.
+- **Terminal capabilities**: Uses curses/terminfo (`-lcurses` or `-lncurses`). The Makefile auto-detects the appropriate library.
 
 When adding new features, prefer POSIX interfaces where possible and use `#ifdef` guards for platform-specific code.
