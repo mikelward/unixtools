@@ -341,6 +341,38 @@ testTimeCreation() {
     cleanup
 }
 
+testStandaloneAtime() {
+    setup
+    touch file
+    l --atime --show-time -1 > /dev/null
+    check "$?" = "0"
+    cleanup
+}
+
+testStandaloneBtime() {
+    setup
+    touch file
+    l --btime --show-time -1 > /dev/null
+    check "$?" = "0"
+    cleanup
+}
+
+testStandaloneCtime() {
+    setup
+    touch file
+    l --ctime --show-time -1 > /dev/null
+    check "$?" = "0"
+    cleanup
+}
+
+testStandaloneMtime() {
+    setup
+    touch file
+    l --mtime --show-time -1 > /dev/null
+    check "$?" = "0"
+    cleanup
+}
+
 testSortByBtime() {
     setup
     touch old
@@ -422,6 +454,10 @@ testTimeMtime
 testTimeBtime
 testTimeBirth
 testTimeCreation
+testStandaloneAtime
+testStandaloneBtime
+testStandaloneCtime
+testStandaloneMtime
 testSortByBtime
 testFormatLong
 testFormatSingleColumn

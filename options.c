@@ -160,6 +160,12 @@ static struct option longopts[] = {
     {"iso",                       no_argument,       NULL, 'I'},
     {"kibibytes",                 no_argument,       NULL, 'k'},
 
+    /* time type shortcuts */
+    {"atime",                     no_argument,       NULL, 0  },
+    {"btime",                     no_argument,       NULL, 0  },
+    {"ctime",                     no_argument,       NULL, 0  },
+    {"mtime",                     no_argument,       NULL, 0  },
+
     /* GNU-compatible long options with arguments */
     {"format",                    required_argument, NULL, 0  },
     {"sort",                      required_argument, NULL, 0  },
@@ -178,7 +184,15 @@ int setoptions(Options *options, int argc, char **argv)
     while ((longindex = 0, option = getopt_long(argc, argv, ":" OPTSTRING, longopts, &longindex)) != -1) {
         switch(option) {
         case 0:
-            if (strcmp(longopts[longindex].name, "time-style") == 0) {
+            if (strcmp(longopts[longindex].name, "atime") == 0) {
+                options->timetype = TIME_ATIME;
+            } else if (strcmp(longopts[longindex].name, "btime") == 0) {
+                options->timetype = TIME_BTIME;
+            } else if (strcmp(longopts[longindex].name, "ctime") == 0) {
+                options->timetype = TIME_CTIME;
+            } else if (strcmp(longopts[longindex].name, "mtime") == 0) {
+                options->timetype = TIME_MTIME;
+            } else if (strcmp(longopts[longindex].name, "time-style") == 0) {
                 options->datetime = true;
                 if (strcmp(optarg, "traditional") == 0) {
                     options->timestyle = TIME_TRADITIONAL;
