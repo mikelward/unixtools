@@ -1,0 +1,9 @@
+[package]
+name = "l"
+version = "0.1.0"
+edition = "2021"
+description = "A cleaner reimplementation of ls"
+
+[dependencies]
+libc = "0.2"
+unicode-width = "0.2"
