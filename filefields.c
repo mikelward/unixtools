@@ -1,7 +1,9 @@
 #define _XOPEN_SOURCE 600
 
 #include <assert.h>
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 
 #include "buf.h"
@@ -14,11 +16,45 @@
 #include "string.h"
 #include "user.h"
 
-#define HUMANBUFSIZE 64
-char humanbuf[HUMANBUFSIZE];
-
-const char *humanbytes(unsigned long bytes);
+char *humanbytes(unsigned long bytes);
 void printnametobuf(File *file, Options *options, Buf *buf);
+
+/**
+ * Dynamically allocate a formatted string (portable asprintf replacement).
+ * Returns a malloc'd string or NULL on failure. Caller must free.
+ */
+static char *xasprintf(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    int n = vsnprintf(NULL, 0, fmt, ap);
+    va_end(ap);
+    if (n < 0) return NULL;
+    char *s = malloc(n + 1);
+    if (!s) return NULL;
+    va_start(ap, fmt);
+    vsnprintf(s, n + 1, fmt, ap);
+    va_end(ap);
+    return s;
+}
+
+/**
+ * Dynamically allocate a strftime result.
+ * Returns a malloc'd string or NULL on failure. Caller must free.
+ */
+static char *xstrftime(const char *fmt, const struct tm *tm)
+{
+    size_t size = 64;
+    for (;;) {
+        char *buf = malloc(size);
+        if (!buf) return NULL;
+        size_t n = strftime(buf, size, fmt, tm);
+        if (n > 0) return buf;
+        free(buf);
+        size *= 2;
+        if (size > 4096) return NULL;
+    }
+}
 
 FieldList *getfilefields(File *file, Options *options)
 {
@@ -27,7 +63,6 @@ FieldList *getfilefields(File *file, Options *options)
         return NULL;
     }
 
-    char snprintfbuf[1024];
     List *fieldlist = newlist();
     if (fieldlist == NULL) {
         errorf("fieldlist is NULL\n");
@@ -50,55 +85,55 @@ FieldList *getfilefields(File *file, Options *options)
     }
 
     if (options->size) {
-        Field *field = getsizefield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        Field *field = getsizefield(file, options);
         if (!field) goto error;
         append(field, fieldlist);
     }
 
     if (options->inode) {
-        Field *field = getinodefield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        Field *field = getinodefield(file, options);
         if (!field) goto error;
         append(field, fieldlist);
     }
 
     if (options->modes) {
-        Field *field = getmodesfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        Field *field = getmodesfield(file, options);
         if (!field) goto error;
         append(field, fieldlist);
     }
 
     if (options->linkcount) {
-        Field *field = getlinkfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        Field *field = getlinkfield(file, options);
         if (!field) goto error;
         append(field, fieldlist);
     }
 
     if (options->owner) {
-        Field *field = getownerfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        Field *field = getownerfield(file, options);
         if (!field) goto error;
         append(field, fieldlist);
     }
 
     if (options->group) {
-        Field *field = getgroupfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        Field *field = getgroupfield(file, options);
         if (!field) goto error;
         append(field, fieldlist);
     }
 
     if (options->perms) {
-        Field *field = getpermsfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        Field *field = getpermsfield(file, options);
         if (!field) goto error;
         append(field, fieldlist);
     }
 
     if (options->bytes) {
-        Field *field = getbytesfield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        Field *field = getbytesfield(file, options);
         if (!field) goto error;
         append(field, fieldlist);
     }
 
     if (options->datetime) {
-        Field *field = getdatetimefield(file, options, snprintfbuf, sizeof(snprintfbuf));
+        Field *field = getdatetimefield(file, options);
         if (!field) goto error;
         append(field, fieldlist);
     }
@@ -113,28 +148,31 @@ error:
     return NULL;
 }
 
-Field *getbytesfield(File *file, Options *options, char *buf, int bufsize)
+Field *getbytesfield(File *file, Options *options)
 {
-    int width;
+    char *s;
     if (!isstat(file)) {
-        width = snprintf(buf, bufsize, "?");
+        s = xasprintf("?");
     } else {
         long bytes = getsize(file);
-        if (options->sizestyle == SIZE_DEFAULT) {
-            width = snprintf(buf, bufsize, "%ld", bytes);
-        } else if (options->sizestyle == SIZE_HUMAN) {
-            width = snprintf(buf, bufsize, "%s", humanbytes(bytes));
+        if (options->sizestyle == SIZE_HUMAN) {
+            s = humanbytes(bytes);
         } else {
-            errorf("Unknown sizestyle %d\n", options->sizestyle);
-            width = snprintf(buf, bufsize, "%ld", bytes);
+            if (options->sizestyle != SIZE_DEFAULT) {
+                errorf("Unknown sizestyle %d\n", options->sizestyle);
+            }
+            s = xasprintf("%ld", bytes);
         }
     }
-    return newfield(buf, ALIGN_RIGHT, width);
+    if (!s) return NULL;
+    Field *field = newfield(s, ALIGN_RIGHT, strlen(s));
+    free(s);
+    return field;
 }
 
-Field *getdatetimefield(File *file, Options *options, char *buf, int bufsize)
+Field *getdatetimefield(File *file, Options *options)
 {
-    int width;
+    char *s = NULL;
     if (isstat(file)) {
         time_t timestamp;
         switch (options->timetype) {
@@ -160,107 +198,123 @@ Field *getdatetimefield(File *file, Options *options, char *buf, int bufsize)
             return NULL;
         }
         if (options->timeformat != NULL) {
-            width = strftime(buf, bufsize, options->timeformat, timestruct);
+            s = xstrftime(options->timeformat, timestruct);
         } else if (options->timestyle == TIME_RELATIVE) {
             assert(options->now > 0);
             time_t seconds_ago = options->now - timestamp;
             if (seconds_ago > 60*60*24*31*12) {
-                width = snprintf(buf, bufsize, "%ld years", seconds_ago/60/60/24/31/12);
+                s = xasprintf("%ld years", seconds_ago/60/60/24/31/12);
             } else if (seconds_ago > 60*60*24*31) {
-                width = snprintf(buf, bufsize, "%ld months", seconds_ago/60/60/24/31);
+                s = xasprintf("%ld months", seconds_ago/60/60/24/31);
             } else if (seconds_ago > 60*60*24) {
-                width = snprintf(buf, bufsize, "%ld days", seconds_ago/60/60/24);
+                s = xasprintf("%ld days", seconds_ago/60/60/24);
             } else if (seconds_ago > 60*60) {
-                width = snprintf(buf, bufsize, "%ld hours", seconds_ago/60/60);
+                s = xasprintf("%ld hours", seconds_ago/60/60);
             } else if (seconds_ago > 60) {
-                width = snprintf(buf, bufsize, "%ld minutes", seconds_ago/60);
+                s = xasprintf("%ld minutes", seconds_ago/60);
             } else if (seconds_ago >= 0) {
-                width = snprintf(buf, bufsize, "%ld seconds", seconds_ago);
+                s = xasprintf("%ld seconds", seconds_ago);
             } else {
-                width = strftime(buf, bufsize, "%b %e  %Y", timestruct);
+                s = xstrftime("%b %e  %Y", timestruct);
             }
         } else {
             /* month day hour and minute if file was modified in the last 6 months,
                month day year otherwise */
             assert(options->now > 0);
-            width = strftime(buf, bufsize, "%b %e  %Y", timestruct);
+            s = xstrftime("%b %e  %Y", timestruct);
             if (timestamp <= options->now) {
                 if (timestamp > options->now - 6*86400) {
-                    width = strftime(buf, bufsize, "%a    %H:%M", timestruct);
+                    free(s);
+                    s = xstrftime("%a    %H:%M", timestruct);
                 } else if (timestamp > options->now - 180*86400) {
-                    width = strftime(buf, bufsize, "%b %e %H:%M", timestruct);
+                    free(s);
+                    s = xstrftime("%b %e %H:%M", timestruct);
                 }
             }
         }
     } else {
-        width = snprintf(buf, bufsize, "?");
+        s = xasprintf("?");
     }
-    return newfield(buf, ALIGN_RIGHT, width);
+    if (!s) return NULL;
+    Field *field = newfield(s, ALIGN_RIGHT, strlen(s));
+    free(s);
+    return field;
 }
 
-Field *getgroupfield(File *file, Options *options, char *buf, int bufsize)
+Field *getgroupfield(File *file, Options *options)
 {
-    int width;
+    char *s;
     if (isstat(file)) {
         gid_t gid = getgroupnum(file);
         if (options->numeric) {
-            width = snprintf(buf, bufsize, "%lu", (unsigned long)gid);
+            s = xasprintf("%lu", (unsigned long)gid);
         } else {
             char *groupname = get(options->groupnames, gid);
             if (!groupname) {
                 groupname = getgroupname(gid);
                 if (!groupname) {
-                    width = snprintf(buf, bufsize, "%lu", (unsigned long)gid);
-                    groupname = buf;
+                    groupname = xasprintf("%lu", (unsigned long)gid);
+                    if (!groupname) return NULL;
+                    set(options->groupnames, gid, groupname);
+                    free(groupname);
+                } else {
+                    set(options->groupnames, gid, groupname);
                 }
-                set(options->groupnames, gid, groupname);
+                groupname = get(options->groupnames, gid);
             }
-            if (groupname != buf) {
-                /* only do this if we didn't already print into the buf */
-                width = snprintf(buf, bufsize, "%s", groupname);
-            }
+            s = xasprintf("%s", groupname);
         }
     } else {
-        width = snprintf(buf, bufsize, "?");
+        s = xasprintf("?");
     }
-    return newfield(buf, ALIGN_LEFT, width);
+    if (!s) return NULL;
+    Field *field = newfield(s, ALIGN_LEFT, strlen(s));
+    free(s);
+    return field;
 }
 
-Field *getinodefield(File *file, Options *options, char *buf, int bufsize)
+Field *getinodefield(File *file, Options *options)
 {
-    int width;
+    char *s;
     if (isstat(file)) {
         ino_t inode = getinode(file);
-        width = snprintf(buf, bufsize, "%lu", inode);
+        s = xasprintf("%lu", inode);
     } else {
-        width = snprintf(buf, bufsize, "%s", "?");
+        s = xasprintf("?");
     }
-    return newfield(buf, ALIGN_RIGHT, width);
+    if (!s) return NULL;
+    Field *field = newfield(s, ALIGN_RIGHT, strlen(s));
+    free(s);
+    return field;
 }
 
-Field *getlinkfield(File *file, Options *options, char *buf, int bufsize)
+Field *getlinkfield(File *file, Options *options)
 {
-    int width;
+    char *s;
     if (isstat(file)) {
         nlink_t nlinks = getlinkcount(file);
-        width = snprintf(buf, bufsize, "%lu", (unsigned long)nlinks);
+        s = xasprintf("%lu", (unsigned long)nlinks);
     } else {
-         width = snprintf(buf, bufsize, "%s", "?");
+        s = xasprintf("?");
     }
-    return newfield(buf, ALIGN_RIGHT, width);
+    if (!s) return NULL;
+    Field *field = newfield(s, ALIGN_RIGHT, strlen(s));
+    free(s);
+    return field;
 }
 
-Field *getmodesfield(File *file, Options *options, char *buf, int bufsize)
+Field *getmodesfield(File *file, Options *options)
 {
-    int width;
+    char *s;
     if (isstat(file)) {
-        char *modes = getmodes(file);
-        width = snprintf(buf, bufsize, "%s", modes);
-        free(modes);
+        s = getmodes(file);
     } else {
-        width = snprintf(buf, bufsize, "%s", "???????????");
+        s = xasprintf("???????????");
     }
-    return newfield(buf, ALIGN_LEFT, width);
+    if (!s) return NULL;
+    Field *field = newfield(s, ALIGN_LEFT, strlen(s));
+    free(s);
+    return field;
 }
 
 /**
@@ -339,34 +393,39 @@ Field *getnamefield(File *file, Options *options)
     return field;
 }
 
-Field *getownerfield(File *file, Options *options, char *buf, int bufsize)
+Field *getownerfield(File *file, Options *options)
 {
-    int width;
+    char *s;
     if (isstat(file)) {
         uid_t uid = getownernum(file);
         if (options->numeric) {
-            width = snprintf(buf, bufsize, "%lu", (unsigned long)uid);
+            s = xasprintf("%lu", (unsigned long)uid);
         } else {
             char *username = get(options->usernames, uid);
             if (!username) {
                 username = getusername(uid);
                 if (!username) {
-                    width = snprintf(buf, bufsize, "%lu", (unsigned long)uid);
-                    username = buf;
+                    username = xasprintf("%lu", (unsigned long)uid);
+                    if (!username) return NULL;
+                    set(options->usernames, uid, username);
+                    free(username);
+                } else {
+                    set(options->usernames, uid, username);
                 }
-                set(options->usernames, uid, username);
+                username = get(options->usernames, uid);
             }
-            if (username != buf) {
-                width = snprintf(buf, bufsize, "%s", username);
-            }
+            s = xasprintf("%s", username);
         }
     } else {
-        width = snprintf(buf, bufsize, "?");
+        s = xasprintf("?");
     }
-    return newfield(buf, ALIGN_LEFT, width);
+    if (!s) return NULL;
+    Field *field = newfield(s, ALIGN_LEFT, strlen(s));
+    free(s);
+    return field;
 }
 
-Field *getpermsfield(File *file, Options *options, char *buf, int bufsize)
+Field *getpermsfield(File *file, Options *options)
 {
     char *perms = getperms(file);
     if (perms == NULL) {
@@ -379,24 +438,27 @@ Field *getpermsfield(File *file, Options *options, char *buf, int bufsize)
     return field;
 }
 
-Field *getsizefield(File *file, Options *options, char *buf, int bufsize)
+Field *getsizefield(File *file, Options *options)
 {
-    int width;
+    char *s;
     if (!isstat(file)) {
-        width = snprintf(buf, bufsize, "%s", "?");
+        s = xasprintf("?");
     } else {
         unsigned long blocks = getblocks(file, options->blocksize);
-        if (options->sizestyle == SIZE_DEFAULT) {
-            width = snprintf(buf, bufsize, "%lu", blocks);
-        } else if (options->sizestyle == SIZE_HUMAN) {
+        if (options->sizestyle == SIZE_HUMAN) {
             unsigned long bytes = blocks * options->blocksize;
-            width = snprintf(buf, bufsize, "%s", humanbytes(bytes));
+            s = humanbytes(bytes);
         } else {
-            errorf("Unknown sizestyle %d", options->sizestyle);
-            width = snprintf(buf, bufsize, "%lu", blocks);
+            if (options->sizestyle != SIZE_DEFAULT) {
+                errorf("Unknown sizestyle %d", options->sizestyle);
+            }
+            s = xasprintf("%lu", blocks);
         }
     }
-    return newfield(buf, ALIGN_RIGHT, width);
+    if (!s) return NULL;
+    Field *field = newfield(s, ALIGN_RIGHT, strlen(s));
+    free(s);
+    return field;
 }
 
 void printnametobuf(File *file, Options *options, Buf *buf)
@@ -492,7 +554,7 @@ void printnametobuf(File *file, Options *options, Buf *buf)
     }
 }
 
-const char *humanbytes(unsigned long bytes)
+char *humanbytes(unsigned long bytes)
 {
     char *units[] = {"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
     int nunits = sizeof(units) / sizeof(units[0]);
@@ -502,6 +564,5 @@ const char *humanbytes(unsigned long bytes)
         dbytes /= 1000;
     }
     /* round to the nearest integer using %.0f */
-    snprintf(humanbuf, sizeof(humanbuf), "%.0f %s", dbytes, units[i]);
-    return humanbuf;
+    return xasprintf("%.0f %s", dbytes, units[i]);
 }

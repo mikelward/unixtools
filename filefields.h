@@ -15,17 +15,17 @@ typedef List FieldList;             /* list of fields for a single file */
  */
 FieldList *getfilefields(File *file, Options *options);
 
-Field *getbytesfield(File *file, Options *options, char *buf, int bufsize);
-Field *getdatetimefield(File *file, Options *options, char *buf, int bufsize);
-Field *getgroupfield(File *file, Options *options, char *buf, int bufsize);
-Field *getinodefield(File *file, Options *options, char *buf, int bufsize);
-Field *getlinkfield(File *file, Options *options, char *buf, int bufsize);
-Field *getmodesfield(File *file, Options *options, char *buf, int bufsize);
+Field *getbytesfield(File *file, Options *options);
+Field *getdatetimefield(File *file, Options *options);
+Field *getgroupfield(File *file, Options *options);
+Field *getinodefield(File *file, Options *options);
+Field *getlinkfield(File *file, Options *options);
+Field *getmodesfield(File *file, Options *options);
 Field *getnamefield(File *file, Options *options);
-Field *getownerfield(File *file, Options *options, char *buf, int bufsize);
-Field *getpermsfield(File *file, Options *options, char *buf, int bufsize);
-Field *getsizefield(File *file, Options *options, char *buf, int bufsize);
+Field *getownerfield(File *file, Options *options);
+Field *getpermsfield(File *file, Options *options);
+Field *getsizefield(File *file, Options *options);
 
-const char *humanbytes(unsigned long bytes);
+char *humanbytes(unsigned long bytes);
 
 #endif
