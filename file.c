@@ -1,7 +1,8 @@
 #define _XOPEN_SOURCE 600   /* for readlink(), strdup(), snprintf() */
-#define _GNU_SOURCE         /* for strverscmp() */
+#define _GNU_SOURCE         /* for strverscmp() on glibc */
 
 #include <sys/stat.h>
+#include <sys/types.h>
 #ifdef __linux__
 #include <sys/sysmacros.h>  /* for major(), minor() - on BSDs these are in <sys/types.h> */
 #include <sys/syscall.h>    /* for SYS_statx */
@@ -11,6 +12,7 @@
 #ifdef HAVE_ACL
 #include <sys/acl.h>
 #endif
+#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>          /* for AT_FDCWD, AT_SYMLINK_NOFOLLOW */
 #include <grp.h>
@@ -19,6 +21,53 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef DEV_BSIZE
+#define DEV_BSIZE 512
+#endif
+
+/*
+ * strverscmp() - version string comparison.
+ * Not available on macOS/BSDs, so provide a portable fallback.
+ *
+ * Adapted from musl libc (src/string/strverscmp.c), which is:
+ * Copyright (c) 2005-2020 Rich Felker, et al.
+ * Licensed under the MIT license.
+ *
+ * Minor differences from glibc's strverscmp exist for unusual
+ * leading-zero edge cases; common version-string patterns (e.g.
+ * file1, file2, file10) are handled identically.
+ */
+#ifndef __GLIBC__
+static int strverscmp(const char *l0, const char *r0)
+{
+    const unsigned char *l = (const void *)l0;
+    const unsigned char *r = (const void *)r0;
+    size_t i, dp, j;
+    int z = 1;
+
+    /* find maximal matching prefix, tracking its maximal digit
+     * suffix and whether those digits are all zeros */
+    for (dp=i=0; l[i]==r[i]; i++) {
+        int c = l[i];
+        if (!c) return 0;
+        if (!isdigit(c)) dp=i+1, z=1;
+        else if (c!='0') z=0;
+    }
+
+    if (l[i]=='0' || r[i]=='0') {
+        /* if the common prefix is in a zero-led digit sequence,
+         * it's a fractional comparison: compare digit by digit */
+        if (z) return (unsigned char)(l[i]-'0') - (unsigned char)(r[i]-'0');
+    }
+
+    /* otherwise compare integral digit runs by magnitude */
+    for (j=i; isdigit(l[j]); j++)
+        if (!isdigit(r[j])) return 1;
+    if (isdigit(r[j])) return -1;
+    return l[i] - r[i];
+}
+#endif
 
 #include "file.h"
 #include "logging.h"
@@ -821,6 +870,21 @@ bool hasacls(File *file)
 {
 #ifndef HAVE_ACL
     return false;
+#elif defined(__APPLE__)
+    /* macOS uses ACL_TYPE_EXTENDED instead of POSIX ACL types */
+    errno = 0;
+    acl_t acl = acl_get_file(file->path, ACL_TYPE_EXTENDED);
+    if (!acl) {
+        if (errno == ENOTSUP) {
+            return false;
+        }
+        return false;
+    }
+    /* any entry in an extended ACL counts */
+    acl_entry_t entry;
+    int status = acl_get_entry(acl, ACL_FIRST_ENTRY, &entry);
+    acl_free(acl);
+    return status == 0;
 #else
     acl_type_t acl_types[] = { ACL_TYPE_ACCESS, ACL_TYPE_DEFAULT };
     for (int i = 0; i < sizeof(acl_types)/sizeof(acl_types[0]); i++) {

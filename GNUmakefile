@@ -1,15 +1,24 @@
-CC=c99
+CC ?= cc
+STD=-std=c99
 DEBUG=-g
 WARNINGS=-Wall -Werror -Wfatal-errors
 UNAME := $(shell uname)
 ifeq ($(UNAME),Linux)
 ACL_CFLAGS ?= -DHAVE_ACL
 ACL_LDFLAGS ?= -lacl
+CURSES_LDFLAGS ?= -lcurses
 else ifeq ($(UNAME),FreeBSD)
 ACL_CFLAGS ?= -DHAVE_ACL
 ACL_LDFLAGS ?=
+CURSES_LDFLAGS ?= -lcurses
+else ifeq ($(UNAME),Darwin)
+ACL_CFLAGS ?= -DHAVE_ACL
+ACL_LDFLAGS ?=
+CURSES_LDFLAGS ?= -lcurses
+else
+CURSES_LDFLAGS ?= -lcurses
 endif
-CFLAGS=$(WARNINGS) $(DEBUG) $(ACL_CFLAGS)
+CFLAGS=$(STD) $(WARNINGS) $(DEBUG) $(ACL_CFLAGS)
 LDFLAGS=$(WARNINGS) $(DEBUG)
 
 DESTDIR=/usr/local
@@ -62,15 +71,13 @@ uninstall: $(PROGS)
 
 all: tags $(TESTS) $(PROGS) $(DOCS)
 
--ltermcap:
-
-l: l.o display.o list.o filefields.o file.o field.o buf.o options.o map.o pair.o user.o group.o logging.o -ltermcap $(ACL_LDFLAGS)
+l: l.o display.o list.o filefields.o file.o field.o buf.o options.o map.o pair.o user.o group.o logging.o $(CURSES_LDFLAGS) $(ACL_LDFLAGS)
 
 buftest: buftest.o buf.o logging.o
 
 filetest: filetest.o file.o map.o pair.o list.o logging.o $(ACL_LDFLAGS)
 
-filefieldstest: filefieldstest.o filefields.o file.o field.o buf.o display.o options.o map.o pair.o list.o user.o group.o logging.o -ltermcap $(ACL_LDFLAGS)
+filefieldstest: filefieldstest.o filefields.o file.o field.o buf.o display.o options.o map.o pair.o list.o user.o group.o logging.o $(CURSES_LDFLAGS) $(ACL_LDFLAGS)
 
 listtest: listtest.o list.o logging.o
 

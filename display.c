@@ -152,14 +152,14 @@ int setupcolors(Colors *colors)
     if (setaf == NULL) {
         return 0;
     }
-    colors->black = strdup(tparm(setaf, COLOR_BLACK, NULL));
-    colors->red = strdup(tparm(setaf, COLOR_RED, NULL));
-    colors->green = strdup(tparm(setaf, COLOR_GREEN, NULL));
-    colors->yellow = strdup(tparm(setaf, COLOR_YELLOW, NULL));
-    colors->blue = strdup(tparm(setaf, COLOR_BLUE, NULL));
-    colors->magenta = strdup(tparm(setaf, COLOR_MAGENTA, NULL));
-    colors->cyan = strdup(tparm(setaf, COLOR_CYAN, NULL));
-    colors->white = strdup(tparm(setaf, COLOR_WHITE, NULL));
+    colors->black = strdup(tparm(setaf, COLOR_BLACK));
+    colors->red = strdup(tparm(setaf, COLOR_RED));
+    colors->green = strdup(tparm(setaf, COLOR_GREEN));
+    colors->yellow = strdup(tparm(setaf, COLOR_YELLOW));
+    colors->blue = strdup(tparm(setaf, COLOR_BLUE));
+    colors->magenta = strdup(tparm(setaf, COLOR_MAGENTA));
+    colors->cyan = strdup(tparm(setaf, COLOR_CYAN));
+    colors->white = strdup(tparm(setaf, COLOR_WHITE));
     char *sgr0 = tigetstr("sgr0");
     if (sgr0 == NULL) {
         return 0;
