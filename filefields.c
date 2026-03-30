@@ -153,6 +153,8 @@ Field *getbytesfield(File *file, Options *options)
     char *s;
     if (!isstat(file)) {
         s = xasprintf("?");
+    } else if (isdevice(file)) {
+        s = xasprintf("%u, %u", getmajor(file), getminor(file));
     } else {
         long bytes = getsize(file);
         if (options->sizestyle == SIZE_HUMAN) {
@@ -443,6 +445,8 @@ Field *getsizefield(File *file, Options *options)
     char *s;
     if (!isstat(file)) {
         s = xasprintf("?");
+    } else if (isdevice(file)) {
+        s = xasprintf("%u, %u", getmajor(file), getminor(file));
     } else {
         unsigned long blocks = getblocks(file, options->blocksize);
         if (options->sizestyle == SIZE_HUMAN) {

@@ -70,6 +70,7 @@ char *makepath(const char *dirname, const char *filename);
 bool isstat(File *file);
 bool isblockdev(File *file);
 bool ischardev(File *file);
+bool isdevice(File *file);
 bool isdir(File *file);
 bool isexec(File *file);
 bool isfifo(File *file);
@@ -83,6 +84,8 @@ bool ishidden(File *file);
 bool hasacls(File *file);
 
 unsigned long getblocks(File *file, int blocksize);
+unsigned int getmajor(File *file);
+unsigned int getminor(File *file);
 
 gid_t getgroupnum(File *file);
 time_t getatime(File *file);

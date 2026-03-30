@@ -2,6 +2,9 @@
 #define _GNU_SOURCE         /* for strverscmp() */
 
 #include <sys/stat.h>
+#ifdef __linux__
+#include <sys/sysmacros.h>  /* for major(), minor() - on BSDs these are in <sys/types.h> */
+#endif
 #include <sys/syscall.h>    /* for SYS_statx */
 #include <linux/stat.h>     /* for struct statx, STATX_BTIME */
 #include <sys/param.h>      /* for DEV_BSIZE */
@@ -210,6 +213,11 @@ bool ischardev(File *file)
 {
     struct stat *pstat = getstat(file);
     return pstat && S_ISCHR(pstat->st_mode);
+}
+
+bool isdevice(File *file)
+{
+    return isblockdev(file) || ischardev(file);
 }
 
 bool isdir(File *file)
@@ -491,6 +499,20 @@ unsigned long getblocks(File *file, int blocksize)
         int factor = DEV_BSIZE / blocksize;
         return blocks * factor;
     }
+}
+
+unsigned int getmajor(File *file)
+{
+    struct stat *pstat = getstat(file);
+    if (!pstat) return 0;
+    return major(pstat->st_rdev);
+}
+
+unsigned int getminor(File *file)
+{
+    struct stat *pstat = getstat(file);
+    if (!pstat) return 0;
+    return minor(pstat->st_rdev);
 }
 
 time_t getatime(File *file)
