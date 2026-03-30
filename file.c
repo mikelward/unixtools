@@ -4,11 +4,13 @@
 #include <sys/stat.h>
 #ifdef __linux__
 #include <sys/sysmacros.h>  /* for major(), minor() - on BSDs these are in <sys/types.h> */
-#endif
 #include <sys/syscall.h>    /* for SYS_statx */
 #include <linux/stat.h>     /* for struct statx, STATX_BTIME */
+#endif
 #include <sys/param.h>      /* for DEV_BSIZE */
+#ifdef HAVE_ACL
 #include <sys/acl.h>
+#endif
 #include <errno.h>
 #include <fcntl.h>          /* for AT_FDCWD, AT_SYMLINK_NOFOLLOW */
 #include <grp.h>
@@ -525,6 +527,7 @@ time_t getatime(File *file)
 time_t getbtime(File *file)
 {
     if (!file) return 0;
+#ifdef __linux__
     struct statx stx;
     if (syscall(SYS_statx, AT_FDCWD, file->path,
                 AT_SYMLINK_NOFOLLOW | AT_STATX_SYNC_AS_STAT,
@@ -536,6 +539,11 @@ time_t getbtime(File *file)
         return 0;
     }
     return stx.stx_btime.tv_sec;
+#else
+    struct stat *pstat = getstat(file);
+    if (!pstat) return 0;
+    return pstat->st_birthtime;
+#endif
 }
 
 time_t getctime(File *file)
@@ -811,6 +819,9 @@ File *getfinaltarget(File *file)
  */
 bool hasacls(File *file)
 {
+#ifndef HAVE_ACL
+    return false;
+#else
     acl_type_t acl_types[] = { ACL_TYPE_ACCESS, ACL_TYPE_DEFAULT };
     for (int i = 0; i < sizeof(acl_types)/sizeof(acl_types[0]); i++) {
         if (!isdir(file) && acl_types[i] == ACL_TYPE_DEFAULT) continue;
@@ -859,6 +870,7 @@ bool hasacls(File *file)
     }
 
     return 0;
+#endif
 }
 
 /* vim: set ts=4 sw=4 tw=0 et:*/

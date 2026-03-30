@@ -1,7 +1,15 @@
 CC=c99
 DEBUG=-g
 WARNINGS=-Wall -Werror -Wfatal-errors
-CFLAGS=$(WARNINGS) $(DEBUG)
+UNAME := $(shell uname)
+ifeq ($(UNAME),Linux)
+ACL_CFLAGS ?= -DHAVE_ACL
+ACL_LDFLAGS ?= -lacl
+else ifeq ($(UNAME),FreeBSD)
+ACL_CFLAGS ?= -DHAVE_ACL
+ACL_LDFLAGS ?=
+endif
+CFLAGS=$(WARNINGS) $(DEBUG) $(ACL_CFLAGS)
 LDFLAGS=$(WARNINGS) $(DEBUG)
 
 DESTDIR=/usr/local
@@ -54,17 +62,15 @@ uninstall: $(PROGS)
 
 all: tags $(TESTS) $(PROGS) $(DOCS)
 
--lacl:
-
 -ltermcap:
 
-l: l.o display.o list.o filefields.o file.o field.o buf.o options.o map.o pair.o user.o group.o logging.o -ltermcap -lacl
+l: l.o display.o list.o filefields.o file.o field.o buf.o options.o map.o pair.o user.o group.o logging.o -ltermcap $(ACL_LDFLAGS)
 
 buftest: buftest.o buf.o logging.o
 
-filetest: filetest.o file.o map.o pair.o list.o logging.o -lacl
+filetest: filetest.o file.o map.o pair.o list.o logging.o $(ACL_LDFLAGS)
 
-filefieldstest: filefieldstest.o filefields.o file.o field.o buf.o display.o options.o map.o pair.o list.o user.o group.o logging.o -ltermcap -lacl
+filefieldstest: filefieldstest.o filefields.o file.o field.o buf.o display.o options.o map.o pair.o list.o user.o group.o logging.o -ltermcap $(ACL_LDFLAGS)
 
 listtest: listtest.o list.o logging.o
 
