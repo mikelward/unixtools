@@ -131,6 +131,15 @@ Files that cannot be stat'd sort as if they have the smallest value (they appear
 
 Escaping applies to file names only. The `\\` literal backslash is doubled only in ESCAPE_C mode. Wide character / multibyte handling via `mbrtowc()` + `iswprint()` + `iswcntrl()`.
 
+**Invalid/incomplete multibyte sequences**: When an invalid or incomplete UTF-8 byte sequence is encountered, each bad byte is handled according to the escape mode:
+- ESCAPE_C: replaced with `\NNN` (octal escape)
+- ESCAPE_QUESTION: replaced with `?`
+- ESCAPE_NONE: passed through as raw bytes
+
+**Characters neither printable nor control** (e.g. unassigned codepoints): handled the same way as control characters per the escape mode.
+
+**Non-printable wide characters**: `wcwidth()` returning -1 is treated as 0 display width to prevent column alignment corruption.
+
 ### Color
 
 | Flag | Long option | Description |

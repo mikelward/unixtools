@@ -109,6 +109,7 @@ asterisks, e.g.
  * print control characters as question marks (`-q`, `--hide-control-chars`)
  * print control characters using C-style escapes (`-e`, `--escape`)
  * disable escaping (`-E`, `--no-escape`)
+ * Unicode-aware: correct column alignment for wide (CJK) and combining characters
 
 _`-q` is the default if output is a terminal, otherwise `-E`._
 
@@ -156,7 +157,6 @@ Invalid options cause the program to print usage and exit with code 2.
  * file sizes in megabytes and gigabytes (`-M`, `-G`?)
 
 ### Coming later
- * locale and Unicode support
  * other stuff
 
 ### To investigate
