@@ -106,6 +106,7 @@ int test_printwchartobuf_newline_noescape(void)
 
     printwchartobuf(L'\n', ESCAPE_NONE, buf);
     assert(strcmp(bufstring(buf), "\n") == 0);
+    freebuf(buf);
     return 0;
 }
 
@@ -114,7 +115,8 @@ int test_printwchartobuf_newline_cescape(void)
     Buf *buf = newbuf();
 
     printwchartobuf(L'\n', ESCAPE_C, buf);
-    assert(strcmp(bufstring(buf), "\\\n") == 0);
+    assert(strcmp(bufstring(buf), "\\n") == 0);
+    freebuf(buf);
     return 0;
 }
 
@@ -124,6 +126,93 @@ int test_printwchartobuf_newline_question(void)
 
     printwchartobuf(L'\n', ESCAPE_QUESTION, buf);
     assert(strcmp(bufstring(buf), "?") == 0);
+    freebuf(buf);
+    return 0;
+}
+
+int test_printwchartobuf_control_noescape_width(void)
+{
+    /* Control chars via ESCAPE_NONE should have 0 display width */
+    Buf *buf = newbuf();
+
+    printwchartobuf(L'\n', ESCAPE_NONE, buf);
+    assert(bufscreenpos(buf) == 0);
+    freebuf(buf);
+    return 0;
+}
+
+int test_printtobuf_invalid_utf8_cescape(void)
+{
+    /* Invalid UTF-8 byte 0xFF should be escaped as octal */
+    Buf *buf = newbuf();
+    char text[] = { 'a', (char)0xFF, 'b', '\0' };
+
+    printtobuf(text, ESCAPE_C, buf);
+    assert(strcmp(bufstring(buf), "a\\377b") == 0);
+    assert(bufscreenpos(buf) == 6); /* a(1) + \377(4) + b(1) */
+    freebuf(buf);
+    return 0;
+}
+
+int test_printtobuf_invalid_utf8_question(void)
+{
+    /* Invalid UTF-8 byte should become ? */
+    Buf *buf = newbuf();
+    char text[] = { 'a', (char)0xFF, 'b', '\0' };
+
+    printtobuf(text, ESCAPE_QUESTION, buf);
+    assert(strcmp(bufstring(buf), "a?b") == 0);
+    assert(bufscreenpos(buf) == 3);
+    freebuf(buf);
+    return 0;
+}
+
+int test_printtobuf_invalid_utf8_noescape(void)
+{
+    /* Invalid UTF-8 byte passed through raw */
+    Buf *buf = newbuf();
+    char text[] = { 'a', (char)0xFF, 'b', '\0' };
+
+    printtobuf(text, ESCAPE_NONE, buf);
+    assert(bufpos(buf) == 3);
+    assert(bufscreenpos(buf) == 3);
+    freebuf(buf);
+    return 0;
+}
+
+int test_printtobuf_incomplete_utf8(void)
+{
+    /* Incomplete UTF-8: first byte of 2-byte sequence with no continuation */
+    Buf *buf = newbuf();
+    char text[] = { 'a', (char)0xC3, '\0' }; /* 0xC3 starts a 2-byte sequence */
+
+    printtobuf(text, ESCAPE_C, buf);
+    assert(strcmp(bufstring(buf), "a\\303") == 0);
+    freebuf(buf);
+    return 0;
+}
+
+int test_printtobuf_mixed_ascii_cjk(void)
+{
+    /* Mixed ASCII and CJK characters */
+    Buf *buf = newbuf();
+
+    printtobuf("aディb", ESCAPE_NONE, buf);
+    /* a(1) + ディ(2 chars * 2 width) + b(1) = 6 display width */
+    assert(bufscreenpos(buf) == 6);
+    freebuf(buf);
+    return 0;
+}
+
+int test_printtobuf_combining_character(void)
+{
+    /* Combining character (U+0301 combining acute accent) has 0 display width */
+    Buf *buf = newbuf();
+
+    printtobuf("e\xCC\x81", ESCAPE_NONE, buf); /* é as e + combining accent */
+    /* e(1) + combining accent(0) = 1 display width */
+    assert(bufscreenpos(buf) == 1);
+    freebuf(buf);
     return 0;
 }
 
@@ -142,6 +231,16 @@ int main(int argc, char **argv)
     test_printwchartobuf_backslash_noescape();
     test_printwchartobuf_backslash_cescape();
     test_printwchartobuf_backslash_question();
+    test_printwchartobuf_newline_noescape();
+    test_printwchartobuf_newline_cescape();
+    test_printwchartobuf_newline_question();
+    test_printwchartobuf_control_noescape_width();
+    test_printtobuf_invalid_utf8_cescape();
+    test_printtobuf_invalid_utf8_question();
+    test_printtobuf_invalid_utf8_noescape();
+    test_printtobuf_incomplete_utf8();
+    test_printtobuf_mixed_ascii_cjk();
+    test_printtobuf_combining_character();
     return 0;
 }
 

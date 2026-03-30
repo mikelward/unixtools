@@ -134,9 +134,11 @@ void bufappendwchar(Buf *buf, wchar_t wc)
 
     char mbbuf[MB_LEN_MAX];
     int columns = wcwidth(wc);
+    if (columns < 0) {
+        columns = 0;
+    }
     size_t width = wcrtomb(mbbuf, wc, &buf->shiftstate);
-    if (width == -1) {
-        // XXX: Append a question mark? Return error and handle in caller?
+    if (width == (size_t)-1) {
         errorf("Invalid multibyte sequence\n");
         return;
     }
@@ -201,21 +203,62 @@ void printtobuf(const char *text, enum escape escape, Buf *buf)
         errorf("bytebuf is NULL\n");
         return;
     }
-    while ((bytes = mbrtowc(&wc, p, MB_LEN_MAX, &state)) > 0) {
-        if (bytes == (size_t)-1) {
-            errorf("Invalid multibyte sequence\n");
+    while (*p != '\0') {
+        bytes = mbrtowc(&wc, p, MB_LEN_MAX, &state);
+        if (bytes == 0) {
+            /* NUL character */
             break;
         }
+        if (bytes == (size_t)-1) {
+            /* Invalid multibyte sequence: escape the byte and skip it */
+            memset(&state, 0, sizeof state);
+            unsigned char bad = (unsigned char)*p;
+            switch (escape) {
+            case ESCAPE_C: {
+                char octal[5];
+                snprintf(octal, sizeof octal, "\\%03o", bad);
+                bufappend(bytebuf, octal, 4, 4);
+                break;
+            }
+            case ESCAPE_QUESTION:
+                bufappendchar(bytebuf, '?');
+                break;
+            case ESCAPE_NONE:
+            default:
+                bufappend(bytebuf, (char *)&bad, 1, 1);
+                break;
+            }
+            p++;
+            continue;
+        }
         if (bytes == (size_t)-2) {
-            errorf("Incomplete multibyte character\n");
+            /* Incomplete multibyte character at end of string: escape remaining bytes */
+            memset(&state, 0, sizeof state);
+            while (*p != '\0') {
+                unsigned char bad = (unsigned char)*p;
+                switch (escape) {
+                case ESCAPE_C: {
+                    char octal[5];
+                    snprintf(octal, sizeof octal, "\\%03o", bad);
+                    bufappend(bytebuf, octal, 4, 4);
+                    break;
+                }
+                case ESCAPE_QUESTION:
+                    bufappendchar(bytebuf, '?');
+                    break;
+                case ESCAPE_NONE:
+                default:
+                    bufappend(bytebuf, (char *)&bad, 1, 1);
+                    break;
+                }
+                p++;
+            }
             break;
         }
         printwchartobuf(wc, escape, bytebuf);
         p += bytes;
     }
-    if (bytes == 0) {
-        bufappendbuf(buf, bytebuf);
-    }
+    bufappendbuf(buf, bytebuf);
     freebuf(bytebuf);
 }
 
@@ -245,7 +288,19 @@ void printwchartobuf(wchar_t wc, enum escape escape, Buf *buf)
             break;
         }
     } else {
-        errorf("Unknown character type, is locale initialized?\n");
+        /* Character is neither printable nor control (e.g. unassigned codepoint) */
+        switch (escape) {
+        case ESCAPE_C:
+            printwesctobuf(wc, buf);
+            break;
+        case ESCAPE_QUESTION:
+            bufappendchar(buf, '?');
+            break;
+        case ESCAPE_NONE:
+        default:
+            bufappendwchar(buf, wc);
+            break;
+        }
     }
 }
 
@@ -263,7 +318,17 @@ void printwesctobuf(wchar_t wc, Buf *buf)
             bufappend(buf, escaped, len, len);
         }
     } else {
-        errorf("Inescapable multibyte character\n");
+        /* Multi-byte control character: escape each byte as octal */
+        char mbbuf[MB_LEN_MAX];
+        mbstate_t state = { 0 };
+        size_t len = wcrtomb(mbbuf, wc, &state);
+        if (len != (size_t)-1) {
+            for (size_t i = 0; i < len; i++) {
+                char octal[5];
+                snprintf(octal, sizeof octal, "\\%03o", (unsigned char)mbbuf[i]);
+                bufappend(buf, octal, 4, 4);
+            }
+        }
     }
 }
 
