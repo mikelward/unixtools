@@ -12,6 +12,8 @@
 #include "buf.h"
 #include "logging.h"
 
+int utf8_locale_available = 0;
+
 int test_newbuf(void)
 {
     Buf *buf = newbuf();
@@ -34,20 +36,24 @@ int test_append_string(void)
 
 int test_printtobuf_arabic(void)
 {
+    if (!utf8_locale_available) return 0;
     Buf *buf = newbuf();
 
     printtobuf("دليل", ESCAPE_NONE, buf);
     assert(bufscreenpos(buf) == 4);
+    freebuf(buf);
     return 0;
 }
 
 int test_printtobuf_japanese(void)
 {
+    if (!utf8_locale_available) return 0;
     Buf *buf = newbuf();
 
     printtobuf("ディレクトリ", ESCAPE_NONE, buf);
     /* 6 double width characters == 12 characters */
     assert(bufscreenpos(buf) == 12);
+    freebuf(buf);
     return 0;
 }
 
@@ -64,12 +70,14 @@ int test_printwchartobuf_ascii(void)
 
 int test_printwchartobuf_unicode(void)
 {
+    if (!utf8_locale_available) return 0;
     Buf *buf = newbuf();
 
     printwchartobuf(L'‽', ESCAPE_NONE, buf);
     /* don't care what bufpos is */
     /* ensure a single Unicode character has screen width 1 */
     assert(bufscreenpos(buf) == 1);
+    freebuf(buf);
     return 0;
 }
 
@@ -143,6 +151,7 @@ int test_printwchartobuf_control_noescape_width(void)
 
 int test_printtobuf_invalid_utf8_cescape(void)
 {
+    if (!utf8_locale_available) return 0;
     /* Invalid UTF-8 byte 0xFF should be escaped as octal */
     Buf *buf = newbuf();
     char text[] = { 'a', (char)0xFF, 'b', '\0' };
@@ -156,6 +165,7 @@ int test_printtobuf_invalid_utf8_cescape(void)
 
 int test_printtobuf_invalid_utf8_question(void)
 {
+    if (!utf8_locale_available) return 0;
     /* Invalid UTF-8 byte should become ? */
     Buf *buf = newbuf();
     char text[] = { 'a', (char)0xFF, 'b', '\0' };
@@ -169,6 +179,7 @@ int test_printtobuf_invalid_utf8_question(void)
 
 int test_printtobuf_invalid_utf8_noescape(void)
 {
+    if (!utf8_locale_available) return 0;
     /* Invalid UTF-8 byte passed through raw */
     Buf *buf = newbuf();
     char text[] = { 'a', (char)0xFF, 'b', '\0' };
@@ -182,6 +193,7 @@ int test_printtobuf_invalid_utf8_noescape(void)
 
 int test_printtobuf_incomplete_utf8(void)
 {
+    if (!utf8_locale_available) return 0;
     /* Incomplete UTF-8: first byte of 2-byte sequence with no continuation */
     Buf *buf = newbuf();
     char text[] = { 'a', (char)0xC3, '\0' }; /* 0xC3 starts a 2-byte sequence */
@@ -194,6 +206,7 @@ int test_printtobuf_incomplete_utf8(void)
 
 int test_printtobuf_mixed_ascii_cjk(void)
 {
+    if (!utf8_locale_available) return 0;
     /* Mixed ASCII and CJK characters */
     Buf *buf = newbuf();
 
@@ -206,6 +219,7 @@ int test_printtobuf_mixed_ascii_cjk(void)
 
 int test_printtobuf_combining_character(void)
 {
+    if (!utf8_locale_available) return 0;
     /* Combining character (U+0301 combining acute accent) has 0 display width */
     Buf *buf = newbuf();
 
@@ -216,11 +230,25 @@ int test_printtobuf_combining_character(void)
     return 0;
 }
 
+/**
+ * Try to set a UTF-8 locale.  Returns 1 on success, 0 on failure.
+ */
+int set_utf8_locale(void)
+{
+    if (setlocale(LC_ALL, "C.utf8")) return 1;
+    if (setlocale(LC_ALL, "C.UTF-8")) return 1;
+    if (setlocale(LC_ALL, "en_US.UTF-8")) return 1;
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     myname = "buftest";
 
-    setlocale(LC_ALL, "");
+    utf8_locale_available = set_utf8_locale();
+    if (!utf8_locale_available) {
+        fprintf(stderr, "warning: no UTF-8 locale available, skipping Unicode tests\n");
+    }
 
     test_newbuf();
     test_append_string();
