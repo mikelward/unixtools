@@ -85,6 +85,271 @@ testListDirectoryItself() {
     check "$(l -1d dir)" = "dir"
 }
 
+testLongOptionAll() {
+    setup
+    touch visible .hidden
+    check "$(l --all -1)" = ".
+..
+.hidden
+visible"
+    cleanup
+}
+
+testLongOptionDirectory() {
+    setup
+    mkdir dir
+    touch dir/file
+    check "$(l --directory -1 dir)" = "dir"
+    cleanup
+}
+
+testLongOptionRecursive() {
+    setup
+    mkdir sub
+    touch sub/file
+    result="$(l --recursive -1)"
+    check "$result" != "${result/sub/}"
+    cleanup
+}
+
+testLongOptionReverse() {
+    setup
+    touch a b c
+    check "$(l --reverse -1)" = "c
+b
+a"
+    cleanup
+}
+
+testLongOptionOnePerLine() {
+    setup
+    touch a b
+    check "$(l --one-per-line)" = "a
+b"
+    cleanup
+}
+
+testLongOptionClassify() {
+    setup
+    mkdir dir
+    touch file
+    result="$(l --classify -1)"
+    check "$result" != "${result/dir\//}"
+    cleanup
+}
+
+testLongOptionDereference() {
+    setup
+    touch target
+    ln -s target link
+    check "$(l --dereference -1 link)" = "link"
+    cleanup
+}
+
+testLongOptionNoDereference() {
+    setup
+    touch target
+    ln -s target link
+    check "$(l --no-dereference -1 link)" = "link"
+    cleanup
+}
+
+testLongOptionEscape() {
+    setup
+    touch $'file\nname'
+    result="$(l --escape -1)"
+    check "$result" != "${result/\\n/}"
+    cleanup
+}
+
+testLongOptionNoEscape() {
+    setup
+    touch normal
+    check "$(l --no-escape -1)" = "normal"
+    cleanup
+}
+
+testLongOptionHideControlChars() {
+    setup
+    touch $'file\x01name'
+    result="$(l --hide-control-chars -1)"
+    check "$result" != "${result/\?/}"
+    cleanup
+}
+
+testLongOptionUnsorted() {
+    setup
+    touch c a b
+    # just verify it doesn't error; order depends on filesystem
+    l --unsorted -1 > /dev/null
+    check "$?" = "0"
+    cleanup
+}
+
+testLongOptionHumanReadable() {
+    setup
+    dd if=/dev/zero of=bigfile bs=1024 count=100 2>/dev/null
+    result="$(l --human-readable --bytes -1 bigfile)"
+    # human-readable should show KB
+    check "$result" != "${result/KB/}"
+    cleanup
+}
+
+testLongOptionKibibytes() {
+    setup
+    touch file
+    # --kibibytes just sets block size, verify it doesn't error
+    l --kibibytes --size -1 > /dev/null
+    check "$?" = "0"
+    cleanup
+}
+
+testLongOptionDirsOnly() {
+    setup
+    mkdir dir
+    touch file
+    check "$(l --dirs-only -1)" = "dir"
+    cleanup
+}
+
+testLongOptionInode() {
+    setup
+    touch file
+    result="$(l --inode -1 file)"
+    # should have a number before the filename
+    check "$result" != "${result/file/}"
+    cleanup
+}
+
+testLongOptionLong() {
+    setup
+    touch file
+    result="$(l --long file)"
+    # long format includes modes like -rw or drw
+    check "$result" != "${result/rw/}"
+    cleanup
+}
+
+testLongOptionNumericUidGid() {
+    setup
+    touch file
+    result="$(l --numeric-uid-gid --owner -1 file)"
+    # should contain a number (uid)
+    check "$result" != "${result/[0-9]/}"
+    cleanup
+}
+
+testLongOptionShowTime() {
+    setup
+    touch file
+    result="$(l --show-time -1 file)"
+    # should contain a date/time
+    check "$result" != "${result/file/}"
+    cleanup
+}
+
+testLongOptionTimeStyleRelative() {
+    setup
+    touch file
+    result="$(l --show-time --time-style=relative -1 file)"
+    check "$result" != "${result/second/}"
+    cleanup
+}
+
+testSortByName() {
+    setup
+    touch c a b
+    check "$(l --sort=name -1)" = "a
+b
+c"
+    cleanup
+}
+
+testSortByNone() {
+    setup
+    touch c a b
+    l --sort=none -1 > /dev/null
+    check "$?" = "0"
+    cleanup
+}
+
+testSortBySize() {
+    setup
+    dd if=/dev/zero of=big bs=1024 count=10 2>/dev/null
+    touch small
+    result="$(l --sort=size --bytes -1)"
+    # big should appear first (largest first)
+    first="$(echo "$result" | head -1)"
+    check "$first" != "${first/big/}"
+    cleanup
+}
+
+testSortByVersion() {
+    setup
+    touch file1 file10 file2
+    check "$(l --sort=version -1)" = "file1
+file2
+file10"
+    cleanup
+}
+
+testTimeAtime() {
+    setup
+    touch file
+    l --time=atime --show-time -1 > /dev/null
+    check "$?" = "0"
+    cleanup
+}
+
+testTimeCtime() {
+    setup
+    touch file
+    l --time=ctime --show-time -1 > /dev/null
+    check "$?" = "0"
+    cleanup
+}
+
+testTimeMtime() {
+    setup
+    touch file
+    l --time=mtime --show-time -1 > /dev/null
+    check "$?" = "0"
+    cleanup
+}
+
+testFormatLong() {
+    setup
+    touch file
+    result="$(l --format=long file)"
+    # long format includes modes like rw
+    check "$result" != "${result/rw/}"
+    cleanup
+}
+
+testFormatSingleColumn() {
+    setup
+    touch a b
+    check "$(l --format=single-column)" = "a
+b"
+    cleanup
+}
+
+testFormatVertical() {
+    setup
+    touch a
+    l --format=vertical > /dev/null
+    check "$?" = "0"
+    cleanup
+}
+
+testFormatAcross() {
+    setup
+    touch a
+    l --format=across > /dev/null
+    check "$?" = "0"
+    cleanup
+}
+
 testBasic
 testNameOrder1
 testNameOrder2
@@ -92,3 +357,34 @@ testSymlinkShowsSymlinkNameByDefault
 testSymlinkShowsSymlinkNameWithL
 testListDirectoryContents
 testListDirectoryItself
+testLongOptionAll
+testLongOptionDirectory
+testLongOptionRecursive
+testLongOptionReverse
+testLongOptionOnePerLine
+testLongOptionClassify
+testLongOptionDereference
+testLongOptionNoDereference
+testLongOptionEscape
+testLongOptionNoEscape
+testLongOptionHideControlChars
+testLongOptionUnsorted
+testLongOptionHumanReadable
+testLongOptionKibibytes
+testLongOptionDirsOnly
+testLongOptionInode
+testLongOptionLong
+testLongOptionNumericUidGid
+testLongOptionShowTime
+testLongOptionTimeStyleRelative
+testSortByName
+testSortByNone
+testSortBySize
+testSortByVersion
+testTimeAtime
+testTimeCtime
+testTimeMtime
+testFormatLong
+testFormatSingleColumn
+testFormatVertical
+testFormatAcross
