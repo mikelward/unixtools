@@ -92,14 +92,12 @@ asterisks, e.g.
  symlinks, green for executables, red for files that cannot be stat'd.
 
 #### Sorting
- * sort by name (default)
  * sort by name (`--sort=name`, default)
  * sort by size (`-S`, `--sort=size`, largest first)
- * sort by mtime (modification time, `-t`, `--sort=time`, newest first)
+ * sort by mtime (modification time, `-t`, `--sort=time`, `--mtime`, `--time=mtime`, newest first, this is the default time sort)
  * sort by ctime (change time, `-tc`, `--ctime`, `--time=ctime`) _just `-c` is sufficient if neither `-T` nor `-l` were given_
  * sort by atime (access time, `-tu`, `--atime`, `--time=atime`) _just `-u` is sufficient if neither `-T` nor `-l` were given_
  * sort by btime (birth/creation time, `--btime`, `--time=btime`) _uses Linux statx() syscall_
- * sort by mtime (modification time, `--mtime`, `--time=mtime`) _this is the default_
  * sort by version (numeric order, `-v`, `--sort=version`)
  * reverse sort (`-r`, `--reverse`)
  * don't sort (`-f`, `-U`, `--unsorted`, `--sort=none`)
@@ -155,8 +153,8 @@ etc.) are non-fatal - the program continues processing remaining files.
 Invalid options cause the program to print usage and exit with code 2.
 
 ### Coming soon
- * show file ACLs (`-A`?)
  * file sizes in megabytes and gigabytes (`-M`, `-G`?)
+ * colors for files with setuid/setgid/sticky bits or capabilities
 
 ### Coming later
  * other stuff
@@ -165,13 +163,16 @@ Invalid options cause the program to print usage and exit with code 2.
  * remove `-f` option (same as `-U`)
  * make `-e` the default instead of `-q`?
  * `-I <pattern>` to ignore files matching `<pattern>`
- * file ACLs and extended attributes
  * customizable colors
- * colors and flags for files with setuid/setgid/sticky bits or capabilities
- * sub-second times for sorting and display
  * SELinux (and other security systems) support (e.g. `.` in modes, `-Z` flag)
  * escape all fields, e.g. usernames, etc.
  * tabular output format, e.g. `<field>[\t<field>]*\n` (no need for null separation given -e flag)
+
+### Undecided
+ * show file ACL details, extended attributes (`-A`? display full ACL entries inline)
+
+### Not planned
+ * sub-second times for sorting and display
 
 ### Incompatibilities
  * `-A` - not implemented
