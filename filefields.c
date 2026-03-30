@@ -144,11 +144,9 @@ Field *getdatetimefield(File *file, Options *options, char *buf, int bufsize)
         case TIME_CTIME:
             timestamp = getctime(file);
             break;
-        /*
         case TIME_BTIME:
             timestamp = getbtime(file);
             break;
-        */
         default:
             errorf("Unknown time attribute\n");
             /* fall through */

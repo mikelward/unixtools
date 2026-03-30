@@ -317,6 +317,41 @@ testTimeMtime() {
     cleanup
 }
 
+testTimeBtime() {
+    setup
+    touch file
+    l --time=btime --show-time -1 > /dev/null
+    check "$?" = "0"
+    cleanup
+}
+
+testTimeBirth() {
+    setup
+    touch file
+    l --time=birth --show-time -1 > /dev/null
+    check "$?" = "0"
+    cleanup
+}
+
+testTimeCreation() {
+    setup
+    touch file
+    l --time=creation --show-time -1 > /dev/null
+    check "$?" = "0"
+    cleanup
+}
+
+testSortByBtime() {
+    setup
+    touch old
+    sleep 1
+    touch new
+    result="$(l --sort=time --time=btime -1)"
+    first="$(echo "$result" | head -1)"
+    check "$first" = "new"
+    cleanup
+}
+
 testFormatLong() {
     setup
     touch file
@@ -384,6 +419,10 @@ testSortByVersion
 testTimeAtime
 testTimeCtime
 testTimeMtime
+testTimeBtime
+testTimeBirth
+testTimeCreation
+testSortByBtime
 testFormatLong
 testFormatSingleColumn
 testFormatVertical
