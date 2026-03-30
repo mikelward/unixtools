@@ -109,7 +109,63 @@ void setdefaults(Options *options)
 }
 
 static struct option longopts[] = {
-    {"time-style", required_argument, NULL, 0},
+    /* file selection */
+    {"all",                       no_argument,       NULL, 'a'},
+    {"directory",                 no_argument,       NULL, 'd'},
+    {"dirs-only",                 no_argument,       NULL, 'D'},
+    {"recursive",                 no_argument,       NULL, 'R'},
+
+    /* metadata fields */
+    {"bytes",                     no_argument,       NULL, 'B'},
+    {"group",                     no_argument,       NULL, 'g'},
+    {"inode",                     no_argument,       NULL, 'i'},
+    {"link-count",                no_argument,       NULL, 'N'},
+    {"modes",                     no_argument,       NULL, 'M'},
+    {"numeric-uid-gid",           no_argument,       NULL, 'n'},
+    {"owner",                     no_argument,       NULL, 'o'},
+    {"perms",                     no_argument,       NULL, 'p'},
+    {"size",                      no_argument,       NULL, 's'},
+    {"show-time",                 no_argument,       NULL, 'T'},
+
+    /* long format */
+    {"long",                      no_argument,       NULL, 'l'},
+
+    /* display format */
+    {"columns",                   no_argument,       NULL, 'C'},
+    {"one-per-line",              no_argument,       NULL, '1'},
+    {"rows",                      no_argument,       NULL, 'x'},
+
+    /* sorting */
+    {"reverse",                   no_argument,       NULL, 'r'},
+    {"unsorted",                  no_argument,       NULL, 'U'},
+
+    /* escaping */
+    {"escape",                    no_argument,       NULL, 'e'},
+    {"hide-control-chars",        no_argument,       NULL, 'q'},
+    {"no-escape",                 no_argument,       NULL, 'E'},
+
+    /* file type indicators */
+    {"classify",                  no_argument,       NULL, 'F'},
+    {"old-flags",                 no_argument,       NULL, 'O'},
+
+    /* symlink handling */
+    {"dereference",               no_argument,       NULL, 'L'},
+    {"dereference-command-line",  no_argument,       NULL, 'H'},
+    {"no-dereference",            no_argument,       NULL, 'P'},
+    {"show-links",                no_argument,       NULL, 'V'},
+
+    /* size/time formatting */
+    {"color",                     no_argument,       NULL, 'G'},
+    {"human-readable",            no_argument,       NULL, 'h'},
+    {"iso",                       no_argument,       NULL, 'I'},
+    {"kibibytes",                 no_argument,       NULL, 'k'},
+
+    /* GNU-compatible long options with arguments */
+    {"format",                    required_argument, NULL, 0  },
+    {"sort",                      required_argument, NULL, 0  },
+    {"time",                      required_argument, NULL, 0  },
+    {"time-style",                required_argument, NULL, 0  },
+
     {NULL, 0, NULL, 0},
 };
 
@@ -130,6 +186,54 @@ int setoptions(Options *options, int argc, char **argv)
                     options->timestyle = TIME_RELATIVE;
                 } else {
                     error("Unsupported time-style '%s'\n", optarg);
+                    exit(2);
+                }
+            } else if (strcmp(longopts[longindex].name, "sort") == 0) {
+                if (strcmp(optarg, "none") == 0) {
+                    options->sorttype = SORT_UNSORTED;
+                } else if (strcmp(optarg, "name") == 0) {
+                    options->sorttype = SORT_BY_NAME;
+                } else if (strcmp(optarg, "size") == 0) {
+                    options->sorttype = SORT_BY_SIZE;
+                } else if (strcmp(optarg, "time") == 0) {
+                    options->sorttype = SORT_BY_TIME;
+                } else if (strcmp(optarg, "version") == 0) {
+                    options->sorttype = SORT_BY_VERSION;
+                } else {
+                    error("Unsupported sort type '%s'\n", optarg);
+                    exit(2);
+                }
+            } else if (strcmp(longopts[longindex].name, "time") == 0) {
+                if (strcmp(optarg, "mtime") == 0 || strcmp(optarg, "modification") == 0) {
+                    options->timetype = TIME_MTIME;
+                } else if (strcmp(optarg, "atime") == 0 || strcmp(optarg, "access") == 0 || strcmp(optarg, "use") == 0) {
+                    options->timetype = TIME_ATIME;
+                } else if (strcmp(optarg, "ctime") == 0 || strcmp(optarg, "status") == 0) {
+                    options->timetype = TIME_CTIME;
+                } else {
+                    error("Unsupported time type '%s'\n", optarg);
+                    exit(2);
+                }
+            } else if (strcmp(longopts[longindex].name, "format") == 0) {
+                if (strcmp(optarg, "long") == 0 || strcmp(optarg, "verbose") == 0) {
+                    options->longformat = true;
+                    options->modes = true;
+                    options->linkcount = true;
+                    options->owner = true;
+                    options->group = true;
+                    options->bytes = true;
+                    options->datetime = true;
+                    options->showlink = true;
+                    options->displaymode = DISPLAY_ONE_PER_LINE;
+                    options->dirtotals = true;
+                } else if (strcmp(optarg, "single-column") == 0) {
+                    options->displaymode = DISPLAY_ONE_PER_LINE;
+                } else if (strcmp(optarg, "vertical") == 0 || strcmp(optarg, "columns") == 0) {
+                    options->displaymode = DISPLAY_IN_COLUMNS;
+                } else if (strcmp(optarg, "across") == 0 || strcmp(optarg, "horizontal") == 0) {
+                    options->displaymode = DISPLAY_IN_ROWS;
+                } else {
+                    error("Unsupported format '%s'\n", optarg);
                     exit(2);
                 }
             }
@@ -410,5 +514,68 @@ error:
  */
 void usage(void)
 {
-    fprintf(stderr, "Usage: %s [-%s] [<file>]...\n", myname, OPTSTRING);
+    fprintf(stderr,
+        "Usage: %s [-%s] [OPTION]... [<file>]...\n"
+        "\n"
+        "File selection:\n"
+        "  -a, --all                  show hidden files\n"
+        "  -D, --dirs-only            show only directories\n"
+        "  -d, --directory            list directory names, not contents\n"
+        "  -R, --recursive            list subdirectories recursively\n"
+        "\n"
+        "Metadata fields:\n"
+        "  -B, -b, --bytes            show file size in bytes\n"
+        "  -g, --group                show group\n"
+        "  -i, --inode                show inode number\n"
+        "  -M, -m, --modes            show file modes\n"
+        "  -N, --link-count           show hard link count\n"
+        "  -n, --numeric-uid-gid      show numeric uid/gid\n"
+        "  -o, --owner                show owner\n"
+        "  -p, --perms                show current user's permissions\n"
+        "  -s, --size                 show size in blocks\n"
+        "  -T, --show-time            show date/time\n"
+        "\n"
+        "Long format:\n"
+        "  -l, --long                 long format (equivalent to -MNogBT1)\n"
+        "\n"
+        "Display format:\n"
+        "  -C, --columns              multi-column output (sorted down)\n"
+        "  -x, --rows                 multi-column output (sorted across)\n"
+        "  -1, --one-per-line         one entry per line\n"
+        "\n"
+        "Sorting:\n"
+        "  -r, --reverse              reverse sort order\n"
+        "  -S                         sort by size\n"
+        "  -t                         sort by time\n"
+        "  -v                         sort by version\n"
+        "  -U, -f, --unsorted         do not sort\n"
+        "\n"
+        "Escaping:\n"
+        "  -e, --escape               C-style escape sequences\n"
+        "  -E, --no-escape            no escaping\n"
+        "  -q, --hide-control-chars   replace control chars with '?'\n"
+        "\n"
+        "File type indicators:\n"
+        "  -F, --classify             append file type indicators\n"
+        "  -O, --old-flags            BSD-style file type indicators\n"
+        "\n"
+        "Symlink handling:\n"
+        "  -H, --dereference-command-line  follow symlinks to dirs in args\n"
+        "  -L, --dereference          follow all symlinks\n"
+        "  -P, --no-dereference       never follow symlinks\n"
+        "  -V, --show-links           show full symlink chain\n"
+        "\n"
+        "Formatting:\n"
+        "  -G, -K, --color            colorize output\n"
+        "  -h, --human-readable       human-readable sizes\n"
+        "  -I, --iso                  ISO 8601 date format\n"
+        "  -k, --kibibytes            use 1024-byte blocks\n"
+        "  -c                         use ctime\n"
+        "  -u                         use atime\n"
+        "      --format=FORMAT        output format: long, single-column,\n"
+        "                               vertical, across\n"
+        "      --sort=WORD            sort by: name, size, time, version, none\n"
+        "      --time=WORD            time type: mtime, atime, ctime\n"
+        "      --time-style=STYLE     time format: traditional, relative\n",
+        myname, OPTSTRING);
 }

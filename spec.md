@@ -9,7 +9,7 @@ This document specifies the behavior of the `l` file listing utility (a custom `
 ## Command-Line Interface
 
 ```
-Usage: l [-1aBbCcDdEeFfGgHhIiKkLlMmNnOoPpqRrSsTtUuVvx] [--time-style=STYLE] [<file>]...
+Usage: l [-1aBbCcDdEeFfGgHhIiKkLlMmNnOoPpqRrSsTtUuVvx] [OPTION]... [<file>]...
 ```
 
 If no file arguments are given, list the current directory (`.`).
@@ -18,61 +18,61 @@ If no file arguments are given, list the current directory (`.`).
 
 ### File Selection
 
-| Flag | Description |
-|------|-------------|
-| `-a` | Show all files, including hidden files (names starting with `.`) |
-| `-D` | Show only directories (filter out non-directories) |
-| `-d` | List directory names themselves, not their contents |
-| `-R` | Recursively list subdirectories |
+| Flag | Long option | Description |
+|------|-------------|-------------|
+| `-a` | `--all` | Show all files, including hidden files (names starting with `.`) |
+| `-D` | `--dirs-only` | Show only directories (filter out non-directories) |
+| `-d` | `--directory` | List directory names themselves, not their contents |
+| `-R` | `--recursive` | Recursively list subdirectories |
 
 ### Metadata Fields
 
 Fields are displayed in the following order when enabled (left to right):
 
-1. **Size in blocks** (`-s`) - right-aligned; also enables directory totals line
-2. **Inode** (`-i`) - right-aligned
-3. **Modes** (`-M` or `-m`) - left-aligned, 11-character string (see [Mode String Format](#mode-string-format))
-4. **Link count** (`-N`) - right-aligned
-5. **Owner** (`-o`) - left-aligned (name by default, numeric with `-n`)
-6. **Group** (`-g`) - left-aligned (name by default, numeric with `-n`)
-7. **Permissions** (`-p`) - right-aligned, 3-character string showing current user's effective permissions via `access()`: `r`/`-`/`?`, `w`/`-`/`?`, `x`/`-`/`?`
-8. **Size in bytes** (`-B` or `-b`) - right-aligned
-9. **Date/time** (`-T`) - right-aligned (see [Date/Time Format](#datetime-format))
+1. **Size in blocks** (`-s`, `--size`) - right-aligned; also enables directory totals line
+2. **Inode** (`-i`, `--inode`) - right-aligned
+3. **Modes** (`-M` or `-m`, `--modes`) - left-aligned, 11-character string (see [Mode String Format](#mode-string-format))
+4. **Link count** (`-N`, `--link-count`) - right-aligned
+5. **Owner** (`-o`, `--owner`) - left-aligned (name by default, numeric with `-n`)
+6. **Group** (`-g`, `--group`) - left-aligned (name by default, numeric with `-n`)
+7. **Permissions** (`-p`, `--perms`) - right-aligned, 3-character string showing current user's effective permissions via `access()`: `r`/`-`/`?`, `w`/`-`/`?`, `x`/`-`/`?`
+8. **Size in bytes** (`-B` or `-b`, `--bytes`) - right-aligned
+9. **Date/time** (`-T`, `--show-time`) - right-aligned (see [Date/Time Format](#datetime-format))
 10. **Name** - left-aligned in columns/rows mode, unpadded in one-per-line mode
 
 ### Long Format
 
-`-l` is equivalent to `-MNogBT1` and also enables:
+`-l` (`--long`) is equivalent to `-MNogBT1` and also enables:
 - `showlink`: display symlink target (one level: `link -> target`)
 - `dirtotals`: print `total <blocks>` line before each directory listing
 
 ### Numeric IDs
 
-`-n` shows numeric uid/gid instead of looking up user/group names.
+`-n` (`--numeric-uid-gid`) shows numeric uid/gid instead of looking up user/group names.
 
 ### File Type Indicators
 
-| Flag | Style | Before name | After name |
-|------|-------|-------------|------------|
-| `-F` | POSIX | (none) | `/` dir, `@` link, `\|` FIFO, `=` socket, `*` exec, ` ` regular |
-| `-O` | BSD   | `[` dir, `@` link, `*` exec, `?` unstat | `]` dir, `@` link, `*` exec, `?` unstat, ` ` regular |
+| Flag | Long option | Style | Before name | After name |
+|------|-------------|-------|-------------|------------|
+| `-F` | `--classify` | POSIX | (none) | `/` dir, `@` link, `\|` FIFO, `=` socket, `*` exec, ` ` regular |
+| `-O` | `--old-flags` | BSD   | `[` dir, `@` link, `*` exec, `?` unstat | `]` dir, `@` link, `*` exec, `?` unstat, ` ` regular |
 
 For `-F`: files that cannot be stat'd get `?` after the name.
 
 ### Symlink Display
 
-| Flag | Description |
-|------|-------------|
-| `-V` | Show full symlink chain: `link1 -> link2 -> file` (with colors/flags on each component). Detects loops via inode tracking. |
-| (with `-l`) | Show immediate target only: `link -> target` |
+| Flag | Long option | Description |
+|------|-------------|-------------|
+| `-V` | `--show-links` | Show full symlink chain: `link1 -> link2 -> file` (with colors/flags on each component). Detects loops via inode tracking. |
+| (with `-l`) | | Show immediate target only: `link -> target` |
 
 ### Symlink Following
 
-| Flag | Description |
-|------|-------------|
-| `-L` | Follow symlinks: show information about target instead of link itself. Implies `-H`. Disables `showlink`. |
-| `-P` | Don't follow symlinks: show information about the link. Implies no `-H`. |
-| `-H` | Follow symlinks to directories specified as command-line arguments. |
+| Flag | Long option | Description |
+|------|-------------|-------------|
+| `-L` | `--dereference` | Follow symlinks: show information about target instead of link itself. Implies `-H`. Disables `showlink`. |
+| `-P` | `--no-dereference` | Don't follow symlinks: show information about the link. Implies no `-H`. |
+| `-H` | `--dereference-command-line` | Follow symlinks to directories specified as command-line arguments. |
 
 **`-H` default logic** (when not explicitly given):
 1. If `-L` was given: `-H` is ON
@@ -84,29 +84,31 @@ When `-L` is active, if the final target of a symlink cannot be determined, fiel
 
 ### Display Format
 
-| Flag | Description |
-|------|-------------|
-| `-C` | Display in columns (fill down first, then across). Default when stdout is a terminal. |
-| `-x` | Display in rows (fill across first, then down) |
-| `-1` | One entry per line. Default when stdout is not a terminal. |
+| Flag | Long option | Description |
+|------|-------------|-------------|
+| `-C` | `--columns`, `--format=vertical` | Display in columns (fill down first, then across). Default when stdout is a terminal. |
+| `-x` | `--rows`, `--format=across` | Display in rows (fill across first, then down) |
+| `-1` | `--one-per-line`, `--format=single-column` | One entry per line. Default when stdout is not a terminal. |
+
+`--format=long` is equivalent to `-l` (`--long`).
 
 ### Sorting
 
-| Flag | Description |
-|------|-------------|
-| (default) | Sort alphabetically by name using `strcoll()` (locale-aware) |
-| `-S` | Sort by file size (`st_size`), largest first |
-| `-t` | Sort by modification time, newest first |
-| `-v` | Sort by version using `strverscmp()` (numeric-aware) |
-| `-r` | Reverse the sort order |
-| `-f` or `-U` | Don't sort (directory order). Also disables `-r`. |
+| Flag | Long option | Description |
+|------|-------------|-------------|
+| (default) | `--sort=name` | Sort alphabetically by name using `strcoll()` (locale-aware) |
+| `-S` | `--sort=size` | Sort by file size (`st_size`), largest first |
+| `-t` | `--sort=time` | Sort by modification time, newest first |
+| `-v` | `--sort=version` | Sort by version using `strverscmp()` (numeric-aware) |
+| `-r` | `--reverse` | Reverse the sort order |
+| `-f` or `-U` | `--unsorted`, `--sort=none` | Don't sort (directory order). Also disables `-r`. |
 
 #### Time type modifiers
 
-| Flag | Effect |
-|------|--------|
-| `-c` | Use ctime (status change time) for sorting and display |
-| `-u` | Use atime (access time) for sorting and display |
+| Flag | Long option | Effect |
+|------|-------------|--------|
+| `-c` | `--time=ctime` | Use ctime (status change time) for sorting and display |
+| `-u` | `--time=atime` | Use atime (access time) for sorting and display |
 
 **Compatibility behavior**: If `-c` or `-u` is given without `-T` or `-l`, it implies `-t` (sort by time). This matches traditional `ls` behavior where `-c` alone means "sort by ctime".
 
@@ -120,20 +122,20 @@ Files that cannot be stat'd sort as if they have the smallest value (they appear
 
 ### Escaping Non-Printable Characters
 
-| Flag | Mode | Description |
-|------|------|-------------|
-| `-q` | ESCAPE_QUESTION | Replace control characters with `?`. Default when stdout is a terminal. |
-| `-e` | ESCAPE_C | C-style escapes: `\n`, `\t`, `\a`, `\b`, `\v`, `\f`, `\r`, `\\`, or `\NNN` for others |
-| `-E` | ESCAPE_NONE | No escaping; output raw bytes. Default when stdout is not a terminal. |
+| Flag | Long option | Mode | Description |
+|------|-------------|------|-------------|
+| `-q` | `--hide-control-chars` | ESCAPE_QUESTION | Replace control characters with `?`. Default when stdout is a terminal. |
+| `-e` | `--escape` | ESCAPE_C | C-style escapes: `\n`, `\t`, `\a`, `\b`, `\v`, `\f`, `\r`, `\\`, or `\NNN` for others |
+| `-E` | `--no-escape` | ESCAPE_NONE | No escaping; output raw bytes. Default when stdout is not a terminal. |
 
 Escaping applies to file names only. The `\\` literal backslash is doubled only in ESCAPE_C mode. Wide character / multibyte handling via `mbrtowc()` + `iswprint()` + `iswcntrl()`.
 
 ### Color
 
-| Flag | Description |
-|------|-------------|
-| `-G` | Enable color (FreeBSD compatibility) |
-| `-K` | Enable color (mnemonic: "kolor") |
+| Flag | Long option | Description |
+|------|-------------|-------------|
+| `-G` | `--color` | Enable color (FreeBSD compatibility) |
+| `-K` | `--color` | Enable color (mnemonic: "kolor") |
 
 **Color assignments** (via terminfo `setaf`):
 - Red: files that cannot be stat'd
@@ -148,10 +150,10 @@ Color escape sequences contribute zero display width (important for column align
 
 ### Size Display
 
-| Flag | Description |
-|------|-------------|
-| `-h` | Human-readable sizes (e.g., `1 KB`, `23 MB`). Uses SI units (1000-based). |
-| `-k` | Block size of 1024 (default is also 1024) |
+| Flag | Long option | Description |
+|------|-------------|-------------|
+| `-h` | `--human-readable` | Human-readable sizes (e.g., `1 KB`, `23 MB`). Uses SI units (1000-based). |
+| `-k` | `--kibibytes` | Block size of 1024 (default is also 1024) |
 
 The `BLOCKSIZE` environment variable sets the default block size if present.
 
@@ -159,11 +161,11 @@ Human-readable format: `%.0f UNIT` where units are B, KB, MB, GB, TB, PB, EB, ZB
 
 ### Date/Time Format
 
-| Flag | Description |
-|------|-------------|
-| `-I` | ISO 8601 format: `YYYY-MM-DD HH:MM:SS` |
-| `--time-style=traditional` | Traditional format (default) |
-| `--time-style=relative` | Relative time (e.g., `3 days`, `2 hours`) |
+| Flag | Long option | Description |
+|------|-------------|-------------|
+| `-I` | `--iso` | ISO 8601 format: `YYYY-MM-DD HH:MM:SS` |
+| | `--time-style=traditional` | Traditional format (default) |
+| | `--time-style=relative` | Relative time (e.g., `3 days`, `2 hours`) |
 
 **Traditional format** (the default) uses three tiers:
 1. Less than 6 days old: `%a    %H:%M` (e.g., `Mon    14:30`)

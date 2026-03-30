@@ -42,34 +42,34 @@ asterisks, e.g.
 ### Supported options
 
 #### File selection
- * directories only (`-D`)
- * show all (including hidden files) (`-a`)
- * list directory names instead of their contents (`-d`)
- * list subdirectories recursively (`-R`)
+ * directories only (`-D`, `--dirs-only`)
+ * show all (including hidden files) (`-a`, `--all`)
+ * list directory names instead of their contents (`-d`, `--directory`)
+ * list subdirectories recursively (`-R`, `--recursive`)
 
 #### File properties
- * show inode number field (`-i`)
- * show size in blocks (`-s`)
- * show file modes, e.g. `-rwxr-xr-x.` (`-M` or `-m`)
- * show link count (`-N`)
- * show file owner (`-o`)
- * show file group (`-g`)
- * show size in bytes (`-B` or `-b`)
- * show file modification time (`-T`)
+ * show inode number field (`-i`, `--inode`)
+ * show size in blocks (`-s`, `--size`)
+ * show file modes, e.g. `-rwxr-xr-x.` (`-M` or `-m`, `--modes`)
+ * show link count (`-N`, `--link-count`)
+ * show file owner (`-o`, `--owner`)
+ * show file group (`-g`, `--group`)
+ * show size in bytes (`-B` or `-b`, `--bytes`)
+ * show file modification time (`-T`, `--show-time`)
  * show file change time (`-Tc`)
  * show file access time (`-Tu`)
- * append a flag showing the file's type (`-F`) _makes `-H` default to off_
- * append a flag showing the file's type - old BSD style (`-O`)
- * long format (`-l`, same as `-MNogBT1`) _makes `-H` default to off_
- * show numeric owner and group instead of looking up their names (`-n`)
- * show time in ISO 8601 format (`-I`), e.g. `2012-05-30 20:30:40`
- * show file symlink chain (`-V`), e.g. `link1 -> link2 -> file`
- * human-readable file sizes (`-h`), e.g. `1 KB`, `23 MB`
+ * append a flag showing the file's type (`-F`, `--classify`) _makes `-H` default to off_
+ * append a flag showing the file's type - old BSD style (`-O`, `--old-flags`)
+ * long format (`-l`, `--long`, same as `-MNogBT1`) _makes `-H` default to off_
+ * show numeric owner and group instead of looking up their names (`-n`, `--numeric-uid-gid`)
+ * show time in ISO 8601 format (`-I`, `--iso`), e.g. `2012-05-30 20:30:40`
+ * show file symlink chain (`-V`, `--show-links`), e.g. `link1 -> link2 -> file`
+ * human-readable file sizes (`-h`, `--human-readable`), e.g. `1 KB`, `23 MB`
 
 #### Symlinks
- * follow symlinks (show information about symlink target, `-L`)
- * don't follow symlinks (show information about symlink itself, `-P`)
- * follow symlinks to directories specified as command line arguments (`-H`, defaults to on unless `-P`, _`-F`, or `-l`_ were given)
+ * follow symlinks (show information about symlink target, `-L`, `--dereference`)
+ * don't follow symlinks (show information about symlink itself, `-P`, `--no-dereference`)
+ * follow symlinks to directories specified as command line arguments (`-H`, `--dereference-command-line`, defaults to on unless `-P`, _`-F`, or `-l`_ were given)
 
  If `-H` is not specified:
 
@@ -78,41 +78,41 @@ asterisks, e.g.
   * otherwise, `-H` is enabled
 
 #### Display format
- * columns (`-C`)
- * rows (`-x`)
- * one-per-line (`-1`)
+ * columns (`-C`, `--columns`)
+ * rows (`-x`, `--rows`)
+ * one-per-line (`-1`, `--one-per-line`)
 
  _`-C` is the default if output is a terminal, otherwise `-1`._
 
 #### Colors
- * `-G` enables colored output (FreeBSD compatibility)
- * `-K` enables colored output (mnemonic: "kolor")
+ * `-G`, `-K`, `--color` enables colored output
 
  Colors are obtained via terminfo. Assignments: blue for directories, cyan for
  symlinks, green for executables, red for files that cannot be stat'd.
 
 #### Sorting
  * sort by name (default)
- * sort by size (`-S`, largest first)
- * sort by mtime (modification time, `-t`, newest first)
- * sort by ctime (change time, `-tc`) _just `-c` is sufficient if neither `-T` nor `-l` were given_
- * sort by atime (access time, `-tu`) _just `-u` is sufficient if neither `-T` nor `-l` were given_
- * sort by version (numeric order, `-v`)
- * reverse sort (`-r`)
- * don't sort (`-f` or `-U`)
+ * sort by name (`--sort=name`, default)
+ * sort by size (`-S`, `--sort=size`, largest first)
+ * sort by mtime (modification time, `-t`, `--sort=time`, newest first)
+ * sort by ctime (change time, `-tc`, `--time=ctime`) _just `-c` is sufficient if neither `-T` nor `-l` were given_
+ * sort by atime (access time, `-tu`, `--time=atime`) _just `-u` is sufficient if neither `-T` nor `-l` were given_
+ * sort by version (numeric order, `-v`, `--sort=version`)
+ * reverse sort (`-r`, `--reverse`)
+ * don't sort (`-f`, `-U`, `--unsorted`, `--sort=none`)
 
  When sorting by time or size, ties are broken by name (alphabetical).
  Files that cannot be stat'd sort last.
 
 #### Escaping
- * print control characters as question marks (`-q`)
- * print control characters using C-style escapes (`-e`)
- * disable escaping (`-E`)
+ * print control characters as question marks (`-q`, `--hide-control-chars`)
+ * print control characters using C-style escapes (`-e`, `--escape`)
+ * disable escaping (`-E`, `--no-escape`)
 
 _`-q` is the default if output is a terminal, otherwise `-E`._
 
 #### Time display
- * ISO 8601 format (`-I`): `YYYY-MM-DD HH:MM:SS`
+ * ISO 8601 format (`-I`, `--iso`): `YYYY-MM-DD HH:MM:SS`
  * traditional format (default): day+time for recent files, month+year for older files
  * relative format (`--time-style=relative`): e.g. `3 days`, `2 hours`
 
