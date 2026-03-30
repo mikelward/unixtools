@@ -22,8 +22,8 @@ conflict with background processes. To avoid this:
 
 ## Documentation
 
-Always keep `spec.md` and `README.md` up to date when making changes to `l`:
-- `spec.md` is the authoritative specification for `l`. Update it whenever behavior changes, options are added/removed, or edge cases are clarified.
+Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
+- `SPEC.md` is the authoritative specification for `l`. Update it whenever behavior changes, options are added/removed, or edge cases are clarified.
 - `README.md` documents user-facing functionality. Update it whenever features, options, or behavior visible to users change. Keep README entries high-level — describe what the user sees, not internal error handling or implementation details.
 
 ## Testing
