@@ -602,7 +602,6 @@ time_t getctime(File *file)
     return pstat->st_ctime;
 }
 
-/* TODO return the number as a string or "?" if the group could not be determined */
 gid_t getgroupnum(File *file)
 {
     struct stat *pstat = getstat(file);
@@ -610,7 +609,6 @@ gid_t getgroupnum(File *file)
     return pstat->st_gid;
 }
 
-/* TODO return a string, "?" if stat fails */
 nlink_t getlinkcount(File *file)
 {
     struct stat *pstat = getstat(file);
@@ -725,7 +723,6 @@ char *getmodes(File *file)
     return modes;
 }
 
-/* TODO return a string, "?" on error */
 ino_t getinode(File *file)
 {
     struct stat *pstat = getstat(file);
@@ -733,7 +730,6 @@ ino_t getinode(File *file)
     return pstat->st_ino;
 }
 
-/* TODO return a string, "?" on error */
 time_t getmtime(File *file)
 {
     struct stat *pstat = getstat(file);
@@ -781,7 +777,6 @@ char *getperms(File *file)
     return perms;
 }
 
-/* TODO return a string instead of uid_t, "?" on failure */
 uid_t getownernum(File *file)
 {
     struct stat *stat = getstat(file);
@@ -789,7 +784,6 @@ uid_t getownernum(File *file)
     return stat->st_uid;
 }
 
-/* TODO return a string instead of long, "?" on failure */
 long getsize(File *file)
 {
     struct stat *pstat = getstat(file);
