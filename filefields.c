@@ -201,6 +201,8 @@ Field *getdatetimefield(File *file, Options *options)
         }
         if (options->timeformat != NULL) {
             s = xstrftime(options->timeformat, timestruct);
+        } else if (options->timestyle == TIME_ISO) {
+            s = xstrftime("%Y-%m-%d %H:%M:%S", timestruct);
         } else if (options->timestyle == TIME_RELATIVE) {
             assert(options->now > 0);
             time_t seconds_ago = options->now - timestamp;

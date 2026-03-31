@@ -17,8 +17,7 @@ enum display { DISPLAY_ONE_PER_LINE, DISPLAY_IN_COLUMNS, DISPLAY_IN_ROWS };
 enum flags { FLAGS_NONE, FLAGS_NORMAL, FLAGS_OLD };
 enum sizestyle { SIZE_DEFAULT, SIZE_HUMAN };
 enum timetype { TIME_MTIME, TIME_CTIME, TIME_ATIME, TIME_BTIME };
-/* TODO: add support for ISO 8601 format */
-enum timestyle { TIME_TRADITIONAL, TIME_RELATIVE };
+enum timestyle { TIME_TRADITIONAL, TIME_RELATIVE, TIME_ISO };
 enum sorttype { SORT_BY_NAME, SORT_BY_TIME, SORT_BY_SIZE, SORT_UNSORTED, SORT_BY_VERSION };
 enum tri { DEFAULT = -1, OFF = 0, ON = 1 };
 

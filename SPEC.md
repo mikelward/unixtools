@@ -180,9 +180,10 @@ For block and character device files, the size in blocks (`-s`) and size in byte
 
 | Flag | Long option | Description |
 |------|-------------|-------------|
-| `-I` | `--iso` | ISO 8601 format: `YYYY-MM-DD HH:MM:SS` |
+| `-I` | `--iso` | ISO 8601 format: `YYYY-MM-DD HH:MM:SS` (equivalent to `--time-style=iso`) |
 | | `--time-style=traditional` | Traditional format (default) |
 | | `--time-style=relative` | Relative time (e.g., `3 days`, `2 hours`) |
+| | `--time-style=iso` | ISO 8601 format: `YYYY-MM-DD HH:MM:SS` |
 
 **Traditional format** (the default) uses three tiers:
 1. Less than 6 days old: `%a    %H:%M` (e.g., `Mon    14:30`)
