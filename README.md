@@ -114,7 +114,7 @@ asterisks, e.g.
 _`-q` is the default if output is a terminal, otherwise `-E`._
 
 #### Time display
- * ISO 8601 format (`-I`, `--iso`): `YYYY-MM-DD HH:MM:SS`
+ * ISO 8601 format (`-I`, `--iso`, `--time-style=iso`): `YYYY-MM-DD HH:MM:SS`
  * traditional format (default): day+time for recent files, month+year for older files
  * relative format (`--time-style=relative`): e.g. `3 days`, `2 hours`
 
