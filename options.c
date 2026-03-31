@@ -312,6 +312,7 @@ int setoptions(Options *options, int argc, char **argv)
             options->sizestyle = SIZE_HUMAN;
             break;
         case 'I':
+            options->datetime = true;
             options->timeformat = "%Y-%m-%d %H:%M:%S";
             break;
         case 'i':
