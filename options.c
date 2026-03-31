@@ -198,6 +198,8 @@ int setoptions(Options *options, int argc, char **argv)
                     options->timestyle = TIME_TRADITIONAL;
                 } else if (strcmp(optarg, "relative") == 0) {
                     options->timestyle = TIME_RELATIVE;
+                } else if (strcmp(optarg, "iso") == 0) {
+                    options->timestyle = TIME_ISO;
                 } else {
                     error("Unsupported time-style '%s'\n", optarg);
                     exit(2);
@@ -310,7 +312,8 @@ int setoptions(Options *options, int argc, char **argv)
             options->sizestyle = SIZE_HUMAN;
             break;
         case 'I':
-            options->timeformat = "%Y-%m-%d %H:%M:%S";
+            options->timestyle = TIME_ISO;
+            options->datetime = true;
             break;
         case 'i':
             options->inode = true;
@@ -595,6 +598,6 @@ void usage(void)
         "                               vertical, across\n"
         "      --sort=WORD            sort by: name, size, time, version, none\n"
         "      --time=WORD            time type: mtime, atime, ctime, btime\n"
-        "      --time-style=STYLE     time format: traditional, relative\n",
+        "      --time-style=STYLE     time format: traditional, relative, iso\n",
         myname, OPTSTRING);
 }
