@@ -34,9 +34,9 @@
  * Copyright (c) 2005-2020 Rich Felker, et al.
  * Licensed under the MIT license.
  *
- * Minor differences from glibc's strverscmp exist for unusual
- * leading-zero edge cases; common version-string patterns (e.g.
- * file1, file2, file10) are handled identically.
+ * Keep this in sync with musl's version.  Earlier local edits to the
+ * leading-zero handling silently diverged from glibc (e.g. "a02" vs
+ * "a019", "foo0100" vs "foo011" sorted the wrong way round).
  */
 #ifndef __GLIBC__
 static int strverscmp(const char *l0, const char *r0)
@@ -55,16 +55,18 @@ static int strverscmp(const char *l0, const char *r0)
         else if (c!='0') z=0;
     }
 
-    if (l[i]=='0' || r[i]=='0') {
-        /* if the common prefix is in a zero-led digit sequence,
-         * it's a fractional comparison: compare digit by digit */
-        if (z) return (unsigned char)(l[i]-'0') - (unsigned char)(r[i]-'0');
+    if (l[dp]!='0' && r[dp]!='0') {
+        /* if we're not looking at a digit sequence that began
+         * with a zero, the longest digit string is greater */
+        for (j=i; isdigit(l[j]); j++)
+            if (!isdigit(r[j])) return 1;
+        if (isdigit(r[j])) return -1;
+    } else if (z && dp<i) {
+        /* otherwise, if the common prefix of the digit sequence is
+         * all zeros, digits order less than non-digits */
+        return (unsigned char)(l[i]-'0') - (unsigned char)(r[i]-'0');
     }
 
-    /* otherwise compare integral digit runs by magnitude */
-    for (j=i; isdigit(l[j]); j++)
-        if (!isdigit(r[j])) return 1;
-    if (isdigit(r[j])) return -1;
     return l[i] - r[i];
 }
 #endif
