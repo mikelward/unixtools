@@ -371,5 +371,9 @@ These options have **different meanings** from standard `ls`:
 - **`strverscmp()`**: GNU extension used for `--sort=version`. Not available on macOS/BSDs; a bundled implementation is provided as a fallback.
 - **ACLs**: Uses POSIX ACL API (`<sys/acl.h>`, `libacl`) on Linux and FreeBSD. On macOS, uses `ACL_TYPE_EXTENDED`. ACL support is optional and controlled by the `HAVE_ACL` compile-time flag.
 - **Terminal capabilities**: Uses curses/terminfo (`-lcurses` or `-lncurses`). The Makefile auto-detects the appropriate library.
+- **Feature test macros**: Sources define `_XOPEN_SOURCE`/`_POSIX_C_SOURCE`, which on macOS lowers `__DARWIN_C_LEVEL` and on the BSDs clears `__BSD_VISIBLE`, hiding non-POSIX extensions such as `st_birthtime` and `major()`/`minor()`. The Makefile compensates with `-D_DARWIN_C_SOURCE` on macOS and `-D__BSD_VISIBLE=1` on FreeBSD.
+- **Linking libraries**: Libraries belong in `LDLIBS`, not in a target's prerequisite list. As prerequisites, GNU make must resolve `-lfoo` through `.LIBPATTERNS` (`lib%.so lib%.a`), which fails on macOS, where system libraries are `.dylib`/`.tbd` and are not present on disk at all since macOS 11.
 
 When adding new features, prefer POSIX interfaces where possible and use `#ifdef` guards for platform-specific code.
+
+Linux and macOS builds and tests run in CI (`.github/workflows/ci.yml`) on every push.
