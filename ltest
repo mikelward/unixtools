@@ -293,6 +293,18 @@ file10"
     cleanup
 }
 
+# Leading-zero digit runs compare as fractions, so a019 sorts before a02.
+# Regression test for the bundled strverscmp() used on non-glibc systems.
+testSortByVersionLeadingZeros() {
+    setup
+    touch a02 a019 foo0100 foo011
+    check "$(l --sort=version -1)" = "a019
+a02
+foo0100
+foo011"
+    cleanup
+}
+
 testTimeAtime() {
     setup
     touch file
@@ -448,6 +460,7 @@ testSortByName
 testSortByNone
 testSortBySize
 testSortByVersion
+testSortByVersionLeadingZeros
 testTimeAtime
 testTimeCtime
 testTimeMtime
