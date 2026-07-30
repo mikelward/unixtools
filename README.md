@@ -97,7 +97,7 @@ asterisks, e.g.
  * sort by mtime (modification time, `-t`, `--sort=time`, `--mtime`, `--time=mtime`, newest first, this is the default time sort)
  * sort by ctime (change time, `-tc`, `--ctime`, `--time=ctime`) _just `-c` is sufficient if neither `-T` nor `-l` were given_
  * sort by atime (access time, `-tu`, `--atime`, `--time=atime`) _just `-u` is sufficient if neither `-T` nor `-l` were given_
- * sort by btime (birth/creation time, `--btime`, `--time=btime`) _uses Linux statx() syscall_
+ * sort by btime (birth/creation time, `--btime`, `--time=btime`) _uses the Linux statx() syscall, or `st_birthtime` on macOS and the BSDs_
  * sort by version (numeric order, `-v`, `--sort=version`)
  * reverse sort (`-r`, `--reverse`)
  * don't sort (`-f`, `-U`, `--unsorted`, `--sort=none`)

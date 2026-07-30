@@ -11,14 +11,20 @@ else ifeq ($(UNAME),FreeBSD)
 ACL_CFLAGS ?= -DHAVE_ACL
 ACL_LDFLAGS ?=
 CURSES_LDFLAGS ?= -lcurses
+# _XOPEN_SOURCE/_POSIX_C_SOURCE clear __BSD_VISIBLE, which hides st_birthtime.
+PORTABILITY_CFLAGS ?= -D__BSD_VISIBLE=1
 else ifeq ($(UNAME),Darwin)
 ACL_CFLAGS ?= -DHAVE_ACL
 ACL_LDFLAGS ?=
 CURSES_LDFLAGS ?= -lcurses
+# _XOPEN_SOURCE/_POSIX_C_SOURCE lower __DARWIN_C_LEVEL, which hides Darwin
+# extensions we rely on (st_birthtime, major(), minor()).  _DARWIN_C_SOURCE
+# restores them without giving up the POSIX declarations.
+PORTABILITY_CFLAGS ?= -D_DARWIN_C_SOURCE
 else
 CURSES_LDFLAGS ?= -lcurses
 endif
-CFLAGS=$(STD) $(WARNINGS) $(DEBUG) $(ACL_CFLAGS)
+CFLAGS=$(STD) $(WARNINGS) $(DEBUG) $(ACL_CFLAGS) $(PORTABILITY_CFLAGS)
 LDFLAGS=$(WARNINGS) $(DEBUG)
 
 DESTDIR=/usr/local
@@ -44,7 +50,7 @@ doc: $(DOCS)
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 %: %.o
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.html: %.md
 	$(MD2HTML) -o $@ $<
@@ -71,13 +77,20 @@ uninstall: $(PROGS)
 
 all: tags $(TESTS) $(PROGS) $(DOCS)
 
-l: l.o display.o list.o filefields.o file.o field.o buf.o options.o map.o pair.o user.o group.o logging.o $(CURSES_LDFLAGS) $(ACL_LDFLAGS)
+# Libraries go in LDLIBS rather than in the prerequisite list.  As `-lfoo'
+# prerequisites GNU make has to resolve them via .LIBPATTERNS (`lib%.so
+# lib%.a'), which finds nothing on macOS, where the system libraries are
+# .dylib/.tbd and are not on disk at all since macOS 11.
+l: LDLIBS = $(CURSES_LDFLAGS) $(ACL_LDFLAGS)
+l: l.o display.o list.o filefields.o file.o field.o buf.o options.o map.o pair.o user.o group.o logging.o
 
 buftest: buftest.o buf.o logging.o
 
-filetest: filetest.o file.o map.o pair.o list.o logging.o $(ACL_LDFLAGS)
+filetest: LDLIBS = $(ACL_LDFLAGS)
+filetest: filetest.o file.o map.o pair.o list.o logging.o
 
-filefieldstest: filefieldstest.o filefields.o file.o field.o buf.o display.o options.o map.o pair.o list.o user.o group.o logging.o $(CURSES_LDFLAGS) $(ACL_LDFLAGS)
+filefieldstest: LDLIBS = $(CURSES_LDFLAGS) $(ACL_LDFLAGS)
+filefieldstest: filefieldstest.o filefields.o file.o field.o buf.o display.o options.o map.o pair.o list.o user.o group.o logging.o
 
 listtest: listtest.o list.o logging.o
 
