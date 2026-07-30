@@ -30,13 +30,15 @@
  * strverscmp() - version string comparison.
  * Not available on macOS/BSDs, so provide a portable fallback.
  *
- * Adapted from musl libc (src/string/strverscmp.c), which is:
+ * Taken verbatim from musl libc (src/string/strverscmp.c), which is:
  * Copyright (c) 2005-2020 Rich Felker, et al.
  * Licensed under the MIT license.
  *
- * Keep this in sync with musl's version.  Earlier local edits to the
- * leading-zero handling silently diverged from glibc (e.g. "a02" vs
- * "a019", "foo0100" vs "foo011" sorted the wrong way round).
+ * Do not "simplify" the leading-zero handling below: indexing at dp
+ * rather than i, and the dp<i guard, are both load-bearing.  This
+ * function is only compiled where glibc is absent, so any divergence
+ * from glibc surfaces on macOS and the BSDs while Linux stays green.
+ * See testSortByVersionLeadingZeros in ltest.
  */
 #ifndef __GLIBC__
 static int strverscmp(const char *l0, const char *r0)
