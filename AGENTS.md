@@ -32,6 +32,15 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
 - Always run tests before considering work complete and ensure they pass.
 - Do not remove or weaken existing tests unless the tested behavior has intentionally changed.
 
+## Talking to the user
+
+- **End the turn by restating any pending decision.** If you're waiting on an
+  answer — a question you asked, or a guess autopilot recorded for review — the
+  last line of the reply is that question, written out in about a sentence. A
+  back-reference ("as asked above") isn't actionable when the question is pages
+  back or was never actually put into words; restate it every turn until it's
+  answered. Nothing pending, no line.
+
 ## Autonomy
 
 - Open the PR without being asked. Pushing a finished branch and opening its
