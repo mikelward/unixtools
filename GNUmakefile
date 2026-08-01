@@ -55,11 +55,16 @@ doc: $(DOCS)
 %.html: %.md
 	$(MD2HTML) -o $@ $<
 
+# Every test runs, and any failure survives to the aggregate status. A bare
+# loop returns only the last command's status, so a failure anywhere but the
+# end was reported as success — which is how CI could accept a regression.
 test: $(TESTS)
-	@for test in $(TESTS); do \
+	@status=0; \
+	for test in $(TESTS); do \
 		echo $$test; \
-		./$$test; \
-	done
+		./$$test || status=1; \
+	done; \
+	exit $$status
 
 install: $(PROGS)
 	@echo install -d $(DESTDIR)/bin; \
