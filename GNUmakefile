@@ -32,7 +32,7 @@ MD2HTML=pandoc -f markdown -t html
 
 SOURCES=*.c *.h
 DOCS=README.html
-TESTS=buftest filetest filefieldstest listtest loggingtest maptest ltest
+TESTS=buftest filetest filefieldstest listtest loggingtest maptest ltest session_start_hook_test
 PROGS=l
 
 build: $(PROGS) $(TESTS)

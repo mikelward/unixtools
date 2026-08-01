@@ -6,4 +6,6 @@
 *.sublime-workspace
 l
 *test
+# Source, not a compiled test binary — the rule above would drop it silently.
+!session_start_hook_test
 tags
