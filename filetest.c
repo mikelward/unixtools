@@ -2,6 +2,9 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef __linux__
+#include <sys/sysmacros.h>  /* for major(), minor() - on BSDs these are in <sys/types.h> */
+#endif
 #include <assert.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -140,22 +143,28 @@ int test_device_numbers(void)
 {
     errorf("\n");   /* prints the function name */
 
-    /* /dev/null is character device 1, 3 */
+    /* Device numbers are platform-specific: /dev/null is 1,3 on Linux and
+       3,2 on Darwin. Comparing against what stat() reports here tests what
+       getmajor()/getminor() are actually for — decoding st_rdev — without
+       baking one platform's numbering into the assertion. */
+    struct stat st;
+
+    assert(stat("/dev/null", &st) == 0);
     File *file = newfile("", "/dev/null");
     assert(isstat(file));
     assert(ischardev(file));
     assert(isdevice(file));
-    assert(getmajor(file) == 1);
-    assert(getminor(file) == 3);
+    assert(getmajor(file) == major(st.st_rdev));
+    assert(getminor(file) == minor(st.st_rdev));
     freefile(file);
 
-    /* /dev/zero is character device 1, 5 */
+    assert(stat("/dev/zero", &st) == 0);
     file = newfile("", "/dev/zero");
     assert(isstat(file));
     assert(ischardev(file));
     assert(isdevice(file));
-    assert(getmajor(file) == 1);
-    assert(getminor(file) == 5);
+    assert(getmajor(file) == major(st.st_rdev));
+    assert(getminor(file) == minor(st.st_rdev));
     freefile(file);
 
     /* a regular file is not a device */
