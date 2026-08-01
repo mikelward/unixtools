@@ -1,0 +1,154 @@
+#!/bin/sh
+#
+# Tests for .claude/hooks/session-start.sh, the SessionStart hook that installs
+# the acl headers `l` needs to compile at all.
+#
+# The hook fetches .debs and runs `dpkg -i` as root, so these tests never let it
+# reach that path for real: each case either exercises an early exit or puts a
+# failing stub on PATH. What is checked is the hook's decisions — does it stay
+# out of a local checkout, does it leave an installed package alone, does it
+# report a failure rather than swallowing it.
+#
+
+_hook="$(dirname "$0")/.claude/hooks/session-start.sh"
+_failures=0
+_passes=0
+
+_check() {
+    _desc=$1
+    _expected=$2
+    _actual=$3
+    if test "$_expected" = "$_actual"; then
+        _passes=$((_passes + 1))
+    else
+        _failures=$((_failures + 1))
+        echo "FAIL: $_desc"
+        echo "  expected: $_expected"
+        echo "  actual:   $_actual"
+    fi
+}
+
+_contains() {
+    _desc=$1
+    _needle=$2
+    _haystack=$3
+    case "$_haystack" in
+        *"$_needle"*) _passes=$((_passes + 1)) ;;
+        *)
+            _failures=$((_failures + 1))
+            echo "FAIL: $_desc"
+            echo "  expected to contain: $_needle"
+            echo "  actual:              $_haystack"
+            ;;
+    esac
+}
+
+if ! test -x "$_hook"; then
+    echo "SKIP: session-start.sh missing or not executable"
+    exit 0
+fi
+
+# A local checkout already has its dependencies; only the ephemeral remote
+# container starts bare. Getting this wrong means running dpkg on a developer's
+# own machine.
+CLAUDE_CODE_REMOTE='' "$_hook" >/dev/null 2>&1
+_check "does nothing when not in a remote container" 0 $?
+
+_out=$(CLAUDE_CODE_REMOTE='' "$_hook" 2>&1)
+_check "stays silent when not in a remote container" "" "$_out"
+
+# The headers are present in this environment, so the hook must report them and
+# stop rather than reinstalling over a package the environment chose.
+if test -f /usr/include/sys/acl.h; then
+    _err=$(CLAUDE_CODE_REMOTE=true "$_hook" 2>&1 >/dev/null)
+    _check "exits cleanly when the acl headers are installed" 0 $?
+    _contains "names the installed acl headers" "acl headers" "$_err"
+
+    # No download and no dpkg: a stub that fails loudly would surface either.
+    _stubs=$(mktemp -d)
+    for _cmd in curl dpkg sudo; do
+        printf '#!/bin/sh\necho "%s called" >>"%s/calls"\nexit 1\n' "$_cmd" "$_stubs" >"$_stubs/$_cmd"
+        chmod +x "$_stubs/$_cmd"
+    done
+    CLAUDE_CODE_REMOTE=true PATH="$_stubs:/usr/bin:/bin" "$_hook" >/dev/null 2>&1
+    _check "installs nothing when the acl headers are present" 0 $?
+    _check "calls neither curl nor dpkg when the headers are present" "" "$(cat "$_stubs/calls" 2>/dev/null)"
+    rm -rf "$_stubs"
+else
+    echo "SKIP: acl-headers-present cases (no /usr/include/sys/acl.h here)"
+fi
+
+# The install path, driven by pointing ACL_HEADER at a file that does not
+# exist. A failed download is fatal: continuing would let the session reach
+# `make` and report a confusing compile error instead of the real cause now.
+_stubs=$(mktemp -d)
+printf '#!/bin/sh\nexit 1\n' >"$_stubs/curl"
+printf '#!/bin/sh\nexit 0\n' >"$_stubs/sudo"
+chmod +x "$_stubs/curl" "$_stubs/sudo"
+_err=$(CLAUDE_CODE_REMOTE=true ACL_HEADER="$_stubs/absent.h" \
+    PATH="$_stubs:/usr/bin:/bin" "$_hook" 2>&1 >/dev/null)
+_check "exits non-zero when the deb download fails" 1 $?
+_contains "says the download failed" "failed to download" "$_err"
+rm -rf "$_stubs"
+
+# A .deb that downloads but does not match its pinned checksum must never
+# reach dpkg — that install runs as root and executes maintainer scripts.
+_stubs=$(mktemp -d)
+# The stub's body is a script for /bin/sh, not this shell — the $ stay literal.
+# shellcheck disable=SC2016
+printf '#!/bin/sh\nwhile test $# -gt 0; do case "$1" in -o) shift; echo tampered >"$1";; esac; shift; done\nexit 0\n' >"$_stubs/curl"
+printf '#!/bin/sh\necho "dpkg called" >>"%s/calls"\nexit 0\n' "$_stubs" >"$_stubs/dpkg"
+printf '#!/bin/sh\nexec "$@"\n' >"$_stubs/sudo"
+chmod +x "$_stubs/curl" "$_stubs/dpkg" "$_stubs/sudo"
+_err=$(CLAUDE_CODE_REMOTE=true ACL_HEADER="$_stubs/absent.h" \
+    PATH="$_stubs:/usr/bin:/bin" "$_hook" 2>&1 >/dev/null)
+_check "exits non-zero when a deb fails its checksum" 1 $?
+_contains "says the checksum failed" "checksum" "$_err"
+_check "never reaches dpkg with a tampered deb" "" "$(cat "$_stubs/calls" 2>/dev/null)"
+rm -rf "$_stubs"
+
+# dpkg must run noninteractively, and the variable has to be passed through
+# sudo — sudo builds a fresh environment, so exporting it beforehand does not
+# reach dpkg. A maintainer script that calls debconf would otherwise hang the
+# session on a prompt nobody can answer.
+_stubs=$(mktemp -d)
+# A curl that writes the real payload, so the checksum passes and the run
+# reaches dpkg.
+cat >"$_stubs/curl" <<'EOF'
+#!/bin/sh
+while test $# -gt 0; do
+    case "$1" in -o) shift; printf 'payload' >"$1" ;; esac
+    shift
+done
+exit 0
+EOF
+printf '#!/bin/sh\necho "$@" >>"%s/sudo-args"\nexit 0\n' "$_stubs" >"$_stubs/sudo"
+# Both .debs hash to the sha256 of "payload", so the pinned checksums match.
+printf '#!/bin/sh\nexit 0\n' >"$_stubs/sha256sum"
+chmod +x "$_stubs/curl" "$_stubs/sudo" "$_stubs/sha256sum"
+CLAUDE_CODE_REMOTE=true ACL_HEADER="$_stubs/absent.h" \
+    PATH="$_stubs:/usr/bin:/bin" "$_hook" >/dev/null 2>&1
+_contains "runs dpkg noninteractively" "DEBIAN_FRONTEND=noninteractive" \
+    "$(cat "$_stubs/sudo-args" 2>/dev/null)"
+_contains "passes the variable through sudo, not around it" \
+    "DEBIAN_FRONTEND=noninteractive dpkg" "$(cat "$_stubs/sudo-args" 2>/dev/null)"
+rm -rf "$_stubs"
+
+# A stalled mirror would otherwise hold up session startup indefinitely, with
+# nothing on screen to explain the wait.
+_stubs=$(mktemp -d)
+printf '#!/bin/sh\necho "curl $*" >>"%s/calls"\nexit 1\n' "$_stubs" >"$_stubs/curl"
+printf '#!/bin/sh\nexit 0\n' >"$_stubs/sudo"
+chmod +x "$_stubs/curl" "$_stubs/sudo"
+CLAUDE_CODE_REMOTE=true ACL_HEADER="$_stubs/absent.h" \
+    PATH="$_stubs:/usr/bin:/bin" "$_hook" >/dev/null 2>&1
+_calls=$(cat "$_stubs/calls" 2>/dev/null)
+_contains "bounds the connection" "--connect-timeout" "$_calls"
+_contains "bounds the transfer" "--max-time" "$_calls"
+rm -rf "$_stubs"
+
+if test $_failures -gt 0; then
+    echo "session-start hook: $_failures test(s) failed, $_passes passed."
+    exit 1
+fi
+echo "session-start hook: all $_passes tests passed."
