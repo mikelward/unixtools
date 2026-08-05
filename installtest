@@ -1,0 +1,110 @@
+#!/bin/sh
+#
+# Tests for the install and uninstall targets: that PREFIX picks the
+# installation root, that BINDIR can override the bin directory under it, and
+# that DESTDIR only stages the same tree elsewhere rather than acting as the
+# prefix itself.
+#
+# Every case installs into a temporary directory, so the suite never writes to
+# the real /usr/local.
+#
+
+set -e
+
+srcdir=$(cd "$(dirname "$0")" && pwd)
+
+# The suite passes MAKE down, since make does not export it to recipes on its
+# own. A standalone run has to find GNU make itself: this is a GNUmakefile, and
+# on the BSDs `make' is a different program that will not read it.
+make=${MAKE:-}
+if test -z "$make"; then
+    if make --version 2>/dev/null | grep -q "GNU Make"; then
+        make=make
+    elif command -v gmake >/dev/null 2>&1; then
+        make=gmake
+    else
+        echo "installtest: no GNU make on PATH" >&2
+        exit 1
+    fi
+fi
+# Anything the surrounding environment says about where to install would reach
+# the sub-makes below and override the paths each case is testing — the
+# makefile's `?=' defaults lose to an inherited PREFIX, and an inherited BINDIR
+# beats even a PREFIX passed on the command line. MAKEFLAGS carries variable
+# overrides from the make that invoked us, so it goes too. Each case sets what
+# it needs explicitly.
+unset PREFIX BINDIR DESTDIR MAKEFLAGS MAKELEVEL MFLAGS
+failures=0
+passes=0
+
+check() {
+    desc=$1
+    if shift && test "$@"; then
+        passes=$((passes + 1))
+    else
+        failures=$((failures + 1))
+        echo "FAIL: $desc"
+    fi
+}
+
+contains() {
+    desc=$1
+    needle=$2
+    haystack=$3
+    case "$haystack" in
+        *"$needle"*) passes=$((passes + 1)) ;;
+        *)
+            failures=$((failures + 1))
+            echo "FAIL: $desc"
+            echo "  expected to contain: $needle"
+            echo "  actual:              $haystack"
+            ;;
+    esac
+}
+
+tmpdir=$(mktemp -d)
+test -n "$tmpdir"
+test "$tmpdir" != "/"
+trap 'rm -rf "$tmpdir"' EXIT
+
+# PREFIX names the installation root, and bin/ hangs off it.  This is the
+# home-directory install the option exists for.
+"$make" -C "$srcdir" install PREFIX="$tmpdir/prefix" >/dev/null
+check "PREFIX installs l under PREFIX/bin" -x "$tmpdir/prefix/bin/l"
+
+# uninstall has to look in the same place install did, or it silently leaves
+# the binary behind.
+"$make" -C "$srcdir" uninstall PREFIX="$tmpdir/prefix" >/dev/null
+check "uninstall removes l from PREFIX/bin" ! -e "$tmpdir/prefix/bin/l"
+
+# PREFIX from the environment, not just the command line: `?=' in the makefile
+# is what makes this work, and a plain `=' would silently ignore it.
+PREFIX="$tmpdir/envprefix" "$make" -C "$srcdir" install >/dev/null
+check "PREFIX is honored from the environment" -x "$tmpdir/envprefix/bin/l"
+
+# BINDIR overrides just the bin directory, for layouts where it isn't
+# PREFIX/bin.
+"$make" -C "$srcdir" install BINDIR="$tmpdir/custombin" >/dev/null
+check "BINDIR overrides PREFIX/bin" -x "$tmpdir/custombin/l"
+
+# DESTDIR stages the tree for packaging: the prefix still appears inside it,
+# and nothing lands at the prefix itself.
+"$make" -C "$srcdir" install DESTDIR="$tmpdir/stage" PREFIX="$tmpdir/unstaged" >/dev/null
+check "DESTDIR stages the full prefixed path" \
+    -x "$tmpdir/stage$tmpdir/unstaged/bin/l"
+check "DESTDIR does not install to the prefix itself" \
+    ! -e "$tmpdir/unstaged/bin/l"
+
+"$make" -C "$srcdir" uninstall DESTDIR="$tmpdir/stage" PREFIX="$tmpdir/unstaged" >/dev/null
+check "uninstall honors DESTDIR" ! -e "$tmpdir/stage$tmpdir/unstaged/bin/l"
+
+# The default is unchanged: an unqualified `make install' still targets
+# /usr/local.  Checked with -n so the test never writes there.
+default=$("$make" -C "$srcdir" -n install)
+contains "default install targets /usr/local/bin" "/usr/local/bin" "$default"
+
+if test $failures -gt 0; then
+    echo "install: $failures test(s) failed, $passes passed."
+    exit 1
+fi
+echo "install: all $passes tests passed."
