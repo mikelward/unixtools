@@ -27,12 +27,18 @@ endif
 CFLAGS=$(STD) $(WARNINGS) $(DEBUG) $(ACL_CFLAGS) $(PORTABILITY_CFLAGS)
 LDFLAGS=$(WARNINGS) $(DEBUG)
 
-DESTDIR=/usr/local
+# PREFIX picks where the files live on the target system; DESTDIR only stages
+# that same tree somewhere else, for packaging.  A home-directory install is
+# `make install PREFIX=$HOME/.local'.  DESTDIR used to be the prefix here, so
+# it now needs PREFIX instead.
+PREFIX ?= /usr/local
+BINDIR ?= $(PREFIX)/bin
+
 MD2HTML=pandoc -f markdown -t html
 
 SOURCES=*.c *.h
 DOCS=README.html
-TESTS=buftest filetest filefieldstest listtest loggingtest maptest ltest session_start_hook_test
+TESTS=buftest filetest filefieldstest listtest loggingtest maptest ltest installtest session_start_hook_test
 PROGS=l
 
 build: $(PROGS) $(TESTS)
@@ -62,22 +68,22 @@ test: $(TESTS)
 	@status=0; \
 	for test in $(TESTS); do \
 		echo $$test; \
-		./$$test || status=1; \
+		MAKE='$(MAKE)' ./$$test || status=1; \
 	done; \
 	exit $$status
 
 install: $(PROGS)
-	@echo install -d $(DESTDIR)/bin; \
-	install -d $(DESTDIR)/bin; \
+	@echo install -d $(DESTDIR)$(BINDIR); \
+	install -d $(DESTDIR)$(BINDIR); \
 	for prog in $(PROGS); do \
-		echo install $$prog $(DESTDIR)/bin; \
-		install $$prog $(DESTDIR)/bin; \
+		echo install $$prog $(DESTDIR)$(BINDIR); \
+		install $$prog $(DESTDIR)$(BINDIR); \
 	done
 
-uninstall: $(PROGS)
+uninstall:
 	@for prog in $(PROGS); do \
-		echo rm $(DESTDIR)/bin/$$prog; \
-		rm $(DESTDIR)/bin/$$prog; \
+		echo rm $(DESTDIR)$(BINDIR)/$$prog; \
+		rm $(DESTDIR)$(BINDIR)/$$prog; \
 	done
 
 all: tags $(TESTS) $(PROGS) $(DOCS)
@@ -102,6 +108,8 @@ listtest: listtest.o list.o logging.o
 loggingtest: loggingtest.o logging.o
 
 ltest:
+
+installtest:
 
 maptest: map.o list.o pair.o logging.o
 

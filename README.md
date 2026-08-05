@@ -198,7 +198,24 @@ Then, run `make`.
 
 ### Installation
 
-Run `make install`.  Files are installed under `/usr/local` by default.  Install
-somewhere else by doing `make install DESTDIR=<path>`.
+Run `make install`.  Files are installed under `/usr/local` by default, so that
+needs write access to it — `sudo make install` on most systems.
+
+Install somewhere else with `PREFIX`.  To install into your home directory,
+where no privileges are needed:
+
+    make install PREFIX="$HOME/.local"
+
+That puts `l` in `$HOME/.local/bin`, which needs to be on your `PATH`.
+`BINDIR` overrides the bin directory alone if it isn't `$PREFIX/bin`.
+
+`make uninstall` removes the files again, and takes the same `PREFIX` and
+`BINDIR` you installed with.
+
+For packaging, `DESTDIR` stages the installation under another directory
+without changing the paths inside it: `make install DESTDIR=/tmp/pkg` writes
+`/tmp/pkg/usr/local/bin/l`.  Earlier versions used `DESTDIR` as the prefix
+itself, so `make install DESTDIR=<path>` now needs to be `make install
+PREFIX=<path>`.
 
 Patches and pull requests are welcome.
