@@ -49,6 +49,17 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
 
 ## Autonomy
 
+- **Branches under your own `<agent>/` prefix are yours.** Create, push,
+  `--force-with-lease` and rename them freely — no permission, no announcement,
+  no per-branch confirmation. Only a branch outside that prefix, or `main`
+  itself, is a conversation. Deleting is the one the prefix can't settle: it
+  doesn't say which session made the branch, so delete the ones this session
+  created and ask about the rest.
+- **The agent authors; whoever merges takes over the committer line.** A squash
+  or rebase merge rewrites the committer to whoever pressed the button. That is
+  expected — never re-author or amend merged commits to "fix" it, and don't
+  narrate it either: no note in the reply, no offer to correct it. It is not a
+  finding.
 - Open the PR without being asked. Pushing a finished branch and opening its
   pull request are one step, not two — don't park a branch waiting for "please
   open a PR." The exception is an explicit instruction not to ("just commit",
