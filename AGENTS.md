@@ -1,5 +1,11 @@
 # Agent Guidelines
 
+Keep this file as short as it can be and still work. Every session loads it
+whole, so each rule costs context on every turn: add one the first time
+something bites, say it once in the fewest words that carry the *why*, rewrite
+or trim an existing rule rather than appending beside it, and delete one that
+has stopped biting.
+
 ## Build Dependencies
 
 This project requires `libacl1-dev` and `libncurses-dev` (or `libtinfo-dev`) to build.
