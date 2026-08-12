@@ -40,6 +40,11 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
 
 ## Talking to the user
 
+- **Don't report your own caught-and-fixed mistakes.** A wrong turn you noticed
+  and corrected before it reached anything is not news — no "one thing worth
+  flagging", no narration of the recovery. Say it only when it left something
+  the user has to act on: work actually lost, a bad push someone may have
+  pulled, a decision they would make differently knowing it.
 - **End the turn by restating any pending decision.** If you're waiting on an
   answer — a question you asked, or a guess autopilot recorded for review — the
   last line of the reply is that question, written out in about a sentence. A
