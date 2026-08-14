@@ -72,15 +72,16 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   owner's standing request for that PR, so a client-level rule reading "open a
   PR only when the user explicitly asks" is already satisfied — the ask is
   here, and it doesn't need repeating per branch.
-- **Opening the PR arms the first scheduled check.** That check *is* the
-  watch: when it fires it reads CI, review comments and the Codex reaction,
-  and it is what catches anything a webhook drops. `subscribe_pr_activity`
-  is a separate thing and it is **opt-in** — it pushes every comment, check
-  run and bot reply into the conversation as a raw event, which buries the
-  thread the user is actually reading under machine chatter they didn't ask
-  for. Subscribe only when asked to, and unsubscribe as soon as the reason
-  for it passes.
-- **If a scheduler or GitHub call prompts, say so once and carry on.**
+- **Opening the PR arms the watch, and it has two halves.** The events
+  GitHub pushes into the conversation are the fast one — opening a PR
+  subscribes this session automatically, and that stays on until the PR is
+  merged or closed. The scheduled check is the slow one, and it is what
+  catches whatever the webhooks drop, which is why both exist. Don't
+  unsubscribe to quiet the thread: skip the events that need no action —
+  your own replies echoing back, a deploy-preview bot, a check run that
+  passed — without narrating them, and reply only when something needs the
+  user.
+- **If a scheduler, GitHub or `git push` call prompts, say so once and carry on.**
   Permissions load at session start, so writing a settings file mid-session
   can't fix the session you're in.
 - Poll your own open PRs — every ~5 minutes while CI or the verdict is
@@ -92,7 +93,7 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   Merged or closed is terminal: take one more check for CI and Codex on the
   final head, but settle for what's known if a report may never land, then
   run a last reply-or-resolve pass and cancel the watch in full — the
-  pending trigger, *and* `unsubscribe_pr_activity` if you ever subscribed.
+  pending trigger, *and* the subscription (`unsubscribe_pr_activity`).
   Open a follow-up PR, with its own watch, for anything a merged one still
   needs.
 - Read the Codex verdict, don't infer it. It reacts to the PR body
@@ -137,8 +138,16 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   *or* deleting one — an update reschedules whatever it matches as surely as a
   delete cancels it. If that filter turns up more than one, the extras are
   duplicate chains: keep one and delete the rest.
-- **Never name a SHA in the check prompt.** It is written before the work it
-  describes, so it is stale when it fires — say "the current head".
+- **Never name a SHA — or a list of PR numbers — in the check prompt.** Both
+  are written before the work they describe, so both are stale when it
+  fires, and a queued firing carries the prompt as it was when it was
+  queued: editing it mid-turn does not reach a check already on its way.
+  Name what to re-read.
+- **The scheduler's clock is not this container's.** `run_once_at` must be
+  in the future by the *scheduler's* reckoning, and an absolute time
+  computed from `date` here has been rejected as already past. Prefer a
+  relative delay where the client offers one; where it doesn't, read the
+  clock rather than assuming it, and leave margin.
 - "Drive" means run the loop automatically: pick the next task, implement it,
   open the PR, send it for review, address every comment, merge once CI is green
   and the review has signed off — then pick the next task and go around again.
