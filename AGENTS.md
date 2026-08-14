@@ -80,20 +80,15 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   thread the user is actually reading under machine chatter they didn't ask
   for. Subscribe only when asked to, and unsubscribe as soon as the reason
   for it passes.
-- **Permissions are granted before the session starts, so a rule here can't
-  fix them.** Copy the scheduler entries — the MCP ones and
-  `ScheduleWakeup`, which is not one — and the GitHub MCP entries, reads and
-  writes both, from this repo's `.claude/settings.json` into
-  `$HOME/.claude/settings.json`, from the environment's setup script, under
-  full MCP identifiers and both server-name spellings, since bare names
-  match nothing. Global writes are a deliberate trade the repo owner has
-  taken: any repo the account opens can then merge and comment unprompted,
-  and in exchange a session rooted above a repo — which loads no repo-local
-  settings — never stalls the watch on a prompt nobody is there to answer.
-  The `Bash` entries stay repo-local: `git push` and `curl` everywhere is
-  wider than the loop needs. Settings load at startup, so writing that file
-  mid-session does nothing for that session; if calls are prompting, say so
-  once and carry on.
+- **Permissions load at session start, so a rule here can't fix them.** The
+  unattended loop needs the scheduler entries (the MCP ones and
+  `ScheduleWakeup`), the GitHub MCP reads and writes, and `git push`. A
+  session rooted above the repo loads no repo-local settings, so those
+  belong in `$HOME/.claude/settings.json`, written by the environment's
+  setup script under both server-name spellings. The cost, which the repo
+  owner has taken: any repo the account opens can push, comment and merge
+  unprompted. Writing that file mid-session does nothing for that session;
+  if calls prompt, say so once and carry on.
 - Poll your own open PRs — every ~5 minutes while CI or the verdict is
   outstanding, ~30 once only a human is left. Those two are what nothing
   else reports. Never end a turn idle with one of yours open: arm the next
@@ -106,26 +101,19 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   pending trigger, *and* `unsubscribe_pr_activity` if you ever subscribed.
   Open a follow-up PR, with its own watch, for anything a merged one still
   needs.
-- Read the Codex verdict, don't infer it. It reacts to the PR **body** —
-  `issue_read` → `reactions` — not to a review thread, whose `Useful?` bar a
-  page fetch finds instead and which reads true on any PR Codex has
-  commented on. `eyes` while it reads, `+1` when it finds nothing — or a
-  review reporting no findings, which is the same verdict and names the
-  commit it read. The reaction is revoked as a new push lands, so what you
-  can see belongs to the head you can see: `+1` on green CI is a merge, with
-  nothing further to wait for. A finding is not silence, so the recovery
-  keys on both: nothing at all five minutes after a push — no reaction, no
-  review, no comment — means it never picked the push up; comment `@codex
-  review`, once. A review that *finds* something leaves no reaction at all,
-  so a sweep of reactions alone reads a PR with findings waiting on it as an
-  empty one: read `get_review_comments` and `get_comments` every poll. An
-  unresolved finding blocks the merge whatever the reaction says; one you
-  have answered or fixed does not. Check who left each — the reaction count
-  is anonymous, so leave PR-body reactions to Codex, and a human's review
-  carries the same `commit_id` as Codex's.
-- **A finding can arrive as a top-level PR comment.** `get_review_comments`
-  returns only inline threads, so read `get_comments` too — a P1 sat
-  unanswered for two hours because a sweep of the threads never saw it.
+- Read the Codex verdict, don't infer it. It reacts to the PR body
+  (`issue_read` → `reactions`), not to a review thread, whose `Useful?` bar
+  reads true on any PR it has commented on. `eyes` means reading, `+1` means
+  clean, and Codex revokes it on push — so a visible one belongs to the
+  visible head, and `+1` with green CI is a merge. The count names no
+  author, so leave PR-body reactions to Codex: nobody else's is revoked, and
+  a review naming that commit with no findings is the same verdict, in the
+  attributable form. Findings arrive as review comments, as a top-level
+  comment, or as a review — read `get_review_comments`, `get_comments` and
+  `get_reviews` to the last page, since all three page oldest first — and
+  they block the merge until fixed or rebutted; an acknowledgement is not an
+  answer. Nothing from Codex since the push, five minutes on, means it never
+  picked it up — comment `@codex review`, once.
 - What the polling costs. Twelve wake-ups an hour per PR at the fast
   cadence, two at the slow one — each a model turn plus a few GitHub API
   calls, so roughly a dollar an hour while a PR is waiting on its merge
