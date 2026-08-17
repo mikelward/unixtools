@@ -91,6 +91,17 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
     rejected as already past. Re-time it, or say the watch isn't armed.
   - A few minutes out while CI or the current head's Codex verdict is
     outstanding; longer once only a human is left; short again after a push.
+  - A PR reading `dirty` — always — or `behind` where the ruleset requires
+    branches up to date, needs a rebase onto its base and a lease-guarded
+    force-push. Nothing reports a base advance, so only this check catches
+    it. Fetch both refs by explicit refspec, unshallow a shallow clone, and
+    rebase onto the fetched `origin/<base>` — not always `main`, never the
+    local branch a fetch leaves behind. Confirm before you rebase that your
+    branch has every commit the remote head has, and before you push that
+    the head has not moved since the tip you noted before fetching: the push
+    flags do not reliably refuse a rewind, a commit you never fetched, or
+    one you fetched and did not rebase onto, and overwriting any of them
+    loses someone's work. If either fails, or you can't tell, stop and ask.
   - Name the PR, and say what to re-read rather than what you read. A SHA or
     a list of which PRs are open goes stale before it fires; one PR number
     does not, and the trigger has to be matchable to it.
