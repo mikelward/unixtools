@@ -5,6 +5,11 @@ on:
     branches: ["**"]
   pull_request:
 
+# The `codex` status has exactly one writer, the codex-review sweep. Declaring
+# read-only here is what proves this workflow is not a second one.
+permissions:
+  contents: read
+
 jobs:
   build:
     name: build (${{ matrix.os }})
