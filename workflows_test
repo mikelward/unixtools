@@ -1,0 +1,194 @@
+#!/bin/sh
+#
+# Tests for the codex-review workflows.
+#
+# The sweep's own logic and tests live in mikelward/codex-review; what is
+# pinned here is the part that stays in a consumer repository: which events
+# may run a status-writing job, and what token it holds. Every one of these
+# guards a value whose wrong setting produces no error at all -- just a merge
+# gate that quietly stops working, or one that can never clear.
+#
+# Read as patterns over YAML, which is an approximation of YAML and known to
+# be. It is worth it because the alternative is a parser this repo has no
+# reason to depend on; the risk is bounded by these being pins on exact
+# strings that a human wrote and a human will edit.
+#
+# Every match runs against a COMMENT-STRIPPED copy, and the settings that
+# live in a block are matched inside that block. Those headers explain each
+# setting at length, in the setting's own words -- `statuses: write` appears
+# in six comments of codex-review.yml, `pull_request_review` in the
+# listener's -- so a whole-file match would keep passing on the prose after
+# the setting it describes was deleted.
+#
+
+_dir="$(dirname "$0")/.github/workflows"
+_sweep="$_dir/codex-review.yml"
+_listener="$_dir/codex-review-listener.yml"
+_failures=0
+_passes=0
+
+_contains() {
+    _desc=$1
+    _needle=$2
+    _haystack=$3
+    case "$_haystack" in
+        *"$_needle"*) _passes=$((_passes + 1)) ;;
+        *)
+            _failures=$((_failures + 1))
+            echo "FAIL: $_desc"
+            echo "  expected to contain: $_needle"
+            ;;
+    esac
+}
+
+_lacks() {
+    _desc=$1
+    _needle=$2
+    _haystack=$3
+    case "$_haystack" in
+        *"$_needle"*)
+            _failures=$((_failures + 1))
+            echo "FAIL: $_desc"
+            echo "  expected NOT to contain: $_needle"
+            ;;
+        *) _passes=$((_passes + 1)) ;;
+    esac
+}
+
+# Drops whole-line and trailing comments. A value keeps whatever precedes the
+# `#`, so this can only ever remove prose, never a setting.
+_uncomment() {
+    sed 's/[[:space:]]*#.*//' "$1"
+}
+
+# The body of a top-level block: everything after `<key>:` at column 0, up to
+# the next line that starts at column 0. Stripped comments leave blank lines,
+# which stay inside the block and match nothing.
+_block() {
+    printf '%s\n' "$2" | awk -v key="$1:" '
+        $0 == key { inside = 1; next }
+        inside && /^[^[:space:]]/ { inside = 0 }
+        inside { print }
+    '
+}
+
+for _f in "$_sweep" "$_listener"; do
+    if ! test -f "$_f"; then
+        echo "FAIL: $_f is missing"
+        exit 1
+    fi
+done
+
+_sweep_raw=$(cat "$_sweep")
+_sweep_text=$(_uncomment "$_sweep")
+_listener_text=$(_uncomment "$_listener")
+_on=$(_block on "$_sweep_text")
+_perms=$(_block permissions "$_sweep_text")
+
+# Both extractions would pass vacuously on an empty string, taking every
+# assertion below them with it.
+_contains "the on: block was found" "pull_request_target:" "$_on"
+_contains "the permissions block was found" "contents: read" "$_perms"
+
+# `@main` is deliberate: the action has no build step and no dependencies, so
+# the file that runs is the file you can read. No checkout, also deliberate --
+# it would put a token-bearing .git/config within reach of a job that can
+# write commit statuses.
+_contains "the sweep runs the shared action unpinned" \
+    "uses: mikelward/codex-review@main" "$_sweep_text"
+_lacks "the sweep checks nothing out" "actions/checkout" "$_sweep_text"
+
+# `edited` is load-bearing: retargeting a pull request changes the reviewed
+# diff without moving the head SHA, and GitHub emits `edited` rather than
+# `synchronize` for it, so an existing `codex: success` would stand over a
+# diff nothing had read.
+_contains "the sweep starts on every pull request change that alters the diff" \
+    "types: [opened, reopened, ready_for_review, synchronize, edited, closed]" "$_on"
+_contains "the sweep hears bare-review verdicts through the listener relay" \
+    "workflows: [codex-review-listener]" "$_on"
+
+# `workflow_dispatch` takes a ref and runs the file FROM that ref; a bare
+# `pull_request` has the same hole via the merge ref; and
+# `pull_request_review` is merge-ref too, which is why it lives on the
+# unprivileged listener instead.
+_lacks "no dispatch, which would run a branch's own sweep" "workflow_dispatch" "$_on"
+_lacks "no bare pull_request, same hole via the merge ref" "  pull_request:" "$_on"
+_lacks "no pull_request_review, which belongs on the listener" "  pull_request_review:" "$_on"
+
+# A canceled loop is a gate that stopped sweeping mid-review; 65 minutes caps
+# a hung API call ten past the action's own 55-minute loop.
+_contains "the sweep keeps its hourly backstop" "cron: '23 * * * *'" "$_on"
+_contains "the sweep is never canceled mid-review" "cancel-in-progress: false" "$_sweep_text"
+_contains "the sweep cannot outlive the action's loop by much" "timeout-minutes: 65" "$_sweep_text"
+
+# Pinned so the header's reasoning keeps naming a job that exists -- NOT
+# because a ruleset requires it. Requiring `sweep` is unsafe: a concurrency
+# group holds one pending run, so a head-associated run queued behind a long
+# sweep is canceled and its replacement reports against the default branch,
+# leaving the head with a required check that can never clear.
+_contains "the sweep job is named" "  sweep:" "$_sweep_text"
+# The only assertion that wants the raw file: it pins the warning itself.
+_contains "and the header says it is not the check to require" \
+    'DO NOT REQUIRE `sweep`' "$_sweep_raw"
+
+# Renaming one end without the other severs the relay silently, and a verdict
+# submitted as a review with no inline comments then goes unheard.
+_contains "the listener is named as the relay names it" \
+    "name: codex-review-listener" "$_listener_text"
+_contains "the listener hears reviews" "pull_request_review:" "$_listener_text"
+_contains "the listener holds nothing" "permissions: {}" "$_listener_text"
+
+# A commit status belongs to the SHA, so a second writer is an unordered
+# write: one delayed past this run's exit overwrites a fresh verdict with a
+# stale one, and nothing reports that it happened.
+#
+# Refusing the literal `statuses: write` in the other files is not enough, and
+# both holes are silent. `permissions: write-all` is valid YAML that grants the
+# scope without ever spelling it; and a workflow with NO permissions block
+# inherits the repository's default GITHUB_TOKEN permission -- a repository
+# SETTING, which no file here can see, and which may be read/write. So each
+# other workflow has to declare its own grant, name no status scope at all
+# (none of them needs even `statuses: read`, and asking for the key rather than
+# one spelling of its value settles the quoting question too), and take no
+# blanket grant.
+#
+# The sweep is asked about its permissions BLOCK; the others about their whole
+# (uncommented) file, since a job-level grant is indented and a top-level scan
+# would miss it. Only the top-level `permissions:` counts as declaring one,
+# though: a job-level block leaves every other job on the repository default.
+_contains "the sweep can write statuses" "statuses: write" "$_perms"
+_lacks "the sweep takes no blanket grant" "write-all" "$_sweep_text"
+# ...and the status is the ONLY thing it may write.
+_writes=$(printf '%s\n' "$_perms" | grep -c ': write' 2>/dev/null || true)
+if test "${_writes:-0}" -ne 1; then
+    _failures=$((_failures + 1))
+    echo "FAIL: the sweep must grant exactly one write scope (found ${_writes:-0})"
+else
+    _passes=$((_passes + 1))
+fi
+_scanned=0
+for _f in "$_dir"/*.yml "$_dir"/*.yaml; do
+    test -e "$_f" || continue
+    _scanned=$((_scanned + 1))
+    test "$_f" = "$_sweep" && continue
+    _name=$(basename "$_f")
+    _other=$(_uncomment "$_f")
+    _other_perms=$(printf '%s\n' "$_other" | grep '^permissions:' || true)
+    _contains "$_name declares a top-level permissions block" "permissions:" "$_other_perms"
+    _lacks "$_name asks for no status scope at all" "statuses:" "$_other"
+    _lacks "$_name takes no blanket grant" "write-all" "$_other"
+done
+# The scan passes vacuously over an empty directory, so prove it had the sweep
+# and at least one other file to distinguish.
+if test "$_scanned" -lt 2; then
+    _failures=$((_failures + 1))
+    echo "FAIL: the status-writer scan had nothing to scan (found $_scanned)"
+else
+    _passes=$((_passes + 1))
+fi
+
+if test $_failures -gt 0; then
+    echo "workflows: $_failures test(s) failed, $_passes passed."
+    exit 1
+fi
+echo "workflows: all $_passes tests passed."
