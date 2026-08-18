@@ -48,3 +48,18 @@ resolve their definition *there*, so neither fires for the pull request
 installing it. What does fire is `pull_request_review_comment`, which resolves
 against the merge ref, so a reply on a review thread runs the sweep and
 publishes the verdict for the current head.
+
+## Review and merge gates
+
+- [ ] Verify the settings half of the fleet's bar — every repository works
+      the same: comprehensive automated review, required merge gates, and
+      auto-merge. The workflow files (CI and the codex-review set) are all
+      present here; what git cannot show, and the 2026-08-18 audit could
+      not verify, is the settings half: a ruleset on the default branch
+      requiring the CI gate, the `codex` status, the
+      `codex-review-check / codex-review-check` workflow pin, conversation
+      resolution, up-to-date branches, and the auto-merge setting enabled —
+      and that Codex automatic reviews are enabled for this repository:
+      `codex-review.yml` only republishes an existing verdict, so with
+      automatic reviews off every pull request would wait on a manual
+      `@codex review` before the gate could clear.
