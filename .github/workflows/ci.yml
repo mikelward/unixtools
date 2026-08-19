@@ -1,15 +1,18 @@
 name: CI
 
 on:
-  # main only, matching every sibling repo's lanes retrofit: a same-repo PR
-  # branch also fires push, and that run always classifies as code (see the
-  # lanes job below) rather than applying the pull_request run's docs-only
-  # gating — so its unconditionally green `lanes` result could report over
-  # a legitimately red PR-run verdict on the exact same commit. Restricting
-  # to main removes the collision; main never carries an open PR against
-  # itself.
+  # Every branch, matching SPEC.md's contract that both builds and tests
+  # run on every push — this predates the lanes retrofit and a same-repo PR
+  # branch pushing before or without a PR still needs that coverage.
+  # Restricting this to main (an earlier attempt) silently dropped it. The
+  # actual hazard this trigger creates — a same-repo PR branch also fires
+  # push, and that run always classifies as code (see the lanes job below)
+  # rather than applying the pull_request run's docs-only gating, so an
+  # unconditionally green push result could report over a legitimately red
+  # PR-run verdict on the same commit — is handled by giving the push run's
+  # check a different name below, not by narrowing what push covers.
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
     # `edited` is here because a retarget changes what the PR's diff is
     # measured against while the head — and any `lanes` check run already
@@ -94,7 +97,13 @@ jobs:
   # housekeeping-only and every commit subject carrying a housekeeping
   # prefix. Any other combination is an explicit red, never a silent pass.
   lanes:
-    name: lanes
+    # A push run's check name is deliberately NOT "lanes": push always
+    # classifies as code and skips none of the pull_request run's gating
+    # (docs_only, required prefixes), so its green result must not be able
+    # to satisfy a PR's required `lanes` context — see the push trigger's
+    # comment above. Only a pull_request-triggered run reports as "lanes";
+    # that is the one the ruleset should require.
+    name: ${{ github.event_name == 'pull_request' && 'lanes' || 'lanes (push)' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [classify, build]
