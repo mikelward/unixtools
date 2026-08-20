@@ -11,7 +11,7 @@ check() {
         echo "${FUNCNAME[1]} OK"
         return 0
     else
-        echo "${FUNCNAME[1]} FAILURE: $@"
+        echo "${FUNCNAME[1]} FAILURE: $*"
         return 1
     fi
 }
@@ -429,6 +429,20 @@ testFormatAcross() {
     cleanup
 }
 
+# Regression test for the $* fix in check(): a failure on more than one
+# argument used to print via $@, which passes each argument to echo
+# separately instead of as one joined string (shellcheck SC2145). bash's
+# echo builtin re-joins multiple arguments with a single space, so a plain
+# string comparison on the printed line can't tell $@ and $* apart here —
+# override echo to reveal the argument boundaries instead: $* produces one
+# bracketed group, a regression to $@ would split "a = b" into three.
+testCheckFormatsMultiArgFailure() {
+    echo() { printf '<%s>' "$@"; printf '\n'; }
+    result="$(check "a" = "b" 2>&1)" || true
+    unset -f echo
+    check "$result" = "<testCheckFormatsMultiArgFailure FAILURE: a = b>"
+}
+
 testBasic
 testNameOrder1
 testNameOrder2
@@ -476,3 +490,4 @@ testFormatLong
 testFormatSingleColumn
 testFormatVertical
 testFormatAcross
+testCheckFormatsMultiArgFailure
