@@ -75,7 +75,12 @@ jobs:
         os: [ubuntu-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      # persist-credentials off like the other jobs: this is the one job
+      # that runs PR-controlled code (the PR's own Makefile and tests), so
+      # the token must not sit in .git/config while it does.
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Install dependencies
         if: runner.os == 'Linux'
