@@ -1,0 +1,153 @@
+#!/bin/sh
+#
+# Tests for .github/workflows/ci.yml's merge-gate condition.
+#
+# The gate settles a push by proving its commit heads no open pull request
+# (mikelward/lanes `settlePush`), and refuses when it does. This repo runs CI
+# on every branch, so on a pull request branch that refusal fired on every
+# push and `lanes (push)` was permanently red. The gate is therefore
+# restricted to the default branch on push — and that restriction is one line
+# of a workflow nothing else here exercises, so a later edit could silently
+# restore the red job, or take the gate away from pull requests entirely,
+# with the C tests all still passing.
+#
+# What is checked is the DECISION, for the three combinations that matter:
+# the condition string is read out of the workflow and evaluated, rather than
+# matched against a pattern that would go on passing after the condition
+# stopped meaning what it says.
+#
+
+_workflow="$(dirname "$0")/.github/workflows/ci.yml"
+_failures=0
+_passes=0
+
+_check() {
+    _desc=$1
+    _expected=$2
+    _actual=$3
+    if test "$_expected" = "$_actual"; then
+        _passes=$((_passes + 1))
+    else
+        _failures=$((_failures + 1))
+        echo "FAIL: $_desc"
+        echo "  expected: $_expected"
+        echo "  actual:   $_actual"
+    fi
+}
+
+_contains() {
+    _desc=$1
+    _needle=$2
+    _haystack=$3
+    case "$_haystack" in
+        *"$_needle"*) _passes=$((_passes + 1)) ;;
+        *)
+            _failures=$((_failures + 1))
+            echo "FAIL: $_desc"
+            echo "  expected to contain: $_needle"
+            echo "  actual:              $_haystack"
+            ;;
+    esac
+}
+
+if ! test -f "$_workflow"; then
+    echo "FAIL: $_workflow is missing"
+    exit 1
+fi
+
+# The `if:` of the named job, folded onto one line. A job's condition is a
+# block scalar continued on the lines below it, so the continuation is
+# gathered until the indentation returns to the job's own keys.
+_condition() {
+    awk -v job="$1" '
+        $0 == "  " job ":" { in_job = 1; next }
+        in_job && /^  [^ ]/ { exit }
+        in_job && /^    if:/ {
+            line = $0
+            sub(/^    if:[ ]*/, "", line)
+            sub(/^>-[ ]*$/, "", line)
+            if (line != "") printf "%s ", line
+            collecting = 1
+            next
+        }
+        collecting && /^      / { sub(/^[ ]+/, ""); printf "%s ", $0; next }
+        collecting { exit }
+    ' "$_workflow" | sed -e 's/[ ][ ]*/ /g' -e 's/^ //' -e 's/ $//'
+}
+
+# Whether the gate runs, for one (event, ref) pair.
+#
+# The GitHub expression is evaluated by awk, whose `==`, `!=`, `&&`, `||` and
+# parentheses mean exactly what GitHub's do — so the contexts are substituted
+# and the rest of the expression is handed over as written, with nothing
+# rewritten and nothing eval'd. An earlier version translated comparisons into
+# `[ ... ]` with a GNU-only sed alternation, which no-op'd under BSD sed and
+# left the operands to run as commands: portable-looking, silently wrong on
+# macOS.
+#
+# Every substitution is anchored to the text the workflow actually carries, so
+# a rewritten condition leaves an untranslated `github.` or `format(` behind
+# rather than quietly evaluating to something else — and that is a hard
+# failure, as is an expression awk cannot parse.
+_runs() {
+    _expr=$1
+    _event=$2
+    _ref=$3
+    _default=$4
+
+    _awk=$(printf '%s\n' "$_expr" | sed \
+        -e 's/always()/1/g' \
+        -e "s#format('refs/heads/{0}', github\.event\.repository\.default_branch)#\"refs/heads/$_default\"#g" \
+        -e "s#github\.event_name#\"$_event\"#g" \
+        -e "s#github\.ref#\"$_ref\"#g" \
+        -e "s#'#\"#g")
+
+    case "$_awk" in
+        *github.*|*format\(*)
+            echo "FAIL: could not translate the condition: $_expr" >&2
+            exit 1
+            ;;
+    esac
+
+    awk "BEGIN { exit ($_awk) ? 0 : 1 }" </dev/null
+    case $? in
+        0) echo yes ;;
+        1) echo no ;;
+        *)
+            echo "FAIL: awk could not evaluate the condition: $_awk" >&2
+            exit 1
+            ;;
+    esac
+}
+
+_gate=$(_condition lanes)
+
+# An empty or unrecognized condition would make every case below vacuously
+# agree, so the extraction is proved before anything is evaluated.
+_contains "the gate's condition is read out of the workflow" "always()" "$_gate"
+_contains "the gate's condition guards on the event" "github.event_name" "$_gate"
+_contains "the gate's condition names the default branch" "default_branch" "$_gate"
+
+# The three combinations the restriction exists to get right.
+_check "the gate runs for a pull request" \
+    yes "$(_runs "$_gate" pull_request refs/pull/36/merge main)"
+_check "the gate runs on a push to the default branch" \
+    yes "$(_runs "$_gate" push refs/heads/main main)"
+_check "the gate is skipped on a push to a branch" \
+    no "$(_runs "$_gate" push refs/heads/claude/topic main)"
+
+# The default branch is read from the event rather than hard-coded, so a
+# rename does not silently turn the gate off on main's successor.
+_check "the gate follows a renamed default branch" \
+    yes "$(_runs "$_gate" push refs/heads/trunk trunk)"
+_check "the gate is still skipped on a branch under a renamed default" \
+    no "$(_runs "$_gate" push refs/heads/main trunk)"
+
+# SPEC.md's contract: builds and tests run on every push. The gate was
+# narrowed; the build must not be.
+_check "the build carries no ref condition" \
+    "needs.classify.outputs.docs_only != 'true'" "$(_condition build)"
+_contains "push still covers every branch" 'branches: ["**"]' "$(cat "$_workflow")"
+
+echo "$_passes passed, $_failures failed"
+test "$_failures" -eq 0

@@ -11,6 +11,9 @@ on:
   # unconditionally green push result could report over a legitimately red
   # PR-run verdict on the same commit — is handled by giving the push run's
   # check a different name below, not by narrowing what push covers.
+  #
+  # The gate does not run on these branch pushes at all; only build does.
+  # See the lanes job's own `if:` for why.
   push:
     branches: ["**"]
   pull_request:
@@ -112,7 +115,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [classify, build]
-    if: always()
+    # On push, the default branch only — everywhere else in this fleet the
+    # push trigger IS main-only, and this repo's `branches: ["**"]` is what
+    # made the difference visible: the gate settles a push by proving its
+    # commit heads no open pull request (mikelward/lanes `settlePush`), and
+    # refuses when it does. That refusal is correct — a push's range is not
+    # a pull request's diff, so a green push verdict on a PR's head would
+    # satisfy that PR's required check without its diff ever being
+    # classified — but on a PR branch it fires on EVERY push, by design, so
+    # `lanes (push)` was permanently red on every open pull request here.
+    # The commit is handed back to the pull_request run's `lanes`, which is
+    # the check responsible for it and the one the ruleset requires.
+    #
+    # `build` is deliberately NOT narrowed with it: SPEC.md's every-push
+    # contract is about the build, and it still runs on every branch.
+    if: >-
+      always() && (github.event_name != 'push' ||
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
     steps:
       - uses: actions/checkout@v5
         with:

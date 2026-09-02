@@ -9,4 +9,5 @@ l
 # Source, not compiled test binaries — the rule above would drop them silently.
 !session_start_hook_test
 !installtest
+!workflow_test
 tags
