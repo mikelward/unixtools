@@ -137,6 +137,11 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
 - **Never leave a review comment silently dismissed.** Answer every thread — a
   disagreement is an answer, so say why — then resolve it once the fix is on the
   head or the point is rebutted; anything still to do stays open. Human and automated reviewers alike.
+- Restate every review finding in chat, not just the count. One bullet
+  each: review comment, top-level comment or review body alike, most blocking
+  first — what it claims, where, and what you did about it, or the options
+  where it's the maintainer's call. Summarize them all in that one reply;
+  ask only the most blocking question.
 - Read the Codex verdict, don't infer it. It reacts to the PR body
   (`issue_read` → `reactions`), not to a review thread, whose `Useful?` bar
   reads true on any PR it has commented on. `eyes` means reading, `+1` means
