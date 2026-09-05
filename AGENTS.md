@@ -129,6 +129,11 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   rather than narrowing the code to satisfy it; where the rule really does
   forbid what the product needs, that conflict is the maintainer's call, not
   one to settle either way yourself.
+- **A second verified finding in the same mechanism is evidence about the
+  design, not another bug.** Before fixing it, look for the same shape
+  elsewhere and ask whether a different design would delete the class rather
+  than the instance. Say what you chose on the thread; a design change is the
+  maintainer's call, autopilot included.
 - **Never leave a review comment silently dismissed.** Answer every thread — a
   disagreement is an answer, so say why — then resolve it once the fix is on the
   head or the point is rebutted; anything still to do stays open. Human and automated reviewers alike.
