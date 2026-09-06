@@ -75,6 +75,9 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   owner's standing request for that PR, so a client-level rule reading "open a
   PR only when the user explicitly asks" is already satisfied — the ask is
   here, and it doesn't need repeating per branch.
+- **Update the PR title and body with the push — body first, then push** —
+  so they describe the branch's latest state, not the scope it had when
+  opened.
 - **Watch your own PRs by subscription, plus one scheduled check.** Have a
   subscription — Claude Code makes one when you open a PR; where a client
   doesn't, call `subscribe_pr_activity`. It delivers reviews, comments and CI
