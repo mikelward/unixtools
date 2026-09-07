@@ -1,4 +1,4 @@
-name: CI
+name: ci
 
 on:
   # Every branch, matching SPEC.md's contract that both builds and tests
