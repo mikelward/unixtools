@@ -140,6 +140,13 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
 - **Never leave a review comment silently dismissed.** Answer every thread — a
   disagreement is an answer, so say why — then resolve it once the fix is on the
   head or the point is rebutted; anything still to do stays open. Human and automated reviewers alike.
+- **Deferring a real-but-out-of-scope finding.** Don't ask the maintainer to
+  merge past it: note the follow-up in `TODO.md`, commit and push that first,
+  reply on the thread citing the sha, and resolve — resolving a deferred
+  thread is the exception to "anything still to do stays open" above. A
+  finding with no thread (top-level comment or review body): just reply. The
+  push re-triggers Codex; `@codex review` only for the five-minute-silence
+  case. Escalate only if the re-review re-raises it.
 - Restate every review finding in chat, not just the count. One bullet
   each: review comment, top-level comment or review body alike, most blocking
   first — what it claims, where, and what you did about it, or the options
