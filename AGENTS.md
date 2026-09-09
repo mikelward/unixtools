@@ -144,7 +144,8 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   merge past it: note the follow-up in `TODO.md`, commit and push that first,
   reply on the thread citing the sha, and resolve — resolving a deferred
   thread is the exception to "anything still to do stays open" above. A
-  finding with no thread (top-level comment or review body): just reply. The
+  finding with no thread (top-level comment or review body) still gets the
+  `TODO.md` record, the push, and the reply — only the resolve is skipped. The
   push re-triggers Codex; `@codex review` only for the five-minute-silence
   case. Escalate only if the re-review re-raises it.
 - Restate every review finding in chat, not just the count. One bullet
