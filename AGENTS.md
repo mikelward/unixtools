@@ -174,8 +174,8 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   `get_reviews` to the last page, since all three page oldest first — and
   they block the merge until fixed, rebutted, or deferred (see *Deferring a
   finding* above); an acknowledgement is not an answer. Nothing from Codex
-  since the push, five minutes on, means it never picked it up — comment
-  `@codex review`, once.
+  since the push, five minutes on, or a clean review that left no reaction,
+  leaves the `codex` status pending — comment `@codex review`, once.
 - "Drive" means run the loop automatically: pick the next task, implement it,
   open the PR, send it for review, address every comment, merge once CI is green
   and the review has signed off — then pick the next task and go around again.
