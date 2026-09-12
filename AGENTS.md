@@ -131,7 +131,9 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   quietly costs capability the product needs. Quote the rule and decline
   rather than narrowing the code to satisfy it; where the rule really does
   forbid what the product needs, that conflict is the maintainer's call, not
-  one to settle either way yourself.
+  one to settle either way yourself. Declining doesn't clear the required
+  `codex` status: post the rebuttal, then `@codex review` once — a push does
+  the same if the rebuttal is up first. Escalate only if it re-raises.
 - **A second verified finding in the same mechanism is evidence about the
   design, not another bug.** Before fixing it, look for the same shape
   elsewhere and ask whether a different design would delete the class rather
@@ -146,8 +148,8 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   thread is the exception to "anything still to do stays open" above. A
   finding with no thread (top-level comment or review body) still gets the
   `TODO.md` record, the push, and the reply — only the resolve is skipped. The
-  push re-triggers Codex; `@codex review` only for the five-minute-silence
-  case. Escalate only if the re-review re-raises it.
+  push re-triggers Codex, so don't also poke it unless five minutes pass with
+  nothing back; escalate only if the re-review re-raises it.
 - Restate every review finding in chat, not just the count. One bullet
   each: review comment, top-level comment or review body alike, most blocking
   first — what it claims, where, and what you did about it, or the options
