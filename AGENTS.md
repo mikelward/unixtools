@@ -138,8 +138,8 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   forbid what the product needs, that conflict is the maintainer's call, not
   one to settle either way yourself. Declining doesn't clear the required
   `codex` status: post the rebuttal, then poke as *Read the Codex verdict*
-  allows — a push does the same if the rebuttal is up first. Escalate if it
-  re-raises.
+  allows — or let the next push do it, if the rebuttal is up first. Escalate
+  if it re-raises.
 - **A second verified finding in the same mechanism is evidence about the
   design, not another bug.** Before fixing it, look for the same shape
   elsewhere and ask whether a different design would delete the class rather
@@ -176,8 +176,9 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   acknowledgement is not an answer. A pending `codex` status is one of three
   things. Findings to address — address them. A clean review that left no
   reaction, or a rebuttal it hasn't answered — poke `@codex review` once,
-  now. Nothing back at all — poke once, five minutes after the push.
-  Escalate five minutes after the poke rather than poking a second time.
+  five minutes after that review or rebuttal. Nothing back at all — poke
+  once, five minutes after the push. Escalate five minutes after the poke
+  rather than poking a second time.
 - "Drive" means run the loop automatically: pick the next task, implement it,
   open the PR, send it for review, address every comment, merge once CI is green
   and the review has signed off — then pick the next task and go around again.
