@@ -15,10 +15,14 @@ conflict with background processes. To avoid this:
 
 1. **Download `.deb` files directly** with `curl`/`wget` and install with `dpkg -i`:
    ```sh
-   curl -sL http://archive.ubuntu.com/ubuntu/pool/main/a/attr/libattr1-dev_2.5.2-1build1.1_amd64.deb -o /tmp/libattr1-dev.deb
-   curl -sL http://archive.ubuntu.com/ubuntu/pool/main/a/acl/libacl1-dev_2.3.2-1build1.1_amd64.deb -o /tmp/libacl1-dev.deb
-   sudo dpkg -i /tmp/libattr1-dev.deb /tmp/libacl1-dev.deb
+   curl -fsSL http://archive.ubuntu.com/ubuntu/pool/main/a/attr/libattr1_2.5.2-1ubuntu0.1_amd64.deb -o /tmp/libattr1.deb
+   curl -fsSL http://archive.ubuntu.com/ubuntu/pool/main/a/attr/libattr1-dev_2.5.2-1ubuntu0.1_amd64.deb -o /tmp/libattr1-dev.deb
+   curl -fsSL http://archive.ubuntu.com/ubuntu/pool/main/a/acl/libacl1-dev_2.3.2-1build1.1_amd64.deb -o /tmp/libacl1-dev.deb
+   sudo dpkg -i /tmp/libattr1.deb /tmp/libattr1-dev.deb /tmp/libacl1-dev.deb
    ```
+   A `-dev` package requires its runtime library at exactly its own version, so
+   `libattr1` comes along. The pool drops a build once an update supersedes it:
+   if a URL 404s, take the version `noble-updates` now lists for both halves.
 2. **Never run `apt-get` in the background** — multiple `apt-get` processes
    will fight over `/var/lib/dpkg/lock-frontend` and all stall.
 3. **Always use `DEBIAN_FRONTEND=noninteractive`** to prevent interactive

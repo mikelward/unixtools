@@ -123,7 +123,7 @@ done
 exit 0
 EOF
 printf '#!/bin/sh\necho "$@" >>"%s/sudo-args"\nexit 0\n' "$_stubs" >"$_stubs/sudo"
-# Both .debs hash to the sha256 of "payload", so the pinned checksums match.
+# A sha256sum that passes every .deb, so the run reaches dpkg.
 # It reads its input before exiting: the hook pipes the checksum line in under
 # pipefail, so a stub that exits unread can kill the writer with SIGPIPE and
 # fail the run at random.
@@ -149,6 +149,16 @@ _calls=$(cat "$_stubs/calls" 2>/dev/null)
 _contains "bounds the connection" "--connect-timeout" "$_calls"
 _contains "bounds the transfer" "--max-time" "$_calls"
 rm -rf "$_stubs"
+
+# libattr1-dev depends on libattr1 at exactly its own version. Pinning the -dev
+# package alone left it unconfigured beside the image's older runtime library,
+# and once the pool dropped the pinned build the download 404ed outright.
+_pinned_version() {
+    sed -n "s|^.*a/attr/$1_\([^_]*\)_amd64\.deb.*$|\1|p" "$_hook"
+}
+_dev=$(_pinned_version libattr1-dev)
+_check "pins a libattr1-dev build" "true" "$(test -n "$_dev" && echo true)"
+_check "pins libattr1 at the version libattr1-dev requires" "$_dev" "$(_pinned_version libattr1)"
 
 if test $_failures -gt 0; then
     echo "session-start hook: $_failures test(s) failed, $_passes passed."
