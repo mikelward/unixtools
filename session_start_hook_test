@@ -124,7 +124,10 @@ exit 0
 EOF
 printf '#!/bin/sh\necho "$@" >>"%s/sudo-args"\nexit 0\n' "$_stubs" >"$_stubs/sudo"
 # Both .debs hash to the sha256 of "payload", so the pinned checksums match.
-printf '#!/bin/sh\nexit 0\n' >"$_stubs/sha256sum"
+# It reads its input before exiting: the hook pipes the checksum line in under
+# pipefail, so a stub that exits unread can kill the writer with SIGPIPE and
+# fail the run at random.
+printf '#!/bin/sh\ncat >/dev/null\nexit 0\n' >"$_stubs/sha256sum"
 chmod +x "$_stubs/curl" "$_stubs/sudo" "$_stubs/sha256sum"
 CLAUDE_CODE_REMOTE=true ACL_HEADER="$_stubs/absent.h" \
     PATH="$_stubs:/usr/bin:/bin" "$_hook" >/dev/null 2>&1
