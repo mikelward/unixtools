@@ -42,8 +42,11 @@ mirror=https://archive.ubuntu.com/ubuntu/pool/main
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
-# path <TAB> sha256
-debs="a/attr/libattr1-dev_2.5.2-1build1.1_amd64.deb	9a46b3d570e8992ff5ee4631abb4ee42e0e26f3febb01564e795703fe2c649f2
+# path <TAB> sha256. libattr1-dev depends on libattr1 at exactly its own
+# version, so the runtime library is pinned alongside it; the pool drops a
+# build once an update supersedes it, which is what a download 404 means.
+debs="a/attr/libattr1_2.5.2-1ubuntu0.1_amd64.deb	a99e2e2dfcefbc0e9c99fdc0b284c8b35eaa58744163aaed476de1c93d3c4ef4
+a/attr/libattr1-dev_2.5.2-1ubuntu0.1_amd64.deb	8b8617c8cfb142dbee1fc32f3a1df555341a7115b9560edfec4476b4bd8c178f
 a/acl/libacl1-dev_2.3.2-1build1.1_amd64.deb	c9711e29621acc8abb01a337d147e38288f950c75e3f761dbdbbfc634d4a7bdf"
 
 while IFS=$'\t' read -r path sha; do
