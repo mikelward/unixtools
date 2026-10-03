@@ -70,7 +70,7 @@ asterisks, e.g.
  * human-readable file sizes (`-h`, `--human-readable`), e.g. `1 KB`, `23 MB`
 
 #### Symlinks
- * follow symlinks (show information about symlink target, `-L`, `--dereference`); a chain the system won't follow (a loop, or more links than it allows: 40 on Linux, 32 on macOS) is reported as an error
+ * follow symlinks (show information about symlink target, `-L`, `--dereference`); a target that is missing, or a chain the system won't follow (a loop, or more links than it allows: 40 on Linux, 32 on macOS), shows `?`, is reported as an error, and makes `l` exit with code 1
  * don't follow symlinks (show information about symlink itself, `-P`, `--no-dereference`)
  * follow symlinks to directories specified as command line arguments (`-H`, `--dereference-command-line`, defaults to on unless `-P`, _`-F`, or `-l`_ were given)
 
