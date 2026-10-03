@@ -670,7 +670,7 @@ testBlocksizeIgnoresNonPositive() {
 }
 
 # -V prints a loop up to and including the name that closes it, and -L
-# reports one rather than following it forever.
+# reports one (the kernel's ELOOP) rather than following it forever.
 testSymlinkLoops() {
     setup
     ln -s self self
@@ -679,7 +679,7 @@ testSymlinkLoops() {
     check "$(l -V -1 self 2>/dev/null)" = "self -> self"
     check "$(l -V -1 a 2>/dev/null)" = "a -> b -> a"
     err="$(l -L -1 a 2>&1 >/dev/null)" || true
-    check "$err" != "${err/Symlink loop/}"
+    check "$err" != "${err/Cannot follow/}"
     cleanup
 }
 
@@ -715,7 +715,7 @@ testLoopDetectionAcrossFileSystems() {
     fi
     check "$(echo "$result" | head -n 1)" = "start -> a/first -> $PWD/b/second -> real"
     # -L shows the modes of real itself, not ? fields after a false loop
-    check "$result" = "${result/Symlink loop/}"
+    check "$result" = "${result/Cannot follow/}"
     check "$result" = "${result/\?/}"
     cleanup
 }
@@ -739,17 +739,16 @@ testHardLinkedSymlinkIsNotALoop() {
     touch d2/next
     check "$(l -V -1 d1/a 2>&1)" = "d1/a -> next -> ../d2/a -> next"
     result="$(l -L -M -1 d1/a 2>&1)" || true
-    check "$result" = "${result/Symlink loop/}"
+    check "$result" = "${result/Cannot follow/}"
     check "$result" = "${result/\?/}"
     ln -s ../d1/back d1/back
     err="$(l -L -1 d1/back 2>&1 >/dev/null)" || true
-    check "$err" != "${err/Symlink loop/}"
+    check "$err" != "${err/Cannot follow/}"
     cleanup
 }
 
-# An absolute target leads to the same place from any directory, so a hard
-# link to the same symlink is a loop as soon as it is reached; checking the
-# directory too reported it one link late, so -V printed d2/a twice.
+# A hard link to a symlink whose target is the absolute path of the other
+# name is a loop. -V stops at the first link that repeats, not one late.
 testHardLinkedAbsoluteSymlinkIsALoop() {
     setup
     mkdir d1 d2
@@ -761,7 +760,62 @@ testHardLinkedAbsoluteSymlinkIsALoop() {
     fi
     check "$(l -V -1 d1/a 2>/dev/null)" = "d1/a -> $PWD/d2/a"
     err="$(l -L -1 d1/a 2>&1 >/dev/null)" || true
-    check "$err" != "${err/Symlink loop/}"
+    check "$err" != "${err/Cannot follow/}"
+    cleanup
+}
+
+# Whether a chain loops is the kernel's call: past its own limit of links
+# (40 on Linux, 32 on macOS and the BSDs) it is ELOOP, as for any program.
+# A chain within every limit is followed to its end. A longer one is
+# reported instead of being walked, which on a chain of thousands of links
+# used to take seconds; -V shows at most 64 links of it.
+testLongSymlinkChains() {
+    setup
+    touch real
+    previous=real
+    for i in $(seq 16 -1 0); do
+        ln -s "$previous" "short$i"
+        previous="short$i"
+    done
+    previous=real
+    for i in $(seq 100 -1 0); do
+        ln -s "$previous" "long$i"
+        previous="long$i"
+    done
+    err="$(l -L -1 short0 2>&1 >/dev/null)" || true
+    check "$err" = ""
+    result="$(l -V -1 short0 2>/dev/null)" || true
+    check "${result##* -> }" = "real"
+    err="$(l -L -1 long0 2>&1 >/dev/null)" || true
+    check "$err" != "${err/Cannot follow/}"
+    result="$(l -V -1 long0 2>/dev/null)" || true
+    arrows="$(echo "$result" | grep -o ' -> ' | wc -l | tr -d ' ')"
+    check "$arrows" = 64
+    cleanup
+}
+
+# One directory bind-mounted at two places has one device and inode, but
+# ../next leads somewhere different from each, so a chain through both is
+# not a loop. Mounting takes a private mount namespace, which some kernels
+# refuse an ordinary user.
+testBindMountedChainIsNotALoop() {
+    if ! unshare -rm true 2>/dev/null; then
+        echo "${FUNCNAME[0]} SKIPPED: no private mount namespace"
+        return 0
+    fi
+    setup
+    mkdir -p a/m b/m shared
+    result="$(unshare -rm sh -c '
+        mount --bind shared a/m && mount --bind shared b/m || exit 1
+        ln -s ../next shared/link
+        ln -s ../b/m/link a/next
+        touch b/next
+        "$1" -V -1 a/m/link 2>&1
+        "$1" -L -M -1 a/m/link 2>&1
+    ' sh "$OUTDIR/l")" || true
+    check "$(echo "$result" | head -n 1)" = "a/m/link -> ../next -> ../b/m/link -> ../next"
+    check "$result" = "${result/Cannot follow/}"
+    check "$result" = "${result/\?/}"
     cleanup
 }
 
@@ -844,4 +898,6 @@ testSymlinkLoops
 testLoopDetectionAcrossFileSystems
 testHardLinkedSymlinkIsNotALoop
 testHardLinkedAbsoluteSymlinkIsALoop
+testLongSymlinkChains
+testBindMountedChainIsNotALoop
 testCheckFormatsMultiArgFailure

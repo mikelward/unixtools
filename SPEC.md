@@ -65,7 +65,7 @@ For `-F`: files that cannot be stat'd get `?` after the name.
 
 | Flag | Long option | Description |
 |------|-------------|-------------|
-| `-V` | `--show-links` | Show full symlink chain: `link1 -> link2 -> file` (with colors/flags on each component). Detects loops by device and inode (see [Symlink Resolution](#symlink-resolution)). |
+| `-V` | `--show-links` | Show full symlink chain: `link1 -> link2 -> file` (with colors/flags on each component). A chain that cannot be followed stops at the link that closes the loop (see [Symlink Resolution](#symlink-resolution)). |
 | (with `-l`) | | Show immediate target only: `link -> target` |
 
 A target that cannot be read (for example, one too long for a `PATH_MAX`-sized buffer) ends the chain: the name is printed without ` -> `, and the reason goes to stderr. Targets up to `PATH_MAX - 1` bytes, the longest the system allows, are read in full.
@@ -281,9 +281,11 @@ Position 11 - ACL indicator:
 ### Symlink Resolution
 
 - `gettarget()`: reads one level of symlink (via `readlink()`)
-- `getfinaltarget()`: follows the full chain, detecting loops
+- `getfinaltarget()`: follows the full chain, or reports that it cannot be followed
 - Target paths are resolved relative to the symlink's directory
-- Loop detection: a file that appears twice in the chain is a loop; print error to stderr. Files are the same only if both device and inode match, since an inode number is unique only within one file system, and, for a symlink with a relative target, the directories they were reached through match too, since that target is resolved in that directory (so hard links to one symlink in two directories can lead to different places). An absolute target leads to the same place from any directory. `-V` prints the chain up to and including the name that closes the loop (`a -> b -> a`).
+- Loop detection is the kernel's: `stat()` on the link fails with `ELOOP` for a loop, or for a chain longer than the kernel follows (40 links on Linux, 32 on macOS and the BSDs), as it would for any program. `l` then prints `Cannot follow <name>: Too many levels of symbolic links` to stderr and treats the target as unknown. It does not try to recognise loops itself: matching device and inode cannot tell apart hard links or bind mounts that share them but lead to different places.
+- A chain the kernel can follow is walked with `readlink()` to find the file at its end, at most 64 links in case the links change while it is walked.
+- `-V` shows a chain the kernel can follow to its end. For one it cannot, it stops after the first link with the same device and inode as an earlier one, which closes a plain loop (`a -> b -> a`), or after 64 links.
 
 ### Directory Listing Flow
 

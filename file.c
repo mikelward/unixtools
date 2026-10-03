@@ -845,43 +845,21 @@ File *gettarget(File *file)
     return file->target;
 }
 
-/*
- * Return true if a and b are in the same directory.  A relative symlink's
- * target is resolved in the directory it was reached through, so hard links
- * to one symlink in two directories can lead to two different places.  A
- * directory that cannot be stat'd counts as the same, so that a chain that
- * really does loop can never be followed forever.
- */
-static bool samedir(File *a, File *b)
+bool chainloops(File *file)
 {
-    char *dira = getdirname(a);
-    char *dirb = getdirname(b);
-    struct stat sa, sb;
-    bool same = !dira || !dirb || stat(dira, &sa) != 0 || stat(dirb, &sb) != 0 ||
-                (sa.st_dev == sb.st_dev && sa.st_ino == sb.st_ino);
-    free(dira);
-    free(dirb);
-    return same;
+    struct stat st;
+    return file && stat(file->path, &st) != 0 && errno == ELOOP;
 }
 
-bool isloop(File *first, File *file)
+bool isrepeat(File *first, File *file)
 {
     struct stat *pstat = getstat(file);
     if (!pstat) return false;
     /* every File on the chain is the cached target of the one before it */
     for (File *f = first; f && f != file; f = f->target) {
         struct stat *fstat = getstat(f);
-        /* an inode number is only unique within its device */
-        if (!fstat || fstat->st_dev != pstat->st_dev ||
-            fstat->st_ino != pstat->st_ino) {
-            continue;
-        }
-        /* the same link leads to the same place if its target is absolute;
-           a relative one also depends on the directory it is resolved in.
-           f was followed to get here, so f->target holds the link's text,
-           and hard links share it */
-        const char *text = f->target ? getname(f->target) : NULL;
-        if ((text && text[0] == '/') || samedir(f, file)) {
+        if (fstat && fstat->st_dev == pstat->st_dev &&
+            fstat->st_ino == pstat->st_ino) {
             return true;
         }
     }
@@ -890,18 +868,28 @@ bool isloop(File *first, File *file)
 
 File *getfinaltarget(File *file)
 {
-    File *first = file;
+    /*
+     * Whether the chain ends is the kernel's call: it follows at most its own
+     * limit of links (40 on Linux, 32 on macOS and the BSDs) and fails with
+     * ELOOP past that, which is how it reports a loop.  Recognising a loop
+     * here instead meant copying how it resolves each link, and that kept
+     * missing cases: devices, directories, absolute targets, bind mounts.
+     */
+    if (chainloops(file)) {
+        errorf("Cannot follow %s: %s\n", getname(file), strerror(ELOOP));
+        return NULL;
+    }
+    /* the chain ends, or dangles: walk it for the File at its end, capped
+       in case the links change while it is walked */
     File *target = NULL;
-    while (isstat(file) && islink(file)) {
+    for (int links = 0; isstat(file) && islink(file); links++) {
+        if (links == MAXCHAIN) {
+            errorf("Cannot follow %s: %s\n", getname(file), strerror(ELOOP));
+            return NULL;
+        }
         target = gettarget(file);
         if (!target) {
             errorf("Cannot determine target of %s\n", getname(file));
-            break;
-        }
-        if (isloop(first, target)) {
-            errorf("Symlink loop in %s\n", getname(file));
-            /* no file to stat, but want to print the name field */
-            target = NULL;
             break;
         }
         file = target;
