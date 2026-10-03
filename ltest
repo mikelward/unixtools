@@ -651,7 +651,8 @@ testDiagnosticsEscapeNames() {
     setup
     name=$'loop\033]0;pwned\a'
     ln -s "$name" "$name"
-    result="$(l -L -1 2>&1 >/dev/null)"
+    # a loop under -L exits 1; this test is about the message
+    result="$(l -L -1 2>&1 >/dev/null)" || true
     esc=$'\033'
     check "$result" = "${result//$esc/}"
     check "$result" != "${result/'loop\033]0;pwned\007'/}"
@@ -819,6 +820,34 @@ testBindMountedChainIsNotALoop() {
     cleanup
 }
 
+# -L lists a link's final target instead of the link, so a target that is
+# dangling or a loop leaves the listing incomplete; that exited 0. Without
+# -L the link itself is listed in full, so it still succeeds.
+testDereferenceExitStatus() {
+    setup
+    ln -s nowhere dangling
+    ln -s loop loop
+    touch real
+    ln -s real good
+    mkdir dir
+    ln -s nowhere dir/dangling
+    for args in "dangling" "loop" "dir"; do
+        status=0
+        l -L -1 $args >/dev/null 2>&1 || status=$?
+        check "-L $args exits $status" = "-L $args exits 1"
+    done
+    status=0
+    l -L -1 good >/dev/null 2>&1 || status=$?
+    check "$status" = 0
+    status=0
+    l -1 dangling loop >/dev/null 2>&1 || status=$?
+    check "$status" = 0
+    # the final target is remembered, so the loop is reported once
+    err="$(l -L -1 loop 2>&1 >/dev/null)" || true
+    check "$(echo "$err" | grep -c 'Cannot follow')" = 1
+    cleanup
+}
+
 # Regression test for the $* fix in check(): a failure on more than one
 # argument used to print via $@, which passes each argument to echo
 # separately instead of as one joined string (shellcheck SC2145). bash's
@@ -900,4 +929,5 @@ testHardLinkedSymlinkIsNotALoop
 testHardLinkedAbsoluteSymlinkIsALoop
 testLongSymlinkChains
 testBindMountedChainIsNotALoop
+testDereferenceExitStatus
 testCheckFormatsMultiArgFailure

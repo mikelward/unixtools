@@ -310,8 +310,18 @@ void listfiles(FileList *files, Options *options)
     /* sorting and the fields stat whatever they show, so this is where an
        entry that could not be stat'd (shown with ? fields) is known */
     for (int i = 0; i < nfiles; i++) {
-        if (statfailed(getitem(files, i))) {
+        File *file = getitem(files, i);
+        if (statfailed(file)) {
             exitstatus = 1;
+        } else if (options->targetinfo == ON && islink(file)) {
+            /* -L lists the final target's details instead of the link's, so
+               a target that cannot be found (a loop, an unreadable link) or
+               stat'd (a dangling link) leaves the listing incomplete too;
+               getfilefields() already followed the chain, so this is silent */
+            File *target = getfinaltarget(file);
+            if (!target || statfailed(target)) {
+                exitstatus = 1;
+            }
         }
     }
     int *fieldwidths = getmaxfilefieldwidths(filefields);
