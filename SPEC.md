@@ -65,7 +65,7 @@ For `-F`: files that cannot be stat'd get `?` after the name.
 
 | Flag | Long option | Description |
 |------|-------------|-------------|
-| `-V` | `--show-links` | Show full symlink chain: `link1 -> link2 -> file` (with colors/flags on each component). Detects loops via inode tracking. |
+| `-V` | `--show-links` | Show full symlink chain: `link1 -> link2 -> file` (with colors/flags on each component). Detects loops by device and inode (see [Symlink Resolution](#symlink-resolution)). |
 | (with `-l`) | | Show immediate target only: `link -> target` |
 
 A target that cannot be read (for example, one too long for a `PATH_MAX`-sized buffer) ends the chain: the name is printed without ` -> `, and the reason goes to stderr. Targets up to `PATH_MAX - 1` bytes, the longest the system allows, are read in full.
@@ -281,9 +281,9 @@ Position 11 - ACL indicator:
 ### Symlink Resolution
 
 - `gettarget()`: reads one level of symlink (via `readlink()`)
-- `getfinaltarget()`: follows the full chain, detecting loops via inode set
+- `getfinaltarget()`: follows the full chain, detecting loops
 - Target paths are resolved relative to the symlink's directory
-- Loop detection: if an inode is seen twice, it's a loop; print error to stderr
+- Loop detection: a file that appears twice in the chain is a loop; print error to stderr. Files are the same only if both device and inode match, since an inode number is unique only within one file system. `-V` prints the chain up to and including the name that closes the loop (`a -> b -> a`).
 
 ### Directory Listing Flow
 

@@ -138,6 +138,14 @@ File *gettarget(File *file);
  * freefile() on file anyway, and that frees file and its targets.
  */
 File *getfinaltarget(File *file);
+/**
+ * Return true if file is the same file as one before it on the chain of
+ * symlinks that starts at first, i.e. following the chain has looped.
+ *
+ * file must be on that chain: first, or reached from it by gettarget().
+ * Files are the same if both their device and their inode match.
+ */
+bool isloop(File *first, File *file);
 
 int comparebyname(const File **a, const File **b);
 int comparebyatime(const File **a, const File **b);
