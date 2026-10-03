@@ -82,6 +82,8 @@ struct file {
     int didstat;
     struct stat *pstat;
     struct file *target;           /* holds target file if this file is a symlink */
+    int didfinaltarget;
+    struct file *finaltarget;      /* getfinaltarget()'s result, on target's chain */
 };
 
 /**
@@ -141,6 +143,8 @@ File *newfile(const char *dir, const char *name)
     file->didstat = 0;
     file->pstat = NULL;
     file->target = NULL;
+    file->didfinaltarget = 0;
+    file->finaltarget = NULL;
 
     return file;
 }
@@ -866,7 +870,7 @@ bool isrepeat(File *first, File *file)
     return false;
 }
 
-File *getfinaltarget(File *file)
+static File *findfinaltarget(File *file)
 {
     /*
      * Whether the chain ends is the kernel's call: it follows at most its own
@@ -895,6 +899,17 @@ File *getfinaltarget(File *file)
         file = target;
     }
     return target;
+}
+
+File *getfinaltarget(File *file)
+{
+    /* remembered, so asking again neither repeats the walk nor its errors;
+       not freed through this: the result is on file's chain of targets */
+    if (file && !file->didfinaltarget) {
+        file->finaltarget = findfinaltarget(file);
+        file->didfinaltarget = 1;
+    }
+    return file ? file->finaltarget : NULL;
 }
 
 /*

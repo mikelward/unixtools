@@ -134,6 +134,9 @@ File *gettarget(File *file);
  * file must be a symlink.  Resolves all symlinks until a non-symlink target is found
  * Returns NULL if the kernel cannot follow the chain (see chainloops()).
  *
+ * The result is remembered, so later calls for the same file are cheap and
+ * print no errors again.
+ *
  * Does not free anything, even on error, since calling code should always call
  * freefile() on file anyway, and that frees file and its targets.
  */
