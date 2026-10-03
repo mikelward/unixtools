@@ -592,11 +592,56 @@ testUnsearchableDirectoryExitStatus() {
     result="$(l -l dir 2>/dev/null)" || status=$?
     plainstatus=0
     plain="$(l -1 dir 2>/dev/null)" || plainstatus=$?
+    # -D stats each entry only to filter it out of the listing
+    dirsstatus=0
+    l -D -1 dir >/dev/null 2>&1 || dirsstatus=$?
     chmod 755 dir
     check "$status" = 1
     check "$result" != "${result/\?\?\?/}"
     check "$plainstatus" = 0
     check "$plain" = "file"
+    check "$dirsstatus" = 1
+    cleanup
+}
+
+# readdir() returns NULL for an error as well as at the end of a directory,
+# and an error used to pass for the end: a partial listing that exited 0.
+# No real file system fails on demand, so a preloaded readdir() fails at
+# the entry named "fail"; LD_PRELOAD limits this to Linux.
+testReaddirFailureExitStatus() {
+    if test "$(uname)" != Linux; then
+        echo "${FUNCNAME[0]} SKIPPED: needs LD_PRELOAD"
+        return 0
+    fi
+    setup
+    cat > shim.c <<'EOF'
+#define _GNU_SOURCE
+#include <dirent.h>
+#include <dlfcn.h>
+#include <errno.h>
+#include <string.h>
+
+struct dirent *readdir(DIR *dir)
+{
+    static struct dirent *(*real)(DIR *);
+    if (!real) {
+        real = (struct dirent *(*)(DIR *))dlsym(RTLD_NEXT, "readdir");
+    }
+    struct dirent *dirent = real(dir);
+    if (dirent && strcmp(dirent->d_name, "fail") == 0) {
+        errno = EIO;
+        return NULL;
+    }
+    return dirent;
+}
+EOF
+    ${CC:-cc} -shared -fPIC -o shim.so shim.c -ldl
+    mkdir dir
+    touch dir/fail
+    status=0
+    err="$(LD_PRELOAD="$PWD/shim.so" l -1 dir 2>&1 >/dev/null)" || status=$?
+    check "$status" = 1
+    check "$err" != "${err/Cannot read dir/}"
     cleanup
 }
 
@@ -696,6 +741,7 @@ testLongOptionErrorsNameTheOption
 testMissingOperandExitStatus
 testUnreadableDirectoryExitStatus
 testUnsearchableDirectoryExitStatus
+testReaddirFailureExitStatus
 testDiagnosticsEscapeNames
 testBlocksizeIgnoresNonPositive
 testCheckFormatsMultiArgFailure
