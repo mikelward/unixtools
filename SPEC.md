@@ -68,6 +68,8 @@ For `-F`: files that cannot be stat'd get `?` after the name.
 | `-V` | `--show-links` | Show full symlink chain: `link1 -> link2 -> file` (with colors/flags on each component). Detects loops via inode tracking. |
 | (with `-l`) | | Show immediate target only: `link -> target` |
 
+A target that cannot be read (for example, one too long for a `PATH_MAX`-sized buffer) ends the chain: the name is printed without ` -> `, and the reason goes to stderr. Targets up to `PATH_MAX - 1` bytes, the longest the system allows, are read in full.
+
 ### Symlink Following
 
 | Flag | Long option | Description |
@@ -103,7 +105,7 @@ When `-L` is active, if the final target of a symlink cannot be determined, fiel
 | `-t` | `--sort=time` | Sort by modification time, newest first |
 | `-v` | `--sort=version` | Sort by version using `strverscmp()` (numeric-aware) |
 | `-r` | `--reverse` | Reverse the sort order |
-| `-f` or `-U` | `--unsorted`, `--sort=none` | Don't sort (directory order). Also disables `-r`. |
+| `-f` or `-U` | `--unsorted`, `--sort=none` | Don't sort (directory order). Also disables `-r`. `-f` and `-U` are identical. |
 
 #### Time type modifiers
 
@@ -132,7 +134,7 @@ Files that cannot be stat'd sort as if they have the smallest value (they appear
 | `-e` | `--escape` | ESCAPE_C | C-style escapes: `\n`, `\t`, `\a`, `\b`, `\v`, `\f`, `\r`, `\\`, or `\NNN` for others |
 | `-E` | `--no-escape` | ESCAPE_NONE | No escaping; output raw bytes. Default when stdout is not a terminal. |
 
-Escaping applies to file names only. The `\\` literal backslash is doubled only in ESCAPE_C mode. Wide character / multibyte handling via `mbrtowc()` + `iswprint()` + `iswcntrl()`.
+Escaping applies to file names, including the names in directory headers (`dirname:`), which `-R` takes from directory entries. The `\\` literal backslash is doubled only in ESCAPE_C mode. Wide character / multibyte handling via `mbrtowc()` + `iswprint()` + `iswcntrl()`.
 
 **Invalid/incomplete multibyte sequences**: When an invalid or incomplete UTF-8 byte sequence is encountered, each bad byte is handled according to the escape mode:
 - ESCAPE_C: replaced with `\NNN` (octal escape)
@@ -190,6 +192,8 @@ For block and character device files, the size in blocks (`-s`) and size in byte
 3. Older or in the future: `%b %e  %Y` (e.g., `Jan  5  2023`)
 
 **Relative format** uses: `N years`, `N months`, `N days`, `N hours`, `N minutes`, `N seconds`. Falls back to traditional for future timestamps.
+
+**Out-of-range times**: a time too far from the epoch for `localtime()` to convert (its year does not fit in an `int`) is shown as the plain number of seconds since the epoch, in every style, as GNU `ls` does.
 
 Time types: modification time (default), change time (`-c`/`-Tc`), access time (`-u`/`-Tu`).
 
@@ -287,14 +291,14 @@ Position 11 - ACL indicator:
 2. If argument is a directory (or symlink-to-directory when `-H` is active): treat as directory
 3. List all files first (sorted, formatted)
 4. Then list each directory:
-   a. Print directory header (`dirname:`) if multiple dirs, or mixing files+dirs, or `-R`
+   a. Print directory header (`dirname:`) if multiple dirs, or mixing files+dirs, or `-R`; the name is escaped as for file names
    b. Print blank line between sections (but not before the first section)
    c. Print `total <blocks>` if `-s` or `-l`
    d. Read directory entries via `readdir()`
    e. Skip hidden files unless `-a`
    f. Apply `-D` filter (dirsonly)
    g. Sort, format, and print entries
-   h. If `-R`, recurse into subdirectories
+   h. If `-R`, recurse into subdirectories, never into `.` or `..` (which `-a` lists)
 
 ### Block Size Calculation
 
@@ -302,7 +306,7 @@ Blocks are stored in 512-byte (`DEV_BSIZE`) units in `st_blocks`. Conversion:
 - If `blocksize > DEV_BSIZE`: `blocks = (st_blocks + factor/2) / factor` where `factor = blocksize / DEV_BSIZE` (rounds to nearest)
 - If `blocksize <= DEV_BSIZE`: `blocks = st_blocks * (DEV_BSIZE / blocksize)`
 
-Default block size: 1024 (overridable by `BLOCKSIZE` env var).
+Default block size: 1024 (overridable by `BLOCKSIZE` env var, read as a decimal integer and ignored unless it is between 1 and `INT_MAX`).
 
 Directory totals: sum of `getblocks()` for all listed files in the directory.
 
@@ -317,16 +321,17 @@ Directory totals: sum of `getblocks()` for all listed files in the directory.
 ## Error Handling
 
 - Errors are printed to stderr with the format: `l: function: message`
+- Anything in a message that is not printable in the current locale is written as `\NNN` octal escapes, byte by byte, whatever the escape mode. Messages include file names, and a name holding a terminal escape sequence must not reach the terminal raw.
 - Most errors are non-fatal (program continues processing other files)
 - Fatal errors (out of memory at startup, invalid options) cause `exit(1)` or `exit(2)`
-- Unknown options print usage and exit with code 2
+- Unknown options print usage and exit with code 2; the message names the option (`-Z`, or `--bogus` for a long option), as does a missing argument to one
 - Files that can't be stat'd are skipped (freed) when given as arguments
 - Directory open failures print an error and skip that directory
 
 ## Exit Codes
 
 - `0`: Success
-- `1`: Runtime error (out of memory, etc.)
+- `1`: Runtime error: an operand that cannot be stat'd, a directory that cannot be opened (including one found by `-R`), out of memory. Remaining operands are still listed.
 - `2`: Usage error (invalid option, missing argument)
 
 ## Incompatibilities with GNU/BSD `ls`
@@ -348,7 +353,7 @@ These options have **different meanings** from standard `ls`:
 
 | Variable | Effect |
 |----------|--------|
-| `BLOCKSIZE` | Default block size for `-s` display (parsed as integer) |
+| `BLOCKSIZE` | Default block size for `-s` display (parsed as integer; values below 1 or above `INT_MAX` are ignored) |
 | `TERM` | Used to determine terminal color capabilities |
 | `LC_ALL`, `LANG`, etc. | Locale settings affecting sort order, character handling |
 
