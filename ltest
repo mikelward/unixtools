@@ -720,6 +720,33 @@ testLoopDetectionAcrossFileSystems() {
     cleanup
 }
 
+# Where a relative symlink leads depends on the directory it is reached
+# through, so hard links to one symlink in two directories are not a loop:
+# here d1/a leads to d1/next, which leads to d2/a, the same symlink, which
+# leads to d2/next. A loop that comes back through a different spelling of
+# the same directory is still one. Skips where a symlink cannot be
+# hard-linked.
+testHardLinkedSymlinkIsNotALoop() {
+    setup
+    mkdir d1 d2
+    ln -s next d1/a
+    if ! ln -P d1/a d2/a 2>/dev/null || ! test -L d2/a; then
+        cleanup
+        echo "${FUNCNAME[0]} SKIPPED: cannot hard-link a symlink"
+        return 0
+    fi
+    ln -s ../d2/a d1/next
+    touch d2/next
+    check "$(l -V -1 d1/a 2>&1)" = "d1/a -> next -> ../d2/a -> next"
+    result="$(l -L -M -1 d1/a 2>&1)" || true
+    check "$result" = "${result/Symlink loop/}"
+    check "$result" = "${result/\?/}"
+    ln -s ../d1/back d1/back
+    err="$(l -L -1 d1/back 2>&1 >/dev/null)" || true
+    check "$err" != "${err/Symlink loop/}"
+    cleanup
+}
+
 # Regression test for the $* fix in check(): a failure on more than one
 # argument used to print via $@, which passes each argument to echo
 # separately instead of as one joined string (shellcheck SC2145). bash's
@@ -797,4 +824,5 @@ testDiagnosticsEscapeNames
 testBlocksizeIgnoresNonPositive
 testSymlinkLoops
 testLoopDetectionAcrossFileSystems
+testHardLinkedSymlinkIsNotALoop
 testCheckFormatsMultiArgFailure
