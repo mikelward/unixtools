@@ -122,3 +122,11 @@ directory lacking search permission, not from the file's own mode.
   for usage errors.
 - Message format. Messages carry internal function names (`l: getstat:
   Cannot lstat ...`), where GNU ls says `ls: cannot access 'x': reason`.
+- `-D` under `-L`. `-D` keeps only directories, judging each entry by its
+  own type even under `-L`, so a link to a directory is left out and a
+  dangling link is dropped without its target ever being looked up. That
+  is why `l -L -D` on a directory holding a dangling link prints nothing
+  and exits 0 (found by Codex on #54). Decide whether `-L` should make
+  `-D` judge the target, as `find -L -type d` does. Then a link to a
+  directory would be listed, and a target that cannot be found would be an
+  error, as it is anywhere else under `-L`.
