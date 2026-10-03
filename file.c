@@ -845,6 +845,25 @@ File *gettarget(File *file)
     return file->target;
 }
 
+/*
+ * Return true if a and b are in the same directory.  A relative symlink's
+ * target is resolved in the directory it was reached through, so hard links
+ * to one symlink in two directories lead to two different places.  A
+ * directory that cannot be stat'd counts as the same, so that a chain that
+ * really does loop can never be followed forever.
+ */
+static bool samedir(File *a, File *b)
+{
+    char *dira = getdirname(a);
+    char *dirb = getdirname(b);
+    struct stat sa, sb;
+    bool same = !dira || !dirb || stat(dira, &sa) != 0 || stat(dirb, &sb) != 0 ||
+                (sa.st_dev == sb.st_dev && sa.st_ino == sb.st_ino);
+    free(dira);
+    free(dirb);
+    return same;
+}
+
 bool isloop(File *first, File *file)
 {
     struct stat *pstat = getstat(file);
@@ -852,9 +871,10 @@ bool isloop(File *first, File *file)
     /* every File on the chain is the cached target of the one before it */
     for (File *f = first; f && f != file; f = f->target) {
         struct stat *fstat = getstat(f);
-        /* an inode number is only unique within its device */
+        /* an inode number is only unique within its device, and where a
+           link leads also depends on the directory it is resolved in */
         if (fstat && fstat->st_dev == pstat->st_dev &&
-            fstat->st_ino == pstat->st_ino) {
+            fstat->st_ino == pstat->st_ino && samedir(f, file)) {
             return true;
         }
     }

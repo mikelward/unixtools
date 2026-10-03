@@ -143,7 +143,9 @@ File *getfinaltarget(File *file);
  * symlinks that starts at first, i.e. following the chain has looped.
  *
  * file must be on that chain: first, or reached from it by gettarget().
- * Files are the same if both their device and their inode match.
+ * Files are the same if their device and inode match and so do those of
+ * the directories they were reached through, since a relative symlink's
+ * target depends on that directory.
  */
 bool isloop(File *first, File *file);
 
