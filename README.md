@@ -19,6 +19,8 @@ where it makes sense, but add some options to make it more useful to me.
     link_to_link_to_file -> link_to_file -> file
 
 with appropriate colors (`-G` or `-K`) or flags (`-F` or `-O`) if requested.
+A loop, or a chain longer than the system will follow, is shown up to the
+link that closes it, and never more than 64 links.
 
 `-p` displays permissions for the _current_ user, hopefully
 making it more useful than the `-rwxr-xr-x user group` format of `ls -l`,
@@ -68,7 +70,7 @@ asterisks, e.g.
  * human-readable file sizes (`-h`, `--human-readable`), e.g. `1 KB`, `23 MB`
 
 #### Symlinks
- * follow symlinks (show information about symlink target, `-L`, `--dereference`)
+ * follow symlinks (show information about symlink target, `-L`, `--dereference`); a chain the system won't follow (a loop, or more links than it allows: 40 on Linux, 32 on macOS) is reported as an error
  * don't follow symlinks (show information about symlink itself, `-P`, `--no-dereference`)
  * follow symlinks to directories specified as command line arguments (`-H`, `--dereference-command-line`, defaults to on unless `-P`, _`-F`, or `-l`_ were given)
 
