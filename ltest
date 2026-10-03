@@ -787,8 +787,10 @@ testLongSymlinkChains() {
     check "$err" = ""
     result="$(l -V -1 short0 2>/dev/null)" || true
     check "${result##* -> }" = "real"
-    err="$(l -L -1 long0 2>&1 >/dev/null)" || true
+    status=0
+    err="$(l -L -1 long0 2>&1 >/dev/null)" || status=$?
     check "$err" != "${err/Cannot follow/}"
+    check "$status" = 1
     result="$(l -V -1 long0 2>/dev/null)" || true
     arrows="$(echo "$result" | grep -o ' -> ' | wc -l | tr -d ' ')"
     check "$arrows" = 64
