@@ -8,6 +8,7 @@
 
 #include <sys/ioctl.h>
 #include <getopt.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -80,11 +81,13 @@ void setdefaults(Options *options)
     options->timeformat = NULL;
     options->usernames = NULL;
 
-    /* use BLOCKSIZE as default blocksize if set */
+    /* use BLOCKSIZE as default blocksize if set to a usable value:
+       getblocks() divides by it as an int, so a negative value printed
+       garbage and one past INT_MAX overflowed atoi() */
     char *blocksizeenv = getenv("BLOCKSIZE");
     if (blocksizeenv != NULL) {
-        int blocksize = atoi(blocksizeenv);
-        if (blocksize != 0) {
+        long blocksize = strtol(blocksizeenv, NULL, 10);
+        if (blocksize > 0 && blocksize <= INT_MAX) {
             options->blocksize = blocksize;
         }
     }
@@ -293,7 +296,8 @@ int setoptions(Options *options, int argc, char **argv)
             options->flags = FLAGS_NORMAL;
             break;
         case 'f':
-            options->compare = NULL;
+            /* setting compare here was undone by the sorttype switch below */
+            options->sorttype = SORT_UNSORTED;
             break;
         case 'G':
             /* for compatibility with FreeBSD */
@@ -401,12 +405,21 @@ int setoptions(Options *options, int argc, char **argv)
         case 'x':
             options->displaymode = DISPLAY_IN_ROWS;
             break;
+        /* optopt is 0 for a long option, so name it from argv instead */
         case ':':
-            error("Missing argument to -%c\n", optopt);
+            if (optopt) {
+                error("Missing argument to -%c\n", optopt);
+            } else {
+                error("Missing argument to %s\n", argv[optind - 1]);
+            }
             usage();
             return -1;
         case '?':
-            error("Unknown option -%c\n", optopt);
+            if (optopt) {
+                error("Unknown option -%c\n", optopt);
+            } else {
+                error("Unknown option %s\n", argv[optind - 1]);
+            }
             usage();
             return -1;
         default:
@@ -488,7 +501,9 @@ int setoptions(Options *options, int argc, char **argv)
     }
 
     if (options->color) {
-        Colors *colors = malloc(sizeof(*colors));
+        /* zeroed: setupcolors() can fail before setting every field,
+           and freecolors() frees them all */
+        Colors *colors = calloc(1, sizeof(*colors));
         if (!colors) {
             errorf("Out of memory?\n");
             goto error;

@@ -1,6 +1,7 @@
 #define _XOPEN_SOURCE 600
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -196,10 +197,11 @@ Field *getdatetimefield(File *file, Options *options)
         }
         struct tm *timestruct = localtime(&timestamp);
         if (!timestruct) {
-            errorf("timestruct is NULL\n");
-            return NULL;
-        }
-        if (options->timeformat != NULL) {
+            /* too far from the epoch for a calendar year to fit in an int:
+               show the raw seconds, as GNU ls does, rather than failing the
+               field, which would drop every file's line from the listing */
+            s = xasprintf("%jd", (intmax_t)timestamp);
+        } else if (options->timeformat != NULL) {
             s = xstrftime(options->timeformat, timestruct);
         } else if (options->timestyle == TIME_RELATIVE) {
             assert(options->now > 0);
@@ -364,7 +366,11 @@ Field *getnamefield(File *file, Options *options)
                 } else {
                     set(linkmap, (uintmax_t)getinode(file), NULL);
                 }
+                /* an unreadable target ends the chain; gettarget() said why */
                 file = gettarget(file);
+                if (!file) {
+                    break;
+                }
                 bufappend(buf, " -> ", 4, 4);
                 printnametobuf(file, options, buf);
             }
@@ -375,9 +381,12 @@ Field *getnamefield(File *file, Options *options)
     } else if (options->showlink) {
         /* print only the first link target without stat'ing the target */
         if (isstat(file) && islink(file)) {
+            /* an unreadable target gets no arrow; gettarget() said why */
             file = gettarget(file);
-            bufappend(buf, " -> ", 4, 4);
-            printnametobuf(file, options, buf);
+            if (file) {
+                bufappend(buf, " -> ", 4, 4);
+                printnametobuf(file, options, buf);
+            }
         }
     }
 

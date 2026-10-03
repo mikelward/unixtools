@@ -429,6 +429,174 @@ testFormatAcross() {
     cleanup
 }
 
+# -a lists . and .., and -R used to descend into both, forever. head bounds
+# the output so a regression fails the check instead of hanging the suite.
+testRecursiveAllSkipsDotAndDotDot() {
+    setup
+    mkdir sub
+    touch sub/file
+    check "$(l -aR -1 | head -n 20)" = ".:
+.
+..
+sub
+
+./sub:
+.
+..
+file"
+    cleanup
+}
+
+# Directory headers are file names too, and -R prints ones anybody could
+# have created, so they get the same escaping as the names in the listing.
+testRecursiveEscapesDirectoryHeaders() {
+    setup
+    mkdir $'d\033x'
+    touch $'d\033x/f'
+    check "$(l -qR -1)" = ".:
+d?x
+
+./d?x:
+f"
+    cleanup
+}
+
+# A symlink target can be PATH_MAX-1 bytes long. The buffer was one byte
+# short of that, and the failure that followed crashed -l and -V.
+testLongSymlinkTarget() {
+    setup
+    max="$(getconf PATH_MAX .)"
+    target="$(printf "%$((max - 1))s" | tr ' ' a)"
+    ln -s "$target" link
+    result="$(l -l link 2>/dev/null)" || true
+    check "${result##* -> }" = "$target"
+    result="$(l -V -1 link 2>/dev/null)" || true
+    check "$result" = "link -> $target"
+    cleanup
+}
+
+# A color setup that fails partway (no TERM, or a terminal without colors)
+# used to free uninitialized pointers. The perturb settings fill fresh
+# allocations with garbage (glibc and macOS respectively), so that free is
+# a reliable crash rather than one that depends on what the heap held.
+testColorWithoutColorTerminal() {
+    setup
+    touch file
+    status=0
+    result="$(MALLOC_PERTURB_=165 MallocPreScribble=1 TERM=dumb l -G -1)" || status=$?
+    check "$status" = 0
+    check "$result" = "file"
+    status=0
+    result="$(MALLOC_PERTURB_=165 MallocPreScribble=1 env -u TERM "$OUTDIR/l" -G -1)" || status=$?
+    check "$status" = 0
+    check "$result" = "file"
+    cleanup
+}
+
+# A time too far from the epoch for localtime() used to fail the time field,
+# which dropped every file's line from the listing. Only tmpfs keeps such a
+# time, and only GNU touch sets one, so this skips anywhere else.
+testFarFutureTimestamp() {
+    if ! test -d /dev/shm || ! test -w /dev/shm; then
+        echo "${FUNCNAME[0]} SKIPPED: no writable /dev/shm"
+        return 0
+    fi
+    TMPDIR=/dev/shm setup
+    touch b
+    touch -d @2305843009213693952 a 2>/dev/null || true
+    if test "$(stat -c %Y a 2>/dev/null)" != 2305843009213693952; then
+        cleanup
+        echo "${FUNCNAME[0]} SKIPPED: /dev/shm cannot hold the time"
+        return 0
+    fi
+    result="$(l -T -1)"
+    check "$(echo "$result" | head -n 1)" = "2305843009213693952 a"
+    last="$(echo "$result" | tail -n 1)"
+    check "${last##* }" = "b"
+    cleanup
+}
+
+# -f used to set the sort function only for it to be overwritten from the
+# sort type, so it sorted by name. Directory order is whatever the file
+# system returns, so compare against -U rather than a fixed order.
+testUnsortedF() {
+    setup
+    for name in m q c x a t f k z b; do
+        touch "$name"
+    done
+    check "$(l -f -1)" = "$(l -U -1)"
+    check "$(l -f -r -1)" = "$(l -U -1)"
+    cleanup
+}
+
+# DEL has no named C escape, and -e used to print it raw.
+testEscapeDel() {
+    setup
+    touch $'a\177b'
+    check "$(l -e -1)" = 'a\177b'
+    cleanup
+}
+
+# getopt sets optopt to 0 for a long option, so these used to print a NUL
+# where the option's name belonged.
+testLongOptionErrorsNameTheOption() {
+    status=0
+    result="$(l --bogus 2>&1 >/dev/null)" || status=$?
+    check "$status" = 2
+    check "$result" != "${result/Unknown option --bogus/}"
+    status=0
+    result="$(l --sort 2>&1 >/dev/null)" || status=$?
+    check "$status" = 2
+    check "$result" != "${result/Missing argument to --sort/}"
+}
+
+# POSIX ls exits non-zero when an operand cannot be listed; this exited 0.
+testMissingOperandExitStatus() {
+    setup
+    touch file
+    status=0
+    result="$(l -1 file missing 2>/dev/null)" || status=$?
+    check "$status" = 1
+    check "$result" = "file"
+    cleanup
+}
+
+testUnreadableDirectoryExitStatus() {
+    if test "$(id -u)" = 0; then
+        echo "${FUNCNAME[0]} SKIPPED: root can open any directory"
+        return 0
+    fi
+    setup
+    mkdir dir
+    chmod 000 dir
+    status=0
+    l dir >/dev/null 2>&1 || status=$?
+    chmod 755 dir
+    check "$status" = 1
+    cleanup
+}
+
+# Error messages carry file names, so they are escaped too: a name holding a
+# terminal escape sequence used to reach the terminal raw through stderr.
+testDiagnosticsEscapeNames() {
+    setup
+    name=$'loop\033]0;pwned\a'
+    ln -s "$name" "$name"
+    result="$(l -L -1 2>&1 >/dev/null)"
+    esc=$'\033'
+    check "$result" = "${result//$esc/}"
+    check "$result" != "${result/'loop\033]0;pwned\007'/}"
+    cleanup
+}
+
+# BLOCKSIZE=-512 used to wrap around to a huge unsigned block size.
+testBlocksizeIgnoresNonPositive() {
+    setup
+    echo data > file
+    check "$(BLOCKSIZE=-512 l -s -1 file)" = "$(l -k -s -1 file)"
+    cleanup
+}
+
 # Regression test for the $* fix in check(): a failure on more than one
 # argument used to print via $@, which passes each argument to echo
 # separately instead of as one joined string (shellcheck SC2145). bash's
@@ -490,4 +658,16 @@ testFormatLong
 testFormatSingleColumn
 testFormatVertical
 testFormatAcross
+testRecursiveAllSkipsDotAndDotDot
+testRecursiveEscapesDirectoryHeaders
+testLongSymlinkTarget
+testColorWithoutColorTerminal
+testFarFutureTimestamp
+testUnsortedF
+testEscapeDel
+testLongOptionErrorsNameTheOption
+testMissingOperandExitStatus
+testUnreadableDirectoryExitStatus
+testDiagnosticsEscapeNames
+testBlocksizeIgnoresNonPositive
 testCheckFormatsMultiArgFailure

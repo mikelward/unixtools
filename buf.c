@@ -311,8 +311,10 @@ void printwesctobuf(wchar_t wc, Buf *buf)
     if (byte != EOF) {
         char *escaped = cescape(byte);
         if (escaped == NULL) {
-            errorf("No C escape for %c\n", byte);
-            bufappendchar(buf, byte);
+            /* no named escape (e.g. DEL): octal, never the raw byte */
+            char octal[5];
+            snprintf(octal, sizeof octal, "\\%03o", (unsigned char)byte);
+            bufappend(buf, octal, 4, 4);
         } else {
             size_t len = strlen(escaped);
             bufappend(buf, escaped, len, len);

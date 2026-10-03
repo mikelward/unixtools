@@ -113,6 +113,8 @@ asterisks, e.g.
 
 _`-q` is the default if output is a terminal, otherwise `-E`._
 
+Directory headers (`dirname:`) are escaped the same way as file names.
+
 #### Time display
  * ISO 8601 format (`-I`, `--iso`): `YYYY-MM-DD HH:MM:SS`
  * traditional format (default): day+time for recent files, month+year for older files
@@ -148,9 +150,12 @@ and can be overridden with the `BLOCKSIZE` environment variable.
 
 ### Error handling
 
-Errors are printed to stderr. Most errors (stat failures, permission errors,
-etc.) are non-fatal - the program continues processing remaining files.
-Invalid options cause the program to print usage and exit with code 2.
+Errors are printed to stderr, with any non-printable characters in them
+(such as those in file names) shown as `\NNN` escapes. Most errors (stat
+failures, permission errors, etc.) are non-fatal - the program continues
+processing remaining files, then exits with code 1 if any file or directory
+could not be listed. Invalid options cause the program to print usage and exit
+with code 2.
 
 ### Coming soon
  * file sizes in megabytes and gigabytes (`-M`, `-G`?)

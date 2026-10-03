@@ -812,15 +812,17 @@ File *gettarget(File *file)
         return NULL;
     }
     if (!file->target) {
-        char targetpath[PATH_MAX];
+        /* a target can be up to PATH_MAX-1 bytes; one more byte than that
+           tells a target that fills the buffer from one that was cut off */
+        char targetpath[PATH_MAX + 1];
         /* note: readlink(3p) not readlink(2) */
         errno = 0;
-        int nchars = readlink(file->path, targetpath, sizeof(targetpath)-1);
+        ssize_t nchars = readlink(file->path, targetpath, sizeof(targetpath)-1);
         if (nchars == -1) {
-            errorf("Error getting symlink target: %s\n", strerror(errno));
+            errorf("Cannot read symlink %s: %s\n", file->path, strerror(errno));
             return NULL;
-        } else if (nchars == sizeof(targetpath)-1) {
-            errorf("Symlink target too long for buffer\n");
+        } else if ((size_t)nchars == sizeof(targetpath)-1) {
+            errorf("Symlink target of %s too long for buffer\n", file->path);
             return NULL;
         }
         targetpath[nchars] = '\0';

@@ -44,6 +44,9 @@ typedef List FileFieldList;         /* list of fields for each file */
 
 const int columnmargin = 1;
 
+/* 1 once anything could not be listed, as POSIX requires */
+static int exitstatus = 0;
+
 int *getmaxfilefieldwidths(FileFieldList *filefields);
 void listfilewithnewline(File *file, Options *options);
 void listfiles(FileList *files, Options *options);
@@ -53,6 +56,7 @@ void printtobuf(const char *text, enum escape escape, Buf *buf);
 int  printsize(File *file, Options *options);
 void printwithnewline(void *string);
 void sortfiles(List *files, Options *options);
+bool isdotordotdot(const char *name);
 bool islinktodir(File *file);
 bool want(File *file, Options *options);
 
@@ -112,6 +116,8 @@ int main(int argc, char **argv)
                 append(file, files);
             }
         } else {
+            /* getstat() has already said why */
+            exitstatus = 1;
             freefile(file);
         }
     }
@@ -125,6 +131,7 @@ int main(int argc, char **argv)
     freelist(dirs, (free_func)freefile);
 
     freeoptions(options);
+    return exitstatus;
 }
 
 StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)
@@ -347,7 +354,8 @@ void listdir(File *dir, Options *options)
     }
     DIR *openeddir = opendir(getpath(dir));
     if (openeddir == NULL) {
-        errorf("Cannot open %s\n", getpath(dir));
+        errorf("Cannot open %s: %s\n", getpath(dir), strerror(errno));
+        exitstatus = 1;
         freelist(files, (free_func)freefile);
         return;
     }
@@ -375,7 +383,9 @@ void listdir(File *dir, Options *options)
             continue;
         }
         append(file, files);
-        if (options->recursive && isdir(file)) {
+        /* -a lists . and .., but descending into them would never end */
+        if (options->recursive && isdir(file) &&
+            !isdotordotdot(dirent->d_name)) {
             append(file, subdirs);
         }
         if (options->dirtotals) {
@@ -415,7 +425,16 @@ void listdirs(FileList *dirs, Options *options, bool firstoutput)
             printf("\n");
         }
         if (needlabel) {
-            printf("%s:\n", getpath(dir));
+            /* escaped like any other file name: -R prints the names of
+               subdirectories here, and anyone can choose those */
+            Buf *buf = newbuf();
+            if (buf) {
+                printtobuf(getpath(dir), options->escape, buf);
+                printf("%s:\n", bufstring(buf));
+                freebuf(buf);
+            } else {
+                errorf("buf is NULL\n");
+            }
         }
         listdir(dir, options);
     }
@@ -451,6 +470,11 @@ void sortfiles(List *files, Options *options)
 void printwithnewline(void *string)
 {
     puts((char *)string);
+}
+
+bool isdotordotdot(const char *name)
+{
+    return strcmp(name, ".") == 0 || strcmp(name, "..") == 0;
 }
 
 bool islinktodir(File *file)

@@ -120,10 +120,19 @@ void printspaces(int n)
     }
 }
 
+/* the escape sequence that sets the foreground to color, or NULL */
+static char *setafstring(char *setaf, int color)
+{
+    char *s = tparm(setaf, color);
+    return s ? strdup(s) : NULL;
+}
+
 /**
  * Try to set up color output.
  *
- * Returns 1 on success, 0 on failure.
+ * Returns 1 on success, 0 on failure.  Every string is set on success;
+ * on failure any of them may be NULL, but each is either NULL or
+ * allocated, so freecolors() is always safe on a zeroed colors.
  *
  * TODO This could be cleaned up a bit,
  * perhaps use an array for the colors, etc.
@@ -149,24 +158,23 @@ int setupcolors(Colors *colors)
     }
 
     char *setaf = tigetstr("setaf");
-    if (setaf == NULL) {
-        return 0;
-    }
-    colors->black = strdup(tparm(setaf, COLOR_BLACK));
-    colors->red = strdup(tparm(setaf, COLOR_RED));
-    colors->green = strdup(tparm(setaf, COLOR_GREEN));
-    colors->yellow = strdup(tparm(setaf, COLOR_YELLOW));
-    colors->blue = strdup(tparm(setaf, COLOR_BLUE));
-    colors->magenta = strdup(tparm(setaf, COLOR_MAGENTA));
-    colors->cyan = strdup(tparm(setaf, COLOR_CYAN));
-    colors->white = strdup(tparm(setaf, COLOR_WHITE));
     char *sgr0 = tigetstr("sgr0");
-    if (sgr0 == NULL) {
+    if (setaf == NULL || sgr0 == NULL) {
         return 0;
     }
+    colors->black = setafstring(setaf, COLOR_BLACK);
+    colors->red = setafstring(setaf, COLOR_RED);
+    colors->green = setafstring(setaf, COLOR_GREEN);
+    colors->yellow = setafstring(setaf, COLOR_YELLOW);
+    colors->blue = setafstring(setaf, COLOR_BLUE);
+    colors->magenta = setafstring(setaf, COLOR_MAGENTA);
+    colors->cyan = setafstring(setaf, COLOR_CYAN);
+    colors->white = setafstring(setaf, COLOR_WHITE);
     colors->none = strdup(sgr0);
 
-    return 1;
+    return colors->black && colors->red && colors->green &&
+           colors->yellow && colors->blue && colors->magenta &&
+           colors->cyan && colors->white && colors->none;
 }
 
 void freecolors(Colors *colors)

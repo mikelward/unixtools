@@ -70,3 +70,15 @@ publishes the verdict for the current head.
       `codex-review.yml` only republishes an existing verdict, so with
       automatic reviews off every pull request would wait on a manual
       `@codex review` before the gate could clear.
+
+## Symlink loop detection ignores the device
+
+`getfinaltarget()` (`-L`, `-H`) and `getnamefield()` (`-V`) detect a symlink
+loop by remembering each link's inode number alone. Inode numbers are only
+unique within one file system, so a chain that crosses file systems and meets
+the same number twice is reported as a loop and cut short. Rare — it needs a
+collision — but wrong when it happens. The fix needs a set keyed on the
+(`st_dev`, `st_ino`) pair; the existing `Map` holds one value per `uintmax_t`
+key, and storing the device as that value would be worse than the bug, since
+two links sharing an inode would overwrite each other and a real loop could
+then go undetected.
