@@ -273,7 +273,7 @@ Position 11 - ACL indicator:
 
 ### Stat Behavior
 
-- Always uses `lstat()` (does not follow symlinks for stat)
+- Always uses `lstat()` for a file's own metadata (does not follow symlinks for stat). The one `stat()` is the probe that asks the kernel whether a symlink chain can be followed (see [Symlink Resolution](#symlink-resolution)); it decides whether to walk the chain, not what is shown for any file.
 - Stat is lazy: only performed when first needed
 - Failed stat is remembered (not retried)
 - Files that fail to stat display `?` for most fields and `???????????` for modes
