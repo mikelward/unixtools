@@ -576,6 +576,30 @@ testUnreadableDirectoryExitStatus() {
     cleanup
 }
 
+# In a directory that can be read but not searched, readdir() works and
+# lstat() of each entry fails, so -l shows ? fields: an incomplete listing,
+# which exited 0. A names-only listing needs no stat, so it still succeeds.
+testUnsearchableDirectoryExitStatus() {
+    if test "$(id -u)" = 0; then
+        echo "${FUNCNAME[0]} SKIPPED: root can search any directory"
+        return 0
+    fi
+    setup
+    mkdir dir
+    touch dir/file
+    chmod 444 dir
+    status=0
+    result="$(l -l dir 2>/dev/null)" || status=$?
+    plainstatus=0
+    plain="$(l -1 dir 2>/dev/null)" || plainstatus=$?
+    chmod 755 dir
+    check "$status" = 1
+    check "$result" != "${result/\?\?\?/}"
+    check "$plainstatus" = 0
+    check "$plain" = "file"
+    cleanup
+}
+
 # Error messages carry file names, so they are escaped too: a name holding a
 # terminal escape sequence used to reach the terminal raw through stderr.
 testDiagnosticsEscapeNames() {
@@ -589,11 +613,14 @@ testDiagnosticsEscapeNames() {
     cleanup
 }
 
-# BLOCKSIZE=-512 used to wrap around to a huge unsigned block size.
+# BLOCKSIZE=-512 used to wrap around to a huge unsigned block size. A value
+# too big for a long has to be ignored too, including where long is no wider
+# than int and strtol() clamps it to exactly INT_MAX.
 testBlocksizeIgnoresNonPositive() {
     setup
     echo data > file
     check "$(BLOCKSIZE=-512 l -s -1 file)" = "$(l -k -s -1 file)"
+    check "$(BLOCKSIZE=99999999999999999999 l -s -1 file)" = "$(l -k -s -1 file)"
     cleanup
 }
 
@@ -668,6 +695,7 @@ testEscapeDel
 testLongOptionErrorsNameTheOption
 testMissingOperandExitStatus
 testUnreadableDirectoryExitStatus
+testUnsearchableDirectoryExitStatus
 testDiagnosticsEscapeNames
 testBlocksizeIgnoresNonPositive
 testCheckFormatsMultiArgFailure

@@ -307,6 +307,13 @@ void listfiles(FileList *files, Options *options)
      * ...construct the fields to output for each file...
      */
     FileFieldList *filefields = map(files, (map_func)getfilefields, options);
+    /* sorting and the fields stat whatever they show, so this is where an
+       entry that could not be stat'd (shown with ? fields) is known */
+    for (int i = 0; i < nfiles; i++) {
+        if (statfailed(getitem(files, i))) {
+            exitstatus = 1;
+        }
+    }
     int *fieldwidths = getmaxfilefieldwidths(filefields);
     /* we don't own files, so don't free it here */
 

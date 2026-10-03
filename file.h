@@ -68,6 +68,13 @@ char *getdirname(File *file);
 char *makepath(const char *dirname, const char *filename);
 
 bool isstat(File *file);
+/**
+ * Return true if file was stat'd and that failed.
+ *
+ * Unlike isstat(), never stats file itself, so it reports only on
+ * metadata something already needed.
+ */
+bool statfailed(File *file);
 bool isblockdev(File *file);
 bool ischardev(File *file);
 bool isdevice(File *file);

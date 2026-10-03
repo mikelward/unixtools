@@ -7,6 +7,7 @@
 #define _POSIX_C_SOURCE 200809L /* needed to make getopt() and opt* visible */
 
 #include <sys/ioctl.h>
+#include <errno.h>
 #include <getopt.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -83,11 +84,14 @@ void setdefaults(Options *options)
 
     /* use BLOCKSIZE as default blocksize if set to a usable value:
        getblocks() divides by it as an int, so a negative value printed
-       garbage and one past INT_MAX overflowed atoi() */
+       garbage and one past INT_MAX overflowed atoi().  errno catches an
+       overflow where long is no wider than int, since strtol() then
+       returns LONG_MAX, which is INT_MAX */
     char *blocksizeenv = getenv("BLOCKSIZE");
     if (blocksizeenv != NULL) {
+        errno = 0;
         long blocksize = strtol(blocksizeenv, NULL, 10);
-        if (blocksize > 0 && blocksize <= INT_MAX) {
+        if (errno == 0 && blocksize > 0 && blocksize <= INT_MAX) {
             options->blocksize = blocksize;
         }
     }

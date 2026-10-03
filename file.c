@@ -258,6 +258,11 @@ bool isstat(File *file)
     return getstat(file);
 }
 
+bool statfailed(File *file)
+{
+    return file && file->didstat && !file->pstat;
+}
+
 bool isblockdev(File *file)
 {
     struct stat *pstat = getstat(file);
