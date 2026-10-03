@@ -283,7 +283,7 @@ Position 11 - ACL indicator:
 - `gettarget()`: reads one level of symlink (via `readlink()`)
 - `getfinaltarget()`: follows the full chain, detecting loops
 - Target paths are resolved relative to the symlink's directory
-- Loop detection: a file that appears twice in the chain is a loop; print error to stderr. Files are the same only if both device and inode match, since an inode number is unique only within one file system, and the directories they were reached through match too, since a relative symlink's target is resolved in that directory (so hard links to one symlink in two directories can lead to different places). `-V` prints the chain up to and including the name that closes the loop (`a -> b -> a`).
+- Loop detection: a file that appears twice in the chain is a loop; print error to stderr. Files are the same only if both device and inode match, since an inode number is unique only within one file system, and, for a symlink with a relative target, the directories they were reached through match too, since that target is resolved in that directory (so hard links to one symlink in two directories can lead to different places). An absolute target leads to the same place from any directory. `-V` prints the chain up to and including the name that closes the loop (`a -> b -> a`).
 
 ### Directory Listing Flow
 

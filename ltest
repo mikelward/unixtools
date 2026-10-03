@@ -747,6 +747,24 @@ testHardLinkedSymlinkIsNotALoop() {
     cleanup
 }
 
+# An absolute target leads to the same place from any directory, so a hard
+# link to the same symlink is a loop as soon as it is reached; checking the
+# directory too reported it one link late, so -V printed d2/a twice.
+testHardLinkedAbsoluteSymlinkIsALoop() {
+    setup
+    mkdir d1 d2
+    ln -s "$PWD/d2/a" d1/a
+    if ! ln -P d1/a d2/a 2>/dev/null || ! test -L d2/a; then
+        cleanup
+        echo "${FUNCNAME[0]} SKIPPED: cannot hard-link a symlink"
+        return 0
+    fi
+    check "$(l -V -1 d1/a 2>/dev/null)" = "d1/a -> $PWD/d2/a"
+    err="$(l -L -1 d1/a 2>&1 >/dev/null)" || true
+    check "$err" != "${err/Symlink loop/}"
+    cleanup
+}
+
 # Regression test for the $* fix in check(): a failure on more than one
 # argument used to print via $@, which passes each argument to echo
 # separately instead of as one joined string (shellcheck SC2145). bash's
@@ -825,4 +843,5 @@ testBlocksizeIgnoresNonPositive
 testSymlinkLoops
 testLoopDetectionAcrossFileSystems
 testHardLinkedSymlinkIsNotALoop
+testHardLinkedAbsoluteSymlinkIsALoop
 testCheckFormatsMultiArgFailure
