@@ -75,7 +75,6 @@ static int strverscmp(const char *l0, const char *r0)
 
 #include "file.h"
 #include "logging.h"
-#include "map.h"
 
 struct file {
     char *name;
@@ -846,13 +845,25 @@ File *gettarget(File *file)
     return file->target;
 }
 
+bool isloop(File *first, File *file)
+{
+    struct stat *pstat = getstat(file);
+    if (!pstat) return false;
+    /* every File on the chain is the cached target of the one before it */
+    for (File *f = first; f && f != file; f = f->target) {
+        struct stat *fstat = getstat(f);
+        /* an inode number is only unique within its device */
+        if (fstat && fstat->st_dev == pstat->st_dev &&
+            fstat->st_ino == pstat->st_ino) {
+            return true;
+        }
+    }
+    return false;
+}
+
 File *getfinaltarget(File *file)
 {
-    Map *linkmap = newmap();
-    if (!linkmap) {
-        errorf("Out of memory?\n");
-        return NULL;
-    }
+    File *first = file;
     File *target = NULL;
     while (isstat(file) && islink(file)) {
         target = gettarget(file);
@@ -860,17 +871,14 @@ File *getfinaltarget(File *file)
             errorf("Cannot determine target of %s\n", getname(file));
             break;
         }
-        if (inmap(linkmap, getinode(target))) {
+        if (isloop(first, target)) {
             errorf("Symlink loop in %s\n", getname(file));
             /* no file to stat, but want to print the name field */
             target = NULL;
             break;
-        } else {
-            set(linkmap, (uintmax_t)getinode(target), NULL);
         }
         file = target;
     }
-    freemap(linkmap);
     return target;
 }
 

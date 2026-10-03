@@ -669,6 +669,57 @@ testBlocksizeIgnoresNonPositive() {
     cleanup
 }
 
+# -V prints a loop up to and including the name that closes it, and -L
+# reports one rather than following it forever.
+testSymlinkLoops() {
+    setup
+    ln -s self self
+    ln -s b a
+    ln -s a b
+    check "$(l -V -1 self 2>/dev/null)" = "self -> self"
+    check "$(l -V -1 a 2>/dev/null)" = "a -> b -> a"
+    err="$(l -L -1 a 2>&1 >/dev/null)" || true
+    check "$err" != "${err/Symlink loop/}"
+    cleanup
+}
+
+# Loop detection compared inode numbers alone, which are only unique within
+# one file system, so a chain through two file systems that happened to
+# share one was cut short as a loop. Each tmpfs numbers its own inodes, so
+# the first file made in each of two fresh mounts collides. Mounting takes
+# a private mount namespace, which some kernels refuse an ordinary user.
+testLoopDetectionAcrossFileSystems() {
+    if ! unshare -rm true 2>/dev/null; then
+        echo "${FUNCNAME[0]} SKIPPED: no private mount namespace"
+        return 0
+    fi
+    setup
+    mkdir a b
+    result="$(unshare -rm sh -c '
+        mount -t tmpfs none a && mount -t tmpfs none b || exit 1
+        ln -s "$PWD/b/second" a/first
+        ln -s real b/second
+        touch b/real
+        ln -s a/first start
+        if test "$(stat -c %i a/first)" != "$(stat -c %i b/second)"; then
+            echo "no collision"
+            exit 0
+        fi
+        "$1" -V -1 start 2>&1
+        "$1" -L -M -1 start 2>&1
+    ' sh "$OUTDIR/l")" || true
+    if test "$result" = "no collision"; then
+        cleanup
+        echo "${FUNCNAME[0]} SKIPPED: inode numbers did not collide"
+        return 0
+    fi
+    check "$(echo "$result" | head -n 1)" = "start -> a/first -> $PWD/b/second -> real"
+    # -L shows the modes of real itself, not ? fields after a false loop
+    check "$result" = "${result/Symlink loop/}"
+    check "$result" = "${result/\?/}"
+    cleanup
+}
+
 # Regression test for the $* fix in check(): a failure on more than one
 # argument used to print via $@, which passes each argument to echo
 # separately instead of as one joined string (shellcheck SC2145). bash's
@@ -744,4 +795,6 @@ testUnsearchableDirectoryExitStatus
 testReaddirFailureExitStatus
 testDiagnosticsEscapeNames
 testBlocksizeIgnoresNonPositive
+testSymlinkLoops
+testLoopDetectionAcrossFileSystems
 testCheckFormatsMultiArgFailure

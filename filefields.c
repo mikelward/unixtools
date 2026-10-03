@@ -354,29 +354,17 @@ Field *getnamefield(File *file, Options *options)
     printnametobuf(file, options, buf);
 
     if (options->showlinks) {
-        Map *linkmap = newmap();
-        if (linkmap) {
-            /* resolve and print symlink targets recursively */
-            while (isstat(file) && islink(file)) {
-                if (inmap(linkmap, getinode(file))) {
-                    /* error already printed by getfilefields */
-                    /* no file to stat, but want to print the name field */
-                    file = NULL;
-                    break;
-                } else {
-                    set(linkmap, (uintmax_t)getinode(file), NULL);
-                }
-                /* an unreadable target ends the chain; gettarget() said why */
-                file = gettarget(file);
-                if (!file) {
-                    break;
-                }
-                bufappend(buf, " -> ", 4, 4);
-                printnametobuf(file, options, buf);
+        /* resolve and print symlink targets recursively,
+           stopping after the name that closes a loop */
+        File *first = file;
+        while (isstat(file) && islink(file) && !isloop(first, file)) {
+            /* an unreadable target ends the chain; gettarget() said why */
+            file = gettarget(file);
+            if (!file) {
+                break;
             }
-            freemap(linkmap);
-        } else {
-            errorf("Out of memory?\n");
+            bufappend(buf, " -> ", 4, 4);
+            printnametobuf(file, options, buf);
         }
     } else if (options->showlink) {
         /* print only the first link target without stat'ing the target */
