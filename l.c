@@ -375,7 +375,7 @@ void listdir(File *dir, Options *options)
         return;
     }
     struct dirent *dirent = NULL;
-    while ((dirent = readdir(openeddir)) != NULL) {
+    while ((errno = 0, dirent = readdir(openeddir)) != NULL) {
         /* TODO: merge this hidden file check with want() */
         if (!options->all && dirent->d_name[0] == '.') {
             continue;
@@ -386,6 +386,11 @@ void listdir(File *dir, Options *options)
             break;
         }
         if (!want(file, options)) {
+            /* -D stats an entry to filter it out, so an entry it could
+               not stat is only known here, not by listfiles() */
+            if (statfailed(file)) {
+                exitstatus = 1;
+            }
             freefile(file);
             continue;
         }
@@ -398,6 +403,12 @@ void listdir(File *dir, Options *options)
         if (options->dirtotals) {
             totalblocks += getblocks(file, options->blocksize);
         }
+    }
+    /* readdir() returns NULL for an error as well as at the end, and only
+       errno tells them apart; an error leaves the listing incomplete */
+    if (dirent == NULL && errno != 0) {
+        errorf("Cannot read %s: %s\n", getpath(dir), strerror(errno));
+        exitstatus = 1;
     }
     closedir(openeddir);
 
