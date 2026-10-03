@@ -333,7 +333,7 @@ Directory totals: sum of `getblocks()` for all listed files in the directory.
 ## Exit Codes
 
 - `0`: Success
-- `1`: Runtime error: an operand that cannot be stat'd, a directory that cannot be opened or read to the end (including one found by `-R`), an entry whose metadata the listing needs but cannot stat (shown with `?` fields, or left out by `-D`, which stats each entry to filter it), under `-L` a listed symlink whose final target cannot be found or stat'd, out of memory. Remaining files are still listed. An entry that is never stat'd (a names-only listing) cannot fail this way; nor can a symlink's target, which is stat'd only to decorate its name.
+- `1`: Runtime error: an operand that cannot be stat'd, a directory that cannot be opened or read to the end (including one found by `-R`), an entry whose metadata the listing needs but cannot stat (shown with `?` fields, or left out by `-D`, which stats each entry to filter it), under `-L` a listed symlink whose final target cannot be found or stat'd, out of memory. Remaining files are still listed. An entry that is never stat'd (a names-only listing) cannot fail this way; nor, without `-L`, can a symlink's target, which is then stat'd only to decorate its name.
 - `2`: Usage error (invalid option, missing argument)
 
 ## Incompatibilities with GNU/BSD `ls`
