@@ -70,3 +70,55 @@ publishes the verdict for the current head.
       `codex-review.yml` only republishes an existing verdict, so with
       automatic reviews off every pull request would wait on a manual
       `@codex review` before the gate could clear.
+
+## Decide: one rule for error messages and exit status
+
+Undecided: "option A" from the review discussion on #52 through #54.
+`file.c` prints an error whenever a lookup fails, whatever the lookup was
+for, while `l.c` sets exit status 1 only at the call sites #52 and #54
+added. The two drift apart: Codex found three missing sites in a row. The
+proposal is that lookups stop printing, and whatever decides a failure
+matters prints the message and sets the status in one call, so neither can
+happen without the other. The per-site `statfailed()` checks in `l.c` would
+then go. The cases to settle, each needing a test:
+
+**Printed, but exits 0.** These would become exit 1:
+- `-l` or `-V` when a link's target cannot be read (`readlink()` fails).
+- ACL read errors under `-l` or `-M` ("Error getting ACLs").
+- `--btime` when `statx()` fails. Separately, a file system with no birth
+  times silently shows the epoch (1970) as the time.
+- Running out of memory partway through a listing. SPEC.md lists it under
+  exit 1, but only failures at startup set it.
+
+**Printed for lookups that only decorate.** GNU ls prints nothing here, so
+these would become silent:
+- `l dangling` or `l loop` with no options. `-H` is on by default, so `l`
+  looks up a link argument's target to see whether it is a directory. An
+  explicit `-H` may differ: GNU reports a command-line link it was asked to
+  follow and could not.
+- `-F` or `-O` classifying, or `-G` coloring, a link's target name in `-l`
+  and `-V` output. A dangling target already shows `?` or red.
+- `-V` following a chain to a dangling end.
+
+**Already exit 1, keep (#52, #54).** An operand that cannot be stat'd; a
+directory that cannot be opened or read to the end; an entry whose own
+lstat fails when the listing needs it (`?` fields, or dropped by `-D`); and
+under `-L`, a final target that cannot be found or stat'd.
+
+**Permissions.** An lstat permission failure comes from the parent
+directory lacking search permission, not from the file's own mode.
+- Listing only the names in a readable but unsearchable directory needs no
+  lstat. Keep it silent with exit 0, as GNU ls does.
+- Anything that needs each entry's metadata prints one error per entry, as
+  GNU ls does. Decide whether to print one message per directory instead
+  for large directories. It exits 1 either way.
+- `-p` silently shows `?` for `access()` failures other than `EACCES`,
+  including `EROFS` for `w` on a read-only file system. Decide whether any
+  of those is an error, and whether `EROFS` should show `-`.
+
+**Also open.**
+- Exit code values. GNU ls exits 2 for an operand it cannot access and 1
+  for minor problems; `l` exits 1 for every runtime failure and keeps 2
+  for usage errors.
+- Message format. Messages carry internal function names (`l: getstat:
+  Cannot lstat ...`), where GNU ls says `ls: cannot access 'x': reason`.
