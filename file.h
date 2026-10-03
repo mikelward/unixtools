@@ -132,22 +132,35 @@ File *gettarget(File *file);
  * Get the file that file points at eventually.
  *
  * file must be a symlink.  Resolves all symlinks until a non-symlink target is found
- * Returns NULL if a loop is detected.
+ * Returns NULL if the kernel cannot follow the chain (see chainloops()).
  *
  * Does not free anything, even on error, since calling code should always call
  * freefile() on file anyway, and that frees file and its targets.
  */
 File *getfinaltarget(File *file);
+
 /**
- * Return true if file is the same file as one before it on the chain of
- * symlinks that starts at first, i.e. following the chain has looped.
- *
- * file must be on that chain: first, or reached from it by gettarget().
- * Files are the same if their device and inode match and, for a symlink
- * with a relative target, so do those of the directories they were reached
- * through, since that target is resolved in that directory.
+ * The most links followed from one symlink, past every kernel's own limit
+ * (40 on Linux, 32 on macOS and the BSDs).  Only a chain that changes while
+ * it is followed, or -V showing a loop it cannot see close, gets this far.
  */
-bool isloop(File *first, File *file);
+#define MAXCHAIN 64
+
+/**
+ * Return true if the kernel cannot follow file's chain of symlinks to its
+ * end: stat() fails with ELOOP, for a loop or more links than it follows.
+ */
+bool chainloops(File *file);
+
+/**
+ * Return true if file has the same device and inode as a link before it on
+ * the chain that starts at first.
+ *
+ * Only a hint for where to stop showing a chain that chainloops() has
+ * already reported: hard links and bind mounts can share a device and inode
+ * yet lead to different places, so it never decides whether a chain loops.
+ */
+bool isrepeat(File *first, File *file);
 
 int comparebyname(const File **a, const File **b);
 int comparebyatime(const File **a, const File **b);

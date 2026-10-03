@@ -354,10 +354,17 @@ Field *getnamefield(File *file, Options *options)
     printnametobuf(file, options, buf);
 
     if (options->showlinks) {
-        /* resolve and print symlink targets recursively,
-           stopping after the name that closes a loop */
+        /* resolve and print symlink targets recursively.  A chain the kernel
+           can follow is shown to its end; one it cannot is shown up to the
+           first link that repeats, which closes a plain loop, or else for
+           MAXCHAIN links */
         File *first = file;
-        while (isstat(file) && islink(file) && !isloop(first, file)) {
+        bool loops = isstat(file) && islink(file) && chainloops(file);
+        for (int links = 0; isstat(file) && islink(file) && links < MAXCHAIN;
+             links++) {
+            if (loops && isrepeat(first, file)) {
+                break;
+            }
             /* an unreadable target ends the chain; gettarget() said why */
             file = gettarget(file);
             if (!file) {
