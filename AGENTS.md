@@ -1,7 +1,7 @@
 ---
 trigger: always_on
 alwaysApply: true
-last_modified: 2026-10-13
+last_modified: 2026-10-15
 ---
 
 # Agent Guidelines
@@ -195,6 +195,12 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   five minutes after that review or rebuttal. Nothing back at all — poke
   once, five minutes after the push. Escalate five minutes after the poke
   rather than poking a second time.
+- **Once Codex has +1'd a PR's head, never make an unnecessary change to it
+  without asking first** (maintainer, 2026-10-13): a to-do, tidy-up or extra
+  fix re-runs CI and Codex for nothing, so it waits for a yes or goes in a
+  follow-up PR. A necessary change goes ahead unasked — a rebase for a `dirty`
+  branch, or a `behind` one where the ruleset requires it up to date, a fix
+  for red CI — and so does drive or autopilot, where in effect.
 - "Drive" means run the loop automatically: pick the next task, implement it,
   open the PR, send it for review, address every comment, merge once CI is green
   and the review has signed off — then pick the next task and go around again.
