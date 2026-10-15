@@ -54,17 +54,17 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
 
 ## Talking to the user
 
-- **Don't narrate routine machinery.** A check run flipping, a re-run, a scheduled check
-  re-arming, a webhook echo, a resolved thread — act on those silently; the noise buries
-  the one line that matters. Reports another rule requires stand.
+- **Message only when the user needs to see it** (maintainer, 2026-10-15): each one
+  notifies their phone. Work and listen in silence; speak up for a question or blocker,
+  something to merge or act on, a merge, an autopilot decision (to review when seen,
+  never waited on), or a change from the plan, `SPEC.md` or their instructions, a
+  review-prompted one included. Never for progress (a client's nudge doesn't count), a
+  review or a push alone (its report rides the next message), routine machinery, or a
+  mistake caught and fixed before it reached the repo. The session-start `AGENTS.md`
+  line still opens every session.
 - **Answer a mid-turn message first.** A user message that arrives while you're working
   — the "sent while you were working" interjection — is addressed in your very next
   output, before any further tool call, even if it's one sentence.
-- **Don't report your own caught-and-fixed mistakes.** A wrong turn you noticed
-  and corrected before it reached anything is not news — no "one thing worth
-  flagging", no narration of the recovery. Say it only when it left something
-  the user has to act on: work actually lost, a bad push someone may have
-  pulled, a decision they would make differently knowing it.
 - **End the turn by restating any pending decision.** If you're waiting on an
   answer — a question you asked, or a guess autopilot recorded for review — the
   last line of the reply is that question, written out in about a sentence. A
@@ -172,11 +172,11 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   `TODO.md` record, the push, and the reply — only the resolve is skipped. The
   push re-triggers Codex, so poke only as *Read the Codex verdict* allows;
   escalate if the re-review re-raises it.
-- Restate every review finding in chat, not just the count. One bullet
-  each: review comment, top-level comment or review body alike, most blocking
-  first — what it claims, where, and what you did about it, or the options
-  where it's the maintainer's call. Summarize them all in that one reply;
-  ask only the most blocking question.
+- Restate every review finding in the next message you send, not just the
+  count. One bullet each: review comment, top-level comment or review body
+  alike, most blocking first — what it claims, where, and what you did about
+  it, or the options where it's the maintainer's call. Summarize them all in
+  that one reply; ask only the most blocking question.
 - Read the Codex verdict, don't infer it. It reacts to the PR body
   (`issue_read` → `reactions`), not to a review thread, whose `Useful?` bar
   reads true on any PR it has commented on. `eyes` means reading, `+1` means
