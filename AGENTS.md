@@ -1,7 +1,7 @@
 ---
 trigger: always_on
 alwaysApply: true
-last_modified: 2026-10-16
+last_modified: 2026-10-17
 ---
 
 # Agent Guidelines
@@ -54,6 +54,9 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
 
 ## Talking to the user
 
+- **One question at a time** — in plain chat or the client's question tool
+  (`AskUserQuestion` in Claude Code, `ask_question` in Antigravity). After asking, stop
+  and wait for the answer; don't proceed on an assumed one.
 - **Message only when the user needs to see it** (maintainer, 2026-10-15): each one
   notifies their phone. Work and listen in silence; speak up for a question or blocker,
   something to merge or act on, a merge, an autopilot decision (to review when seen,
