@@ -6,6 +6,8 @@ last_modified: 2026-10-17
 
 # Agent Guidelines
 
+`CLAUDE.md` and `GEMINI.md` are symlinks to this file. Edit `AGENTS.md`.
+
 Keep this file as short as it can be and still work. Every session loads it
 whole, so each rule costs context on every turn: add one the first time
 something bites, say it once in the fewest words that carry the *why*, rewrite
@@ -19,6 +21,9 @@ before it steers the work. Bump `last_modified` whenever you edit this file.
 ## Build Dependencies
 
 This project requires `libacl1-dev` and `libncurses-dev` (or `libtinfo-dev`) to build.
+In a remote container `.claude/hooks/session-start.sh` installs the acl headers (pinned,
+checksummed `.deb`s over HTTPS); it is auto-invoked only in Claude Code, so other agents
+run `CLAUDE_CODE_REMOTE=true .claude/hooks/session-start.sh` themselves.
 
 When installing packages in the Claude Code sandbox, `apt-get` can hang or
 conflict with background processes. To avoid this:
@@ -77,7 +82,8 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
 
 ## Autonomy
 
-- **Branches under your own `<agent>/` prefix are yours.** Create one freely;
+- **Branches under your own `<agent>/` prefix are yours** (`claude/…` Claude Code,
+  `gemini/…` Gemini / Antigravity, `codex/…` Codex). Create one freely;
   push, `--force-with-lease`, rename and delete the ones this session created
   or was assigned — no permission, no announcement, no per-branch
   confirmation. This file is the standing grant, so a client rule demanding
@@ -90,6 +96,15 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   expected — never re-author or amend merged commits to "fix" it, and don't
   narrate it either: no note in the reply, no offer to correct it. It is not a
   finding.
+- **No model identifier** — never name the coding agent's model or version
+  (`Opus 4.8`, `Sonnet`, `Gemini …`, `claude-*`, `gemini-*`) in a commit, PR,
+  comment, or pushed artifact; keep it to chat. Generic attribution
+  (`Co-Authored-By: Claude` / `Gemini`, `Claude-Session:`, "Generated with Claude
+  Code") is fine.
+- Prefer the `mcp__github__*` tools where mounted (Claude Code requires them);
+  otherwise fall back to `gh`. Resolve a review thread with
+  `resolve_review_thread` or `gh api graphql` `resolveReviewThread`, passing the
+  thread's `PRRT_*` ID, not a comment's `PRRC_*`.
 - Open the PR without being asked. Pushing a finished branch and opening its
   pull request are one step, not two — don't park a branch waiting for "please
   open a PR." The exception is an explicit instruction not to ("just commit",
@@ -102,11 +117,13 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
   opened.
 - **Watch your own PRs by subscription, plus one scheduled check.** Have a
   subscription — Claude Code makes one when you open a PR; where a client
-  doesn't, call `subscribe_pr_activity`. It delivers reviews, comments and CI
-  failures. It cannot deliver CI *success*, a push, the merge, Codex's clean
-  verdict (a reaction), or Codex never answering at all — so keep exactly one
-  check armed for as long as the PR is open (each event and each check costs
-  a model turn). Under drive, arm auto-merge at PR open too — but only where
+  doesn't, call `subscribe_pr_activity` (exposed only in `claude-code-remote`).
+  It delivers reviews, comments and CI failures. It cannot deliver CI
+  *success*, a push, the merge, Codex's clean verdict (a reaction), or Codex
+  never answering at all — so keep exactly one check armed for as long as the
+  PR is open (`send_later` in Claude Code; `schedule` with `DurationSeconds` in
+  Antigravity, canceled via `manage_task` `kill`; each event and each check
+  costs a model turn). Under drive, arm auto-merge at PR open too — but only where
   the ruleset makes the Codex verdict a required check AND requires
   conversations resolved: where CI is the only requirement it merges before
   Codex has answered, and an open review comment holds nothing back on its own.
@@ -154,8 +171,9 @@ Always keep `SPEC.md` and `README.md` up to date when making changes to `l`:
     if it doesn't merge cleanly with it (`git merge-tree --write-tree`, Git
     2.38 or later, exits 1). Any exit but 0 or 1 from either is a failure
     to report, not an answer. Your own rules decide the rebase from there.
-    Skip a PR with no session URL, and don't retry a failed send; its own
-    scheduled check is the fallback.
+    Skip a PR with no session URL, or when your client only has local
+    subagent messaging, and don't retry a failed send; its own scheduled
+    check is the fallback.
   - Merged or closed, take one last reply-and-resolve pass — a review can
     land after the merge. Nothing is holding the PR now, so on a merged one
     anything real goes to a follow-up PR, named on the thread, before you
