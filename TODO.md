@@ -71,6 +71,11 @@ publishes the verdict for the current head.
       automatic reviews off every pull request would wait on a manual
       `@codex review` before the gate could clear.
 
+- [ ] **Check `AGENTS.md` < 24,000 bytes in CI** (mikelward/stopdash#932):
+      add `test "$(wc -c < AGENTS.md)" -lt 24000` to `.github/workflows/ci.yml`
+      on the docs/classify path, so `AGENTS.md` cannot silently grow past
+      Antigravity's 24,000-byte per-file rule cap, which truncates the tail.
+
 ## Decide: one rule for error messages and exit status
 
 Undecided: "option A" from the review discussion on #52 through #54.
