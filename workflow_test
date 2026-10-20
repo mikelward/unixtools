@@ -149,5 +149,22 @@ _check "the build carries no ref condition" \
     "needs.classify.outputs.docs_only != 'true'" "$(_condition build)"
 _contains "push still covers every branch" 'branches: ["**"]' "$(cat "$_workflow")"
 
+# One workflow-level concurrency group. A pull request's runs share one, keyed
+# by number, and a newer push cancels the stale run. A push, to main or any
+# branch, is keyed by its run id and never canceled or evicted, so every push
+# still gets its build, even one commit pushed to several branches at once. An `edited` run queues rather than cancels: GitHub doesn't promise
+# to start runs in event order, so it could cancel the only run on a newer head.
+_main_event="(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'))"
+_check "the workflow declares one concurrency block" \
+    1 "$(grep -c '^concurrency:$' "$_workflow")"
+_contains "the group keys a pull request by number and a push by its own run" \
+    "  group: ci-\${{ $_main_event && format('push-{0}', github.run_id) || github.event.pull_request.number || github.ref }}" \
+    "$(cat "$_workflow")"
+_contains "a pull request push cancels the stale run, never a push run or an edit" \
+    "  cancel-in-progress: \${{ !$_main_event && github.event.action != 'edited' }}" \
+    "$(cat "$_workflow")"
+_contains "an edit still starts a run" \
+    'types: [opened, synchronize, reopened, edited]' "$(cat "$_workflow")"
+
 echo "$_passes passed, $_failures failed"
 test "$_failures" -eq 0
