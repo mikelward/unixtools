@@ -1,7 +1,7 @@
 ---
 trigger: always_on
 alwaysApply: true
-last_modified: 2026-10-17
+last_modified: 2026-10-22
 ---
 
 # Agent Guidelines
@@ -191,9 +191,10 @@ or behavior change, and keep it high-level — not internal error handling or im
   `get_comments` and `get_reviews` to the last page (all page oldest first) — and block
   the merge until fixed, rebutted or deferred; an acknowledgment is not an answer. A
   pending `codex` status is one of three: findings — address them; a clean review with no
-  reaction, or a rebuttal it hasn't answered — `@codex review` once, five minutes after
-  it; nothing back at all — poke once, five minutes after the push. Escalate five minutes
-  after the poke rather than poking twice.
+  reaction, or a rebuttal it hasn't answered — `@codex review` five minutes after it; a
+  hung review, nothing back five minutes after the push or stuck at running (👀) ten
+  minutes on — poke. A poke that hangs the same way gets a second an hour later; escalate
+  only if that one hangs too, never after one (maintainer, 2026-10-22).
 - **Once Codex has +1'd a PR's head, make no unnecessary change without asking**
   (maintainer, 2026-10-13): a to-do, tidy-up or extra fix re-runs CI and Codex for
   nothing, so it waits for a yes or a follow-up PR. A necessary change proceeds unasked —
