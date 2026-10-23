@@ -1,7 +1,7 @@
 ---
 trigger: always_on
 alwaysApply: true
-last_modified: 2026-10-22
+last_modified: 2026-10-23
 ---
 
 # Agent Guidelines
@@ -94,6 +94,11 @@ or behavior change, and keep it high-level — not internal error handling or im
   `Sonnet`, `Gemini …`, `claude-*`, `gemini-*`) in a commit, PR, comment, or pushed
   artifact; keep it to chat. Generic attribution (`Co-Authored-By: Claude` / `Gemini`,
   `Claude-Session:`, "Generated with Claude Code") is fine.
+- **Title commits like a changelog line** (maintainer, 2026-10-23): after any prefix, an
+  imperative verb, then the change as someone running the tools sees it, plain English,
+  sentence case, ≤ ~70 chars, e.g. `Fix …` for what was broken, `Improve …` for what got
+  better, `Add …` for what's new; an optional parenthetical says how. Never the scenario
+  or the mechanism (that's the body). PR titles match.
 - Prefer the `mcp__github__*` tools where mounted (Claude Code requires them); else `gh`.
   Resolve a thread with `resolve_review_thread` or `gh api graphql` `resolveReviewThread`,
   passing its `PRRT_*` ID, not a comment's `PRRC_*`.
