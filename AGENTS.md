@@ -13,7 +13,7 @@ last_modified: 2026-10-26
 loaded and its `last_modified` date** (front matter), so a stale or wrong copy is caught
 before it steers the work.
 
-Keep this file short — one-liners over essays, **under 24,000 bytes** (`wc -c AGENTS.md`):
+Keep this file short — one-liners over essays, **under 22,000 bytes** (`wc -c AGENTS.md`):
 Antigravity caps rule files at 24 KB and silently truncates the tail. Every session loads
 it whole, so add a rule the first time something bites, say it once in the fewest words
 that carry the *why*, rewrite or trim rather than append, and delete rules that stopped
