@@ -1,7 +1,7 @@
 ---
 trigger: always_on
 alwaysApply: true
-last_modified: 2026-10-23
+last_modified: 2026-10-26
 ---
 
 # Agent Guidelines
@@ -72,7 +72,9 @@ or behavior change, and keep it high-level — not internal error handling or im
   still opens every session.
 - **Answer a mid-turn message first** — the "sent while you were working" interjection is
   addressed in your very next output, before any further tool call, even if it's one
-  sentence.
+  sentence. **Claude Code only** (maintainer, 2026-10-25): its app reliably shows just a
+  turn's last message, so reply only there, answering a mid-turn message at a stopping
+  point soon.
 - **End the turn by restating any pending decision** — a question you asked, or a guess
   autopilot recorded for review — as its last line, written out in about a sentence (a
   back-reference isn't actionable), every turn until it's answered. Nothing pending, no
