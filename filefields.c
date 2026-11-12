@@ -24,6 +24,8 @@ void printnametobuf(File *file, Options *options, Buf *buf);
  * Dynamically allocate a formatted string (portable asprintf replacement).
  * Returns a malloc'd string or NULL on failure. Caller must free.
  */
+static char *xasprintf(const char *fmt, ...) PRINTFLIKE(1, 2);
+
 static char *xasprintf(const char *fmt, ...)
 {
     va_list ap;
@@ -207,17 +209,17 @@ Field *getdatetimefield(File *file, Options *options)
             assert(options->now > 0);
             time_t seconds_ago = options->now - timestamp;
             if (seconds_ago > 60*60*24*31*12) {
-                s = xasprintf("%ld years", seconds_ago/60/60/24/31/12);
+                s = xasprintf("%jd years", (intmax_t)(seconds_ago/60/60/24/31/12));
             } else if (seconds_ago > 60*60*24*31) {
-                s = xasprintf("%ld months", seconds_ago/60/60/24/31);
+                s = xasprintf("%jd months", (intmax_t)(seconds_ago/60/60/24/31));
             } else if (seconds_ago > 60*60*24) {
-                s = xasprintf("%ld days", seconds_ago/60/60/24);
+                s = xasprintf("%jd days", (intmax_t)(seconds_ago/60/60/24));
             } else if (seconds_ago > 60*60) {
-                s = xasprintf("%ld hours", seconds_ago/60/60);
+                s = xasprintf("%jd hours", (intmax_t)(seconds_ago/60/60));
             } else if (seconds_ago > 60) {
-                s = xasprintf("%ld minutes", seconds_ago/60);
+                s = xasprintf("%jd minutes", (intmax_t)(seconds_ago/60));
             } else if (seconds_ago >= 0) {
-                s = xasprintf("%ld seconds", seconds_ago);
+                s = xasprintf("%jd seconds", (intmax_t)seconds_ago);
             } else {
                 s = xstrftime("%b %e  %Y", timestruct);
             }
@@ -282,7 +284,7 @@ Field *getinodefield(File *file, Options *options)
     char *s;
     if (isstat(file)) {
         ino_t inode = getinode(file);
-        s = xasprintf("%lu", inode);
+        s = xasprintf("%ju", (uintmax_t)inode);
     } else {
         s = xasprintf("?");
     }

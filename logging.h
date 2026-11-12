@@ -6,6 +6,19 @@
 extern char *myname;       /* defined in the main module */
 
 /**
+ * Marks a function as taking a printf() format string and its arguments, so
+ * that the compiler checks each call's arguments against its format.
+ *
+ * fmt and first are the positions of the format string and of the first
+ * argument it formats, counting from 1.
+ */
+#ifdef __GNUC__
+#define PRINTFLIKE(fmt, first) __attribute__((__format__(__printf__, fmt, first)))
+#else
+#define PRINTFLIKE(fmt, first)
+#endif
+
+/**
  * Copy str into *pbuf.
  *
  * *pbuf is modified to point to the terminating NUL byte, so
@@ -44,7 +57,7 @@ void copystring(const char *str, char **pbuf, int *pbufsize);
  *
  * @see printf().
  */
-void errorf2(const char *func, const char *format, ...);
+void errorf2(const char *func, const char *format, ...) PRINTFLIKE(2, 3);
 
 #endif
 /* vim: set ts=4 sw=4 tw=0 et:*/
