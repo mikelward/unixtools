@@ -76,6 +76,24 @@ publishes the verdict for the current head.
       on the docs/classify path, so `AGENTS.md` cannot silently grow past
       Antigravity's 24,000-byte per-file rule cap, which truncates the tail.
 
+## Check every allocation
+
+Found by a bug and security review and left alone: each needs an allocation
+to fail, which no test here can arrange yet, and what `l` should then do is
+the out-of-memory case still undecided below.
+
+- [ ] `getmaxfilefieldwidths()` in `l.c` and `newmap()` in `map.c` use
+      `calloc()`'s result unchecked.
+- [ ] `getdirname()` and `getbasename()` in `file.c` hand an unchecked
+      `strdup()` to `dirname()` and `basename()`, which read `NULL` as `.`,
+      so a link's target would be looked up in the wrong directory.
+- [ ] `makefilestrings()` in `l.c` appends an unchecked `strdup()`, which
+      `puts()` then dereferences.
+- [ ] `set()` in `map.c` uses `newpair()`'s result unchecked, and `append()`
+      in `list.c` drops the element when the list cannot grow.
+- [ ] `hasacls()` in `file.c` reads the tag type without checking that
+      `acl_get_tag_type()` set it.
+
 ## Decide: one rule for error messages and exit status
 
 Undecided: "option A" from the review discussion on #52 through #54.
