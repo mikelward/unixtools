@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -90,7 +91,11 @@ bool ishidden(File *file);
 
 bool hasacls(File *file);
 
-unsigned long getblocks(File *file, int blocksize);
+/**
+ * Return the space allocated to file, in blocks of blocksize bytes, rounded
+ * to the nearest block.  A blocksize of 1 gives it in bytes.
+ */
+uintmax_t getblocks(File *file, unsigned blocksize);
 unsigned int getmajor(File *file);
 unsigned int getminor(File *file);
 

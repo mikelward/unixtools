@@ -304,9 +304,11 @@ Position 11 - ACL indicator:
 
 ### Block Size Calculation
 
-Blocks are stored in 512-byte (`DEV_BSIZE`) units in `st_blocks`. Conversion:
-- If `blocksize > DEV_BSIZE`: `blocks = (st_blocks + factor/2) / factor` where `factor = blocksize / DEV_BSIZE` (rounds to nearest)
-- If `blocksize <= DEV_BSIZE`: `blocks = st_blocks * (DEV_BSIZE / blocksize)`
+Blocks are stored in 512-byte (`DEV_BSIZE`) units in `st_blocks`. Conversion, for any block size:
+- `bytes = st_blocks * DEV_BSIZE`
+- `blocks = (bytes + blocksize/2) / blocksize` (rounds to nearest)
+
+With `-h`, `-s` shows `bytes` in human-readable form, whatever the block size.
 
 Default block size: 1024 (overridable by `BLOCKSIZE` env var, read as a decimal integer and ignored unless it is between 1 and `INT_MAX`).
 

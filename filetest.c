@@ -7,6 +7,7 @@
 #endif
 #include <assert.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,6 +23,7 @@ int test_dot();
 int test_filename();
 int test_fileperms();
 int test_device_numbers();
+int test_blocks();
 
 int main(int argc, char **argv)
 {
@@ -34,6 +36,7 @@ int main(int argc, char **argv)
     test_filename();
     test_fileperms();
     test_device_numbers();
+    test_blocks();
     return 0;
 }
 
@@ -172,6 +175,36 @@ int test_device_numbers(void)
     assert(isstat(file));
     assert(!isdevice(file));
     freefile(file);
+
+    return 0;
+}
+
+/* a block size that 512 neither divides nor is divided by used to be
+   rounded to one that does, so 1000 counted 512-byte blocks */
+int test_blocks(void)
+{
+    errorf("\n");   /* prints the function name */
+    char name[] = "filetest.XXXXXX";
+    int fd = mkstemp(name);
+    assert(fd != -1);
+    char data[10000];
+    memset(data, 'x', sizeof data);
+    assert(write(fd, data, sizeof data) == (ssize_t)sizeof data);
+    /* so that the file's allocation is settled before it is stat'd */
+    assert(fsync(fd) == 0);
+    assert(close(fd) == 0);
+
+    struct stat st;
+    assert(stat(name, &st) == 0);
+    uintmax_t bytes = (uintmax_t)st.st_blocks * 512;
+    File *file = newfile(".", name);
+    unsigned blocksizes[] = { 1, 100, 512, 1000, 1024, 2000, 4096, 1000000 };
+    for (size_t i = 0; i < sizeof blocksizes / sizeof blocksizes[0]; i++) {
+        unsigned blocksize = blocksizes[i];
+        assert(getblocks(file, blocksize) == (bytes + blocksize / 2) / blocksize);
+    }
+    freefile(file);
+    assert(unlink(name) == 0);
 
     return 0;
 }

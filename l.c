@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <dirent.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -399,7 +400,7 @@ void listdir(File *dir, Options *options)
         freelist(files, (free_func)freefile);
         return;
     }
-    unsigned long totalblocks = 0;
+    uintmax_t totalblocks = 0;
     List *subdirs = newlist();
     if (subdirs == NULL) {
         errorf("subdirs is NULL\n");
@@ -446,7 +447,7 @@ void listdir(File *dir, Options *options)
     closedir(openeddir);
 
     if (options->dirtotals) {
-        printf("total %lu\n", totalblocks);
+        printf("total %ju\n", totalblocks);
     }
     listfiles(files, options);
     if (options->recursive) {
