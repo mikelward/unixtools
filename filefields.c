@@ -452,15 +452,15 @@ Field *getsizefield(File *file, Options *options)
     } else if (isdevice(file)) {
         s = xasprintf("%u, %u", getmajor(file), getminor(file));
     } else {
-        unsigned long blocks = getblocks(file, options->blocksize);
         if (options->sizestyle == SIZE_HUMAN) {
-            unsigned long bytes = blocks * options->blocksize;
-            s = humanbytes(bytes);
+            /* the bytes allocated, not the block count scaled back up:
+               that had already been rounded to whole blocks */
+            s = humanbytes(getblocks(file, 1));
         } else {
             if (options->sizestyle != SIZE_DEFAULT) {
                 errorf("Unknown sizestyle %d", options->sizestyle);
             }
-            s = xasprintf("%lu", blocks);
+            s = xasprintf("%ju", getblocks(file, options->blocksize));
         }
     }
     if (!s) return NULL;

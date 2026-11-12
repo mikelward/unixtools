@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <fcntl.h>          /* for AT_FDCWD, AT_SYMLINK_NOFOLLOW */
 #include <grp.h>
+#include <inttypes.h>
 #include <libgen.h>
 #include <pwd.h>
 #include <stdio.h>
@@ -541,27 +542,18 @@ int comparebyversion(const File **a, const File **b)
     return strverscmp(fa->name, fb->name);
 }
 
-unsigned long getblocks(File *file, int blocksize)
+uintmax_t getblocks(File *file, unsigned blocksize)
 {
     struct stat *pstat = getstat(file);
-    if (!pstat) return 0;
-    unsigned long blocks = pstat->st_blocks;
-    /* blocks are stored as an unsigned long on i686
-     * when dealing with integral types, we have to do
-     * larger / smaller to avoid getting zero for everything
-     * but we also want to do the blocksize/BSIZE calculation
-     * first to reduce the chances of overflow */
-    if (blocksize > DEV_BSIZE) {
-        int factor = blocksize / DEV_BSIZE;
-        /* round up to nearest integer
-         * e.g. if it takes 3 * 512 byte blocks,
-         * it would take 2 1024 byte blocks */
-        return (blocks+(factor/2)) / factor;
-    }
-    else {
-        int factor = DEV_BSIZE / blocksize;
-        return blocks * factor;
-    }
+    if (!pstat || blocksize == 0) return 0;
+    /* st_blocks counts DEV_BSIZE-byte blocks whatever size is asked for.
+     * Converting through bytes is right for any blocksize, where scaling by
+     * a whole factor was only right for a multiple or divisor of DEV_BSIZE.
+     * Rounds to the nearest block:
+     * e.g. if it takes 3 * 512 byte blocks,
+     * it would take 2 1024 byte blocks */
+    uintmax_t bytes = (uintmax_t)pstat->st_blocks * DEV_BSIZE;
+    return (bytes + blocksize / 2) / blocksize;
 }
 
 unsigned int getmajor(File *file)

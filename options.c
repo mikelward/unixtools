@@ -83,8 +83,8 @@ void setdefaults(Options *options)
     options->usernames = NULL;
 
     /* use BLOCKSIZE as default blocksize if set to a usable value:
-       getblocks() divides by it as an int, so a negative value printed
-       garbage and one past INT_MAX overflowed atoi().  errno catches an
+       getblocks() divides by it, so it must be positive, and a negative
+       value once wrapped around to a huge one.  errno catches an
        overflow where long is no wider than int, since strtol() then
        returns LONG_MAX, which is INT_MAX */
     char *blocksizeenv = getenv("BLOCKSIZE");

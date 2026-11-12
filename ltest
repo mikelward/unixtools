@@ -670,6 +670,19 @@ testBlocksizeIgnoresNonPositive() {
     cleanup
 }
 
+# A block size that 512 neither divides nor is divided by was rounded to one
+# that does: 1000 counted 512-byte blocks, and one bigger than the file
+# counted none, which -h then showed as 0 B.
+testBlocksizeNotAMultipleOf512() {
+    setup
+    head -c 100000 /dev/zero | tr '\0' x > file
+    blocks="$(BLOCKSIZE=512 l -s -1 file)"
+    blocks="${blocks%% *}"
+    check "$(BLOCKSIZE=1000 l -s -1 file)" = "$(( (blocks * 512 + 500) / 1000 )) file"
+    check "$(BLOCKSIZE=1000000000 l -sh -1 file)" = "$(l -sh -1 file)"
+    cleanup
+}
+
 # -V prints a loop up to and including the name that closes it, and -L
 # reports one (the kernel's ELOOP) rather than following it forever.
 testSymlinkLoops() {
@@ -944,6 +957,7 @@ testUnsearchableDirectoryExitStatus
 testReaddirFailureExitStatus
 testDiagnosticsEscapeNames
 testBlocksizeIgnoresNonPositive
+testBlocksizeNotAMultipleOf512
 testSymlinkLoops
 testLoopDetectionAcrossFileSystems
 testHardLinkedSymlinkIsNotALoop
