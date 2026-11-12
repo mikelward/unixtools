@@ -38,7 +38,7 @@ MD2HTML=pandoc -f markdown -t html
 
 SOURCES=*.c *.h
 DOCS=README.html
-TESTS=buftest filetest filefieldstest listtest loggingtest maptest ltest installtest session_start_hook_test workflow_test
+TESTS=buftest filetest filefieldstest listtest loggingtest maptest optionstest ltest installtest session_start_hook_test workflow_test
 PROGS=l
 
 build: $(PROGS) $(TESTS)
@@ -64,7 +64,7 @@ doc: $(DOCS)
 # Every test runs, and any failure survives to the aggregate status. A bare
 # loop returns only the last command's status, so a failure anywhere but the
 # end was reported as success — which is how CI could accept a regression.
-test: $(TESTS)
+test: $(PROGS) $(TESTS)
 	@status=0; \
 	for test in $(TESTS); do \
 		echo $$test; \
@@ -107,9 +107,15 @@ listtest: listtest.o list.o logging.o
 
 loggingtest: loggingtest.o logging.o
 
+optionstest: LDLIBS = $(CURSES_LDFLAGS) $(ACL_LDFLAGS)
+optionstest: optionstest.o options.o display.o file.o map.o pair.o list.o logging.o
+
 ltest:
 
-installtest:
+instaloptionstest: LDLIBS = $(CURSES_LDFLAGS) $(ACL_LDFLAGS)
+optionstest: optionstest.o options.o display.o file.o map.o pair.o list.o logging.o
+
+ltest:
 
 maptest: map.o list.o pair.o logging.o
 
