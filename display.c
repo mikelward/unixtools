@@ -46,7 +46,7 @@ void printacross(StringList *list, int stringwidth, int screenwidth)
 
     int colwidth = stringwidth + outermargin;
     int cols = screenwidth / colwidth;
-    cols = (cols) ? cols : 1;
+    cols = (cols > 0) ? cols : 1;
     int col = 0;
     for (int i = 0; i < len; i++) {
         char *str = getitem(list, i);
@@ -89,7 +89,7 @@ void printdown(StringList *list, int stringwidth, int screenwidth)
     int colwidth = stringwidth + outermargin;
 
     int maxcols = screenwidth / colwidth;
-    maxcols = (maxcols) ? maxcols : 1;
+    maxcols = (maxcols > 0) ? maxcols : 1;
     int rows = ceildiv(len, maxcols);
     int cols = ceildiv(len, rows);
 

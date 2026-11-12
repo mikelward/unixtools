@@ -62,7 +62,7 @@ typedef struct options {
     Map *groupnames;                /* cache of gid -> groupname for -g */
     time_t now;                     /* current time - for determining date/time format */
     Colors *colors;                 /* the colors to use */
-    short screenwidth;              /* how wide the screen is, 0 if unknown */
+    int screenwidth;                /* how wide the screen is, 0 if unknown */
     const char *timeformat;         /* custom time format for -T */
     Map *usernames;                 /* cache of uid -> username for -o */
 } Options;
