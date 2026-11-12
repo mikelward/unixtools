@@ -396,6 +396,24 @@ testSortByBtime() {
     cleanup
 }
 
+# Sorting asks for a birth time at every comparison. Each one read it afresh,
+# so a file whose birth time could not be read was reported once per
+# comparison, and a sort could see two answers for one file.
+testSortByBtimeReadsEachFileOnce() {
+    if test "$(id -u)" = 0; then
+        echo "${FUNCNAME[0]} SKIPPED: root can search any directory"
+        return 0
+    fi
+    setup
+    mkdir dir
+    touch dir/a dir/b dir/c dir/d dir/e dir/f dir/g dir/h
+    chmod 444 dir
+    err="$(l --sort=time --time=btime -1 dir 2>&1 >/dev/null)" || true
+    chmod 755 dir
+    check "$(echo "$err" | grep -c 'dir/a')" = 1
+    cleanup
+}
+
 testFormatLong() {
     setup
     touch file
@@ -939,6 +957,7 @@ testStandaloneBtime
 testStandaloneCtime
 testStandaloneMtime
 testSortByBtime
+testSortByBtimeReadsEachFileOnce
 testFormatLong
 testFormatSingleColumn
 testFormatVertical

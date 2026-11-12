@@ -85,6 +85,8 @@ struct file {
     struct file *target;           /* holds target file if this file is a symlink */
     int didfinaltarget;
     struct file *finaltarget;      /* getfinaltarget()'s result, on target's chain */
+    int didbtime;
+    time_t btime;                  /* getbtime()'s result */
 };
 
 /**
@@ -146,6 +148,8 @@ File *newfile(const char *dir, const char *name)
     file->target = NULL;
     file->didfinaltarget = 0;
     file->finaltarget = NULL;
+    file->didbtime = 0;
+    file->btime = 0;
 
     return file;
 }
@@ -577,9 +581,8 @@ time_t getatime(File *file)
     return pstat->st_atime;
 }
 
-time_t getbtime(File *file)
+static time_t readbtime(File *file)
 {
-    if (!file) return 0;
 #ifdef __linux__
     struct statx stx;
     if (syscall(SYS_statx, AT_FDCWD, file->path,
@@ -597,6 +600,18 @@ time_t getbtime(File *file)
     if (!pstat) return 0;
     return pstat->st_birthtime;
 #endif
+}
+
+time_t getbtime(File *file)
+{
+    if (!file) return 0;
+    /* remembered: sorting by it asks for every comparison, which has to get
+       the same answer each time, and should report a failure only once */
+    if (!file->didbtime) {
+        file->btime = readbtime(file);
+        file->didbtime = 1;
+    }
+    return file->btime;
 }
 
 time_t getctime(File *file)
