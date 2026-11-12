@@ -156,8 +156,8 @@ Errors are printed to stderr, with any non-printable characters in them
 (such as those in file names) shown as `\NNN` escapes. Most errors (stat
 failures, permission errors, etc.) are non-fatal - the program continues
 processing remaining files, then exits with code 1 if any file or directory
-could not be listed in full. Invalid options cause the program to print usage and exit
-with code 2.
+could not be listed in full, or the listing could not be written. Invalid
+options cause the program to print usage and exit with code 2.
 
 ### Coming soon
  * file sizes in megabytes and gigabytes (`-M`, `-G`?)

@@ -56,6 +56,7 @@ void printtobuf(const char *text, enum escape escape, Buf *buf);
 int  printsize(File *file, Options *options);
 void printwithnewline(void *string);
 void sortfiles(List *files, Options *options);
+void closeoutput(void);
 bool isdotordotdot(const char *name);
 bool islinktodir(File *file);
 bool want(File *file, Options *options);
@@ -131,7 +132,29 @@ int main(int argc, char **argv)
     freelist(dirs, (free_func)freefile);
 
     freeoptions(options);
+    closeoutput();
     return exitstatus;
+}
+
+/**
+ * Flush and close stdout, reporting any of the listing that was not written.
+ *
+ * The listing is buffered, so a write that fails (a full disk, a closed
+ * descriptor) may only be attempted here, and one that failed earlier is
+ * remembered only by the stream's error flag.
+ */
+void closeoutput(void)
+{
+    bool failed = ferror(stdout);
+    errno = 0;
+    if (fclose(stdout) != 0) {
+        error("Cannot write output: %s\n", strerror(errno));
+        exitstatus = 1;
+    } else if (failed) {
+        /* the write that failed is long gone, and its errno with it */
+        error("Cannot write output\n");
+        exitstatus = 1;
+    }
 }
 
 StringList *makefilestrings(FileFieldList *filefields, int *fieldwidths)

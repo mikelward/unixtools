@@ -850,6 +850,25 @@ testDereferenceExitStatus() {
     cleanup
 }
 
+# The listing is buffered, so a write that fails (a full disk, a closed
+# descriptor) shows only when the buffer is flushed; nothing checked, and l
+# exited 0 having printed nothing.
+testWriteErrorExitStatus() {
+    setup
+    touch file
+    status=0
+    err="$(l -1 2>&1 >&-)" || status=$?
+    check "$status" = 1
+    check "$err" != "${err/Cannot write/}"
+    if test -c /dev/full; then
+        status=0
+        err="$(l -1 2>&1 >/dev/full)" || status=$?
+        check "$status" = 1
+        check "$err" != "${err/No space left/}"
+    fi
+    cleanup
+}
+
 # Regression test for the $* fix in check(): a failure on more than one
 # argument used to print via $@, which passes each argument to echo
 # separately instead of as one joined string (shellcheck SC2145). bash's
@@ -932,4 +951,5 @@ testHardLinkedAbsoluteSymlinkIsALoop
 testLongSymlinkChains
 testBindMountedChainIsNotALoop
 testDereferenceExitStatus
+testWriteErrorExitStatus
 testCheckFormatsMultiArgFailure
